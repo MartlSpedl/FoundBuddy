@@ -1,0 +1,16 @@
+# Maven/Java
+target/
+*.iml
+*.class
+*.log
+.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Docker
+dbdata/
