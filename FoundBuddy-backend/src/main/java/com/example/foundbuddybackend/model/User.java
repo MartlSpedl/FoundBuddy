@@ -1,12 +1,5 @@
 package com.example.foundbuddybackend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 /**
  * Simple user entity corresponding to a profile in the FoundBuddy front‑end.
  *
@@ -16,20 +9,11 @@ import jakarta.persistence.Table;
  * authentication is provided by this backend; it simply stores arbitrary
  * profiles posted by the client.
  */
-@Entity
-@Table(name = "users")
 public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
-    @Column(nullable = false)
+    private String id;
     private String userName;
 
     private String fullName;
-
-    @Column(length = 4096)
     private String bio;
 
     private String profileImageUri;
@@ -43,11 +27,11 @@ public class User {
         this.profileImageUri = profileImageUri;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

@@ -1,29 +1,13 @@
 package com.example.foundbuddybackend.model;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 /**
  * Entity representing a found item posted by a user.  A found item consists of
  * a title, description and an optional image URI.  The timestamp is stored
  * separately as {@code createdAt} in milliseconds since the epoch.
  */
-@Entity
-@Table(name = "found_items")
+
 public class FoundItem {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
-    @Column(nullable = false)
+    private String id;
     private String title;
-
-    @Column(length = 4096)
     private String description;
 
     /**
@@ -49,11 +33,11 @@ public class FoundItem {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
