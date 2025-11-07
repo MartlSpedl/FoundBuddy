@@ -1,14 +1,5 @@
 package com.example.foundbuddybackend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 /**
  * Entity representing either a lost or a found item reported by users.
  *
@@ -18,23 +9,11 @@ import jakarta.persistence.Table;
  * {@code photoUri} pointing to an image resource and a timestamp in
  * milliseconds.
  */
-@Entity
-@Table(name = "items")
 public class Item {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
-    @Column(nullable = false)
+    private String id;
     private String title;
-
-    @Column(length = 4096)
     private String description;
-
-    @Enumerated(EnumType.STRING)
     private ItemStatus status;
-
     private Long timestamp;
 
     /**
@@ -54,11 +33,11 @@ public class Item {
         this.photoUri = photoUri;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

@@ -1,94 +1,140 @@
 package com.example.foundbuddybackend.controller;
 
 import com.example.foundbuddybackend.model.FoundItem;
-import com.example.foundbuddybackend.repository.FoundItemRepository;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.*;
+import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * REST controller exposing CRUD endpoints for {@link FoundItem} entities.
  *
  * <p>
- * All endpoints are prefixed with {@code /api/found-items} and are CORS
- * enabled to allow cross‑origin requests from the Android front‑end.  The
- * controller delegates persistence to {@link FoundItemRepository}.  Note
- * that image handling is out of scope; the {@code imageUri} field is
- * preserved as supplied by clients.
+ * Now uses Firebase Firestore instead of a JPA repository.
+ * All endpoints are prefixed with {@code /api/found-items} and are CORS-enabled.
  */
 @RestController
 @RequestMapping("/api/found-items")
 @CrossOrigin(origins = "*")
 public class FoundItemController {
 
-    private final FoundItemRepository repository;
+    private static final String COLLECTION_NAME = "found_items";
 
-    public FoundItemController(FoundItemRepository repository) {
-        this.repository = repository;
+    private Firestore getFirestore() {
+        return FirestoreClient.getFirestore();
     }
 
     /**
      * Returns all found items sorted by descending creation time.
-     *
-     * @return list of all found items
      */
     @GetMapping
-    public List<FoundItem> getAll() {
-        List<FoundItem> items = repository.findAll();
-        // sort descending by createdAt (nulls last)
-        items.sort((a, b) -> {
-            Long tsA = a.getCreatedAt();
-            Long tsB = b.getCreatedAt();
-            if (tsA == null && tsB == null) return 0;
-            if (tsA == null) return 1;
-            if (tsB == null) return -1;
-            return tsB.compareTo(tsA);
-        });
-        return items;
+    public ResponseEntity<List<FoundItem>> getAll() {
+        try {
+            Firestore db = getFirestore();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+            List<FoundItem> items = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : docs) {
+                FoundItem item = doc.toObject(FoundItem.class);
+                item.setId(doc.getId());
+                items.add(item);
+            }
+
+            // sort descending by createdAt (nulls last)
+            items.sort((a, b) -> {
+                Long tsA = a.getCreatedAt();
+                Long tsB = b.getCreatedAt();
+                if (tsA == null && tsB == null) return 0;
+                if (tsA == null) return 1;
+                if (tsB == null) return -1;
+                return tsB.compareTo(tsA);
+            });
+
+            return ResponseEntity.ok(items);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     /**
-     * Retrieves a single found item by its identifier.
-     *
-     * @param id the item identifier
-     * @return the found item or 404 if not found
+     * Retrieves a single found item by its Firestore document ID.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<FoundItem> getById(@PathVariable Long id) {
-        Optional<FoundItem> item = repository.findById(id);
-        return item.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<FoundItem> getById(@PathVariable String id) {
+        try {
+            Firestore db = getFirestore();
+            DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
+            DocumentSnapshot snapshot = docRef.get().get();
+
+            if (snapshot.exists()) {
+                FoundItem item = snapshot.toObject(FoundItem.class);
+                item.setId(snapshot.getId());
+                return ResponseEntity.ok(item);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     /**
-     * Creates a new found item.  The {@code id} property, if present in the
-     * request, is ignored; the backend will assign its own value.  If
-     * {@code createdAt} is not provided it will be set to the current time.
-     *
-     * @param item incoming item from the client
-     * @return the persisted item with generated identifier
+     * Creates a new found item (auto-generates Firestore ID if missing).
      */
     @PostMapping
     public ResponseEntity<FoundItem> create(@RequestBody FoundItem item) {
-        item.setId(null);
-        if (item.getCreatedAt() == null) {
-            item.setCreatedAt(Instant.now().toEpochMilli());
+        try {
+            Firestore db = getFirestore();
+            if (item.getId() == null || item.getId().isBlank()) {
+                item.setId(UUID.randomUUID().toString());
+            }
+            if (item.getCreatedAt() == null) {
+                item.setCreatedAt(Instant.now().toEpochMilli());
+            }
+
+            ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
+                    .document(item.getId())
+                    .set(item);
+            result.get(); // wait for completion
+
+            return new ResponseEntity<>(item, HttpStatus.CREATED);
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
-        FoundItem saved = repository.save(item);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
     /**
-     * Deletes all found items from the repository.  Returns HTTP 204 on
-     * success.
+     * Deletes all found items in the Firestore collection.
      */
     @DeleteMapping
     public ResponseEntity<Void> deleteAll() {
-        repository.deleteAll();
-        return ResponseEntity.noContent().build();
+        try {
+            Firestore db = getFirestore();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+            for (QueryDocumentSnapshot doc : docs) {
+                db.collection(COLLECTION_NAME).document(doc.getId()).delete();
+            }
+
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
