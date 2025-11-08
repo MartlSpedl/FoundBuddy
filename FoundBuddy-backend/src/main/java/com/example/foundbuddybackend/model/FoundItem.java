@@ -22,10 +22,6 @@ public class FoundItem {
      */
     private Long createdAt;
 
-    public FoundItem() {
-        // Default constructor for JPA
-    }
-
     public FoundItem(String title, String description, String imageUri, Long createdAt) {
         this.title = title;
         this.description = description;

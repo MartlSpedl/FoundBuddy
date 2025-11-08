@@ -21,10 +21,6 @@ public class Item {
      */
     private String photoUri;
 
-    public Item() {
-        // Default constructor required by JPA
-    }
-
     public Item(String title, String description, ItemStatus status, Long timestamp, String photoUri) {
         this.title = title;
         this.description = description;
