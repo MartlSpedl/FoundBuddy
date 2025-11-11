@@ -2,14 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
 }
 
 android {
-    namespace = "com.example.FoundBuddy"
+    namespace = "com.example.foundbuddy"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.FoundBuddy"
+        applicationId = "com.example.foundbuddy"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -62,16 +63,18 @@ dependencies {
     // Für Bilder (falls noch nicht da)
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+
     // Compose + Material3 (Versionen ggf. zu deinem Projekt passend)
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-    // JSON (Moshi) + Kotlin-Support
+// JSON (Moshi) + Kotlin-Support
     implementation("com.squareup.moshi:moshi:1.15.1")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.23")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-
 }
