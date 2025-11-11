@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
             val userViewModel: UserViewModel = viewModel()
             var isLoggedIn by remember { mutableStateOf(false) }
 
+            val isDarkMode by userViewModel.isDarkMode
             val scope = rememberCoroutineScope()
             var items by remember { mutableStateOf(listOf<FoundItem>()) }
 
@@ -43,14 +44,30 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             } else {
-                MaterialTheme(
-                    colorScheme = lightColorScheme(
-                        primary = Color(0xFF7B68EE),
-                        secondary = Color(0xFF8A7FF5),
-                        background = Color(0xFFF5F7FF),
-                        surface = Color.White
-                    )
-                ) {
+                // Dynamisches Theme
+                val colorScheme = if (isDarkMode) darkColorScheme(
+                    primary = Color(0xFFBB86FC),
+                    onPrimary = Color.Black,
+                    secondary = Color(0xFF03DAC6),
+                    background = Color(0xFF121212),
+                    onBackground = Color(0xFFEAEAEA),
+                    surface = Color(0xFF1E1E1E),
+                    onSurface = Color(0xFFEAEAEA),
+                    error = Color(0xFFCF6679),
+                    onError = Color.Black
+                ) else lightColorScheme(
+                    primary = Color(0xFF7B68EE),
+                    onPrimary = Color.White,
+                    secondary = Color(0xFF8A7FF5),
+                    background = Color(0xFFF5F7FF),
+                    onBackground = Color(0xFF1E1E1E),
+                    surface = Color.White,
+                    onSurface = Color(0xFF1E1E1E),
+                    error = Color(0xFFB00020),
+                    onError = Color.White
+                )
+
+                MaterialTheme(colorScheme = colorScheme) {
                     var screen by remember { mutableStateOf("feed") }
 
                     Scaffold(
