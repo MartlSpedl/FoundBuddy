@@ -15,55 +15,41 @@ import com.example.foundbuddy.model.FoundItem
 @Composable
 fun DetailScreen(
     item: FoundItem,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onResolve: (String) -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Zurück-Button
-        Button(
-            onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEDB8FF)),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text("Zurück", color = Color(0xFF4A2D68))
+        Button(onClick = onBack) {
+            Text("Zurück")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Bild aus dem item anzeigen
-        if (!item.imagePath.isNullOrEmpty()) {
+        item.imagePath?.let {
             AsyncImage(
-                model = item.imagePath,
-                contentDescription = item.toString(),
-                modifier = Modifier
-                    .size(250.dp)
-                    .padding(8.dp),
+                model = it,
+                contentDescription = item.title,
+                modifier = Modifier.size(250.dp),
                 contentScale = ContentScale.Crop
             )
-        } else {
-            // Fallback, wenn kein Bild vorhanden
-            Surface(
-                color = Color(0xFFF5E7FF),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(250.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("Kein Bild verfügbar", color = Color(0xFF7A4B9A))
-                }
-            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Item-Informationen
-        Text(
-            text = item.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = Color(0xFF4A2D68)
-        )
+        Text(item.title, style = MaterialTheme.typography.titleLarge)
+        item.description?.let { Text("Beschreibung: $it") }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (!item.isResolved) {
+            Button(onClick = { onResolve(item.id) }) {
+                Text(if (item.status == "Gefunden") "Zurückgegeben" else "Zurückbekommen")
+            }
+        } else {
+            Text("✅ Bereits zurückgegeben", color = Color(0xFF4CAF50))
+        }
     }
 }

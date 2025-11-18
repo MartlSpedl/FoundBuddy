@@ -4,18 +4,12 @@ import android.content.Context
 import com.example.foundbuddy.model.FoundItem
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.io.File
 
 class FoundItemRepository(private val context: Context) {
 
     private val file = File(context.filesDir, "found_items.json")
-
-    // WICHTIG: KotlinJsonAdapterFactory hinzufügen!
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-
+    private val moshi = Moshi.Builder().build()
     private val type = Types.newParameterizedType(List::class.java, FoundItem::class.java)
     private val adapter = moshi.adapter<List<FoundItem>>(type)
 
@@ -35,4 +29,13 @@ class FoundItemRepository(private val context: Context) {
     suspend fun clearAll() {
         file.writeText("")
     }
+
+    suspend fun markAsResolved(itemId: String) {
+        val current = getAll().toMutableList()
+        val updated = current.map {
+            if (it.id == itemId) it.copy(isResolved = true) else it
+        }
+        file.writeText(adapter.toJson(updated))
+    }
 }
+

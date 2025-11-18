@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
@@ -40,7 +40,7 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
             LazyColumn {
                 items(results) { item ->
                     ListItem(headlineContent = { Text(item.title) }, supportingContent = { Text(item.description) })
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }

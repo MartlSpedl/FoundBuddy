@@ -6,15 +6,11 @@ import com.example.foundbuddy.model.User
 
 class UserViewModel : ViewModel() {
 
-    // Benutzerzustand
     var currentUser = mutableStateOf<User?>(null)
     var username = mutableStateOf("")
     var email = mutableStateOf("")
-
-    // Dark Mode global
     var isDarkMode = mutableStateOf(false)
 
-    // Dummy-Nutzerliste (Frontend-only)
     private val users = mutableListOf<User>()
 
     fun register(username: String, email: String, password: String): Boolean {
@@ -54,5 +50,9 @@ class UserViewModel : ViewModel() {
 
     fun toggleDarkMode() {
         isDarkMode.value = !isDarkMode.value
+    }
+
+    fun updateProfileImage(uri: String?) {
+        currentUser.value = currentUser.value?.copy(profileImage = uri)
     }
 }
