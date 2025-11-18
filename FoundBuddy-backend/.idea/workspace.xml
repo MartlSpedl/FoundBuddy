@@ -4,8 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="">
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="h2 auf firebase umstellen">
+      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/Item.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/Item.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" afterPath="$PROJECT_DIR$/build/reports/problems/problems-report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/Item.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,6 +49,12 @@
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
                 <item name="application" type="c8890929:TasksNode$1" />
               </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="foundbuddy-backend" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
             </expand>
             <select />
           </tree_state>
@@ -79,6 +90,12 @@
   }
 }</component>
   <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$/../FoundBuddy-frontend" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13" javaHome="$USER_HOME$/.jdks/liberica-full-17.0.17" gradleVersion="8.13" />
+  <component name="HttpClientEndpointsTabState">
+    <option name="cachedRequestData" value="&lt;CachedHttpClientTabRequests&gt;&#10;  &lt;entry key=&quot;c2bc910b4ab16b15c1ee7c3174f9cd783751dbed&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/users&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;&amp;quot;,&amp;#10;  &amp;quot;userName&amp;quot;: &amp;quot;&amp;quot;,&amp;#10;  &amp;quot;fullName&amp;quot;: &amp;quot;&amp;quot;,&amp;#10;  &amp;quot;bio&amp;quot;: &amp;quot;&amp;quot;,&amp;#10;  &amp;quot;profileImageUri&amp;quot;: &amp;quot;&amp;quot;&amp;#10;}&quot; /&gt;&#10;  &lt;entry key=&quot;b8340223bede6eefabcec750e47344d373b84867&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/items&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;test1&amp;quot;,&amp;#10;  &amp;quot;title&amp;quot;: &amp;quot;Testitem&amp;quot;,&amp;#10;  &amp;quot;description&amp;quot;: &amp;quot;ein Item&amp;quot;,&amp;#10;  &amp;quot;status&amp;quot;: &amp;quot;LOST&amp;quot;,&amp;#10;  &amp;quot;timestamp&amp;quot;: 0,&amp;#10;  &amp;quot;photoUri&amp;quot;: &amp;quot;&amp;quot;&amp;#10;}&quot; /&gt;&#10;  &lt;entry key=&quot;e24c0c5159b89153d7410163bb64e860c5524417&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/items/test1&quot; /&gt;&#10;&lt;/CachedHttpClientTabRequests&gt;" />
+  </component>
+  <component name="HttpClientOnboardingState">{
+  &quot;isOnboardingCommentShown&quot;: true
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
 }</component>
@@ -87,33 +104,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Build FoundBuddy-frontend.executor": "Run",
-    "Gradle.FoundBuddy-backend [bootRun].executor": "Run",
-    "Gradle.FoundBuddy-backend [clean].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.FoundBuddyApplication.executor": "Run",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/matthias/Documents/HTL/5.Klasse/ITP/Praxis/foundbuddy/FoundBuddy-frontend/build.gradle.kts",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "SDKs",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.3321839",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build FoundBuddy-frontend.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.FoundBuddy-backend [bootRun].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.FoundBuddy-backend [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.FoundBuddy-backend [clean].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.FoundBuddyApplication.executor&quot;: &quot;Run&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/matthias/Documents/HTL/5.Klasse/ITP/Praxis/foundbuddy/FoundBuddy-frontend/build.gradle.kts&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.3321839&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Gradle.FoundBuddy-backend [bootRun]">
     <configuration name="FoundBuddy-backend [bootRun]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
@@ -127,6 +145,28 @@
         <option name="taskNames">
           <list>
             <option value="bootRun" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="FoundBuddy-backend [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -159,17 +199,6 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="kotlin.scripts.KotlinBuildScript.app:build.gradle.kts" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <module name="kotlin.scripts.KotlinBuildScript.app:build.gradle.kts" />
-      <option name="filePath" />
-      <method v="2" />
-    </configuration>
     <configuration name="FoundBuddyApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="foundbuddy-backend" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="at.htl.foundbuddy.FoundBuddyApplication" />
@@ -188,6 +217,7 @@
       <list>
         <item itemvalue="Gradle.FoundBuddy-backend [bootRun]" />
         <item itemvalue="Gradle.FoundBuddy-backend [clean]" />
+        <item itemvalue="Gradle.FoundBuddy-backend [build]" />
       </list>
     </recent_temporary>
   </component>
@@ -209,6 +239,8 @@
       <workItem from="1762271704754" duration="77000" />
       <workItem from="1762327415224" duration="2858000" />
       <workItem from="1762607440925" duration="1860000" />
+      <workItem from="1762873315726" duration="1107000" />
+      <workItem from="1762960064105" duration="717000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />

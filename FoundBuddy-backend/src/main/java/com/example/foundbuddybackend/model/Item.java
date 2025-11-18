@@ -29,6 +29,9 @@ public class Item {
         this.photoUri = photoUri;
     }
 
+    public Item() {
+    }
+
     public String getId() {
         return id;
     }
