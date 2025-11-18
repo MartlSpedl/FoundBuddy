@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -68,7 +69,7 @@ fun SettingsScreen(
             Text("Profil speichern", color = colors.onPrimary)
         }
 
-        Divider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
+        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
 
         // Dark Mode Umschalten
         Row(
@@ -90,7 +91,7 @@ fun SettingsScreen(
             )
         }
 
-        Divider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
+        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
 
         Text(
             "App-Verwaltung",

@@ -25,8 +25,8 @@ fun FeedScreen(
 ) {
     var query by remember { mutableStateOf("") }
 
-    val foundItems = items.filter { it.status == "Gefunden" && it.title.contains(query, true) }
-    val lostItems = items.filter { it.status == "Verloren" && it.title.contains(query, true) }
+    val foundItems = items.filter { it.status == "Gefunden" && !it.isResolved }
+    val lostItems = items.filter { it.status == "Verloren" && !it.isResolved }
 
     Column(
         modifier = modifier

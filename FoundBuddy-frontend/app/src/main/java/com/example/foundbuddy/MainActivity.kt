@@ -124,15 +124,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 modifier = Modifier.padding(paddingValues)
                             )
-                            "settings" -> SettingsScreen(
-                                userViewModel = userViewModel,
-                                onClear = {
-                                    scope.launch {
-                                        repo.clearAll()
-                                        items = emptyList()
-                                    }
-                                },
-                                modifier = Modifier.padding(paddingValues)
+                            "settings" -> ProfileScreen(
+                                userViewModel = userViewModel
                             )
                         }
                     }
