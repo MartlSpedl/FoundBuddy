@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.foundbuddy.controller.UserViewModel
 
@@ -20,7 +19,8 @@ fun SettingsScreen(
 ) {
     var username by remember { userViewModel.username }
     var email by remember { userViewModel.email }
-    var darkMode by remember { userViewModel.darkModeEnabled }
+    val isDarkMode by userViewModel.isDarkMode
+    val colors = MaterialTheme.colorScheme
 
     Column(
         modifier = modifier
@@ -29,7 +29,11 @@ fun SettingsScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Profil", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "Profil",
+            style = MaterialTheme.typography.headlineSmall,
+            color = colors.onBackground
+        )
 
         OutlinedTextField(
             value = username,
@@ -37,8 +41,9 @@ fun SettingsScreen(
                 username = it
                 userViewModel.updateUsername(it)
             },
-            label = { Text("Benutzername") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Benutzername", color = colors.onSurfaceVariant) },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface)
         )
 
         OutlinedTextField(
@@ -47,8 +52,9 @@ fun SettingsScreen(
                 email = it
                 userViewModel.updateEmail(it)
             },
-            label = { Text("E-Mail-Adresse") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("E-Mail-Adresse", color = colors.onSurfaceVariant) },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface)
         )
 
         Button(
@@ -57,40 +63,52 @@ fun SettingsScreen(
                 userViewModel.updateEmail(email)
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A4B9A))
+            colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
         ) {
-            Text("Profil speichern", color = Color.White)
+            Text("Profil speichern", color = colors.onPrimary)
         }
 
-        Divider(Modifier.padding(vertical = 12.dp))
+        Divider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
 
+        // Dark Mode Umschalten
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Dark Mode aktivieren", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "Dark Mode aktivieren",
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.onBackground
+            )
             Switch(
-                checked = darkMode,
-                onCheckedChange = {
-                    darkMode = it
-                    userViewModel.toggleDarkMode()
-                }
+                checked = isDarkMode,
+                onCheckedChange = { userViewModel.toggleDarkMode() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = colors.primary,
+                    checkedTrackColor = colors.primaryContainer
+                )
             )
         }
 
-        Divider(Modifier.padding(vertical = 12.dp))
+        Divider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
 
-        Text("App-Verwaltung", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "App-Verwaltung",
+            style = MaterialTheme.typography.headlineSmall,
+            color = colors.onBackground
+        )
 
         Button(
             onClick = onClear,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.errorContainer,
+                contentColor = colors.onErrorContainer
+            ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = "Löschen",
-                tint = MaterialTheme.colorScheme.onErrorContainer
+                contentDescription = "Löschen"
             )
             Spacer(Modifier.width(8.dp))
             Text("Alle Fundsachen löschen")

@@ -41,7 +41,7 @@ fun UploadScreen(
         Text(
             text = "Neuer Eintrag",
             style = MaterialTheme.typography.titleLarge,
-            color = Color(0xFF4A2D68)
+            color = Color(0xFF4A2D67)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
