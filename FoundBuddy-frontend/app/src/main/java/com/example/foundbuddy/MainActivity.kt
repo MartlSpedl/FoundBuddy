@@ -1,10 +1,10 @@
 package com.example.foundbuddy
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,122 +12,160 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.data.FoundItemRepository
-import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.view.*
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val repo = FoundItemRepository(this)
+        val repository = FoundItemRepository(this)
 
         setContent {
             val userViewModel: UserViewModel = viewModel()
-            var isLoggedIn by remember { mutableStateOf(false) }
+            val homeViewModel: HomeViewModel = viewModel()
+            val navController: NavHostController = rememberNavController()
 
-            val isDarkMode by userViewModel.isDarkMode
-            val scope = rememberCoroutineScope()
-            var items by remember { mutableStateOf(listOf<FoundItem>()) }
+            val isDarkMode by userViewModel.isDarkMode.collectAsState(
+                initial = isSystemInDarkTheme()
+            )
 
-            if (!isLoggedIn) {
-                AuthScreen(
-                    userViewModel = userViewModel,
-                    onLoginSuccess = {
-                        isLoggedIn = true
-                        scope.launch { items = repo.getAll() }
+            val colors = if (isDarkMode) darkColorScheme(
+                primary = Color(0xFFBB86FC),
+                secondary = Color(0xFF03DAC6),
+                background = Color(0xFF121212),
+                surface = Color(0xFF1E1E1E),
+                onSurface = Color(0xFFEAEAEA)
+            ) else lightColorScheme(
+                primary = Color(0xFF7B68EE),
+                secondary = Color(0xFF8A7FF5),
+                background = Color(0xFFF5F7FF),
+                surface = Color.White,
+                onSurface = Color(0xFF1E1E1E)
+            )
+
+            MaterialTheme(colorScheme = colors) {
+
+                val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+                val isLoggedIn = currentUser != null
+                val scope = rememberCoroutineScope()
+
+                LaunchedEffect(isLoggedIn) {
+                    if (isLoggedIn) {
+                        homeViewModel.refreshItems(repository.getAll())
                     }
-                )
-            } else {
-                // Dynamisches Theme
-                val colorScheme = if (isDarkMode) darkColorScheme(
-                    primary = Color(0xFFBB86FC),
-                    onPrimary = Color.Black,
-                    secondary = Color(0xFF03DAC6),
-                    background = Color(0xFF121212),
-                    onBackground = Color(0xFFEAEAEA),
-                    surface = Color(0xFF1E1E1E),
-                    onSurface = Color(0xFFEAEAEA),
-                    error = Color(0xFFCF6679),
-                    onError = Color.Black
-                ) else lightColorScheme(
-                    primary = Color(0xFF7B68EE),
-                    onPrimary = Color.White,
-                    secondary = Color(0xFF8A7FF5),
-                    background = Color(0xFFF5F7FF),
-                    onBackground = Color(0xFF1E1E1E),
-                    surface = Color.White,
-                    onSurface = Color(0xFF1E1E1E),
-                    error = Color(0xFFB00020),
-                    onError = Color.White
-                )
+                }
 
-                MaterialTheme(colorScheme = colorScheme) {
-                    var screen by remember { mutableStateOf("feed") }
+                NavHost(
+                    navController = navController,
+                    startDestination = if (isLoggedIn) "main" else "auth"
+                ) {
+                    composable("auth") {
+                        AuthScreen(
+                            userViewModel = userViewModel,
+                            onLoginSuccess = {
+                                navController.navigate("main") {
+                                    popUpTo("auth") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
 
-                    Scaffold(
-                        bottomBar = {
-                            NavigationBar {
-                                NavigationBarItem(
-                                    selected = screen == "feed",
-                                    onClick = { screen = "feed" },
-                                    icon = {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.home_icon),
-                                            contentDescription = "Feed",
-                                            tint = Color.Unspecified
-                                        )
-                                    },
-                                    label = { Text("Feed") }
+                    composable("main") {
+
+                        var selectedTab by remember { mutableStateOf("feed") }
+
+                        Scaffold(
+                            bottomBar = {
+                                NavigationBar {
+                                    NavigationBarItem(
+                                        selected = selectedTab == "feed",
+                                        onClick = { selectedTab = "feed" },
+                                        icon = {
+                                            Icon(
+                                                painterResource(id = R.drawable.home_icon),
+                                                contentDescription = "Feed",
+                                                tint = Color.Unspecified
+                                            )
+                                        },
+                                        label = { Text("Feed") }
+                                    )
+
+                                    NavigationBarItem(
+                                        selected = selectedTab == "upload",
+                                        onClick = { selectedTab = "upload" },
+                                        icon = {
+                                            Icon(
+                                                painterResource(id = R.drawable.camera_icon),
+                                                contentDescription = "Upload",
+                                                tint = Color.Unspecified
+                                            )
+                                        },
+                                        label = { Text("Upload") }
+                                    )
+
+                                    NavigationBarItem(
+                                        selected = selectedTab == "profile",
+                                        onClick = { selectedTab = "profile" },
+                                        icon = {
+                                            Icon(
+                                                painterResource(id = R.drawable.profile_icon),
+                                                contentDescription = "Profil",
+                                                tint = Color.Unspecified
+                                            )
+                                        },
+                                        label = { Text("Profil") }
+                                    )
+                                }
+                            }
+                        ) { padding ->
+                            when (selectedTab) {
+                                "feed" -> FeedScreen(
+                                    vm = homeViewModel,
+                                    navController = navController,
+                                    onItemClick = { id -> navController.navigate("detail/$id") },
+                                    modifier = Modifier.padding(padding)
                                 )
-                                NavigationBarItem(
-                                    selected = screen == "upload",
-                                    onClick = { screen = "upload" },
-                                    icon = {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.camera_icon),
-                                            contentDescription = "Upload",
-                                            tint = Color.Unspecified
-                                        )
+
+                                "upload" -> UploadScreen(
+                                    onUpload = { newItem ->
+                                        scope.launch {
+                                            repository.addItem(newItem)
+                                            homeViewModel.refreshItems(repository.getAll())
+                                        }
+                                        selectedTab = "feed"
                                     },
-                                    label = { Text("Upload") }
+                                    modifier = Modifier.padding(padding)
                                 )
-                                NavigationBarItem(
-                                    selected = screen == "settings",
-                                    onClick = { screen = "settings" },
-                                    icon = {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.profile_icon),
-                                            contentDescription = "Profil",
-                                            tint = Color.Unspecified
-                                        )
-                                    },
-                                    label = { Text("Profil") }
+
+                                "profile" -> ProfileScreen(
+                                    userViewModel = userViewModel,
+                                    onLogout = {
+                                        userViewModel.logout()
+                                        navController.navigate("auth") {
+                                            popUpTo("main") { inclusive = true }
+                                        }
+                                    }
                                 )
                             }
                         }
-                    ) { paddingValues ->
-                        when (screen) {
-                            "feed" -> FeedScreen(items = items, modifier = Modifier.padding(paddingValues))
-                            "upload" -> UploadScreen(
-                                onUpload = { newItem ->
-                                    scope.launch {
-                                        repo.addItem(newItem)
-                                        items = repo.getAll()
-                                    }
-                                    screen = "feed"
-                                },
-                                modifier = Modifier.padding(paddingValues)
-                            )
-                            "settings" -> ProfileScreen(
-                                userViewModel = userViewModel
-                            )
-                        }
+                    }
+
+                    composable("detail/{itemId}") { backStackEntry ->
+                        val itemId = backStackEntry.arguments?.getString("itemId")!!
+                        ItemDetailScreen(
+                            itemId = itemId,
+                            navController = navController,
+                            vm = homeViewModel
+                        )
                     }
                 }
             }

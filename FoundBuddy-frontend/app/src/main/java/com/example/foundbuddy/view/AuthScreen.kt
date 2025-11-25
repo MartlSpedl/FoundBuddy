@@ -1,14 +1,15 @@
 package com.example.foundbuddy.view
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.controller.UserViewModel
 
 @Composable
@@ -16,90 +17,96 @@ fun AuthScreen(
     userViewModel: UserViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    var isRegisterMode by remember { mutableStateOf(false) }
-    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var isRegister by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            onLoginSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (isRegisterMode) "Account erstellen" else "Anmelden",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color(0xFF4A2D68)
+            text = if (isRegister) "Registrieren" else "Anmelden",
+            fontSize = 32.sp,
+            style = MaterialTheme.typography.headlineLarge
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(40.dp))
 
-        if (isRegisterMode) {
+        if (isRegister) {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Benutzername") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
         }
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("E-Mail") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Passwort") },
+            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(16.dp))
+        if (errorMessage.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(errorMessage, color = MaterialTheme.colorScheme.error)
+        }
+
+        Spacer(Modifier.height(32.dp))
 
         Button(
             onClick = {
-                if (email.isBlank() || password.isBlank() || (isRegisterMode && username.isBlank())) {
-                    error = "Bitte alle Felder ausfüllen"
+                errorMessage = ""
+                if (isRegister) {
+                    val success = userViewModel.register(username, email, password)
+                    if (!success) {
+                        errorMessage = "E-Mail schon vergeben oder Eingaben unvollständig!"
+                    }
                 } else {
-                    if (isRegisterMode) {
-                        val ok = userViewModel.register(username, email, password)
-                        if (ok) onLoginSuccess() else error = "E-Mail wird bereits verwendet"
-                    } else {
-                        val ok = userViewModel.login(email, password)
-                        if (ok) onLoginSuccess() else error = "Falsche E-Mail oder Passwort"
+                    val success = userViewModel.login(email, password)
+                    if (!success) {
+                        errorMessage = "Falsche Anmeldedaten!"
                     }
                 }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7A4B9A)),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text(if (isRegisterMode) "Registrieren" else "Login", color = Color.White)
-        }
-
-        if (error.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text(error, color = Color.Red)
+            Text(if (isRegister) "Registrieren" else "Anmelden", fontSize = 18.sp)
         }
 
         Spacer(Modifier.height(16.dp))
 
-        ClickableText(
-            text = AnnotatedString(
-                if (isRegisterMode)
-                    "Ich habe schon ein Konto → Anmelden"
-                else
-                    "Noch kein Konto? Jetzt registrieren"
-            ),
-            onClick = { isRegisterMode = !isRegisterMode },
-            style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF7A4B9A))
-        )
+        TextButton(onClick = { isRegister = !isRegister }) {
+            Text(
+                if (isRegister) "Schon einen Account? Anmelden"
+                else "Kein Account? Registrieren"
+            )
+        }
     }
 }

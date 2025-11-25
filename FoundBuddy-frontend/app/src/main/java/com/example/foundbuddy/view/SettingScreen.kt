@@ -3,13 +3,13 @@ package com.example.foundbuddy.view
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.UserViewModel
 
 @Composable
@@ -18,10 +18,9 @@ fun SettingsScreen(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var username by remember { userViewModel.username }
-    var email by remember { userViewModel.email }
-    val isDarkMode by userViewModel.isDarkMode
-    val colors = MaterialTheme.colorScheme
+    var username by remember { mutableStateOf(userViewModel.username.value) }
+    var email by remember { mutableStateOf(userViewModel.email.value) }
+    val isDarkMode by userViewModel.isDarkMode.collectAsState()
 
     Column(
         modifier = modifier
@@ -30,11 +29,7 @@ fun SettingsScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            "Profil",
-            style = MaterialTheme.typography.headlineSmall,
-            color = colors.onBackground
-        )
+        Text("Profil", style = MaterialTheme.typography.headlineSmall)
 
         OutlinedTextField(
             value = username,
@@ -42,73 +37,49 @@ fun SettingsScreen(
                 username = it
                 userViewModel.updateUsername(it)
             },
-            label = { Text("Benutzername", color = colors.onSurfaceVariant) },
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface)
+            label = { Text("Benutzername") },
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = email,
-            onValueChange = {
-                email = it
-                userViewModel.updateEmail(it)
-            },
-            label = { Text("E-Mail-Adresse", color = colors.onSurfaceVariant) },
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface)
+            onValueChange = {},
+            label = { Text("E-Mail-Adresse") },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Button(
-            onClick = {
-                userViewModel.updateUsername(username)
-                userViewModel.updateEmail(email)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
+            onClick = { userViewModel.updateUsername(username) },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Profil speichern", color = colors.onPrimary)
+            Text("Profil speichern")
         }
 
-        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
+        HorizontalDivider()
 
-        // Dark Mode Umschalten
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Dark Mode aktivieren",
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.onBackground
-            )
-            Switch(
-                checked = isDarkMode,
-                onCheckedChange = { userViewModel.toggleDarkMode() },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = colors.primary,
-                    checkedTrackColor = colors.primaryContainer
-                )
-            )
+            Text("Dark Mode aktivieren", style = MaterialTheme.typography.bodyLarge)
+            Switch(checked = isDarkMode, onCheckedChange = { userViewModel.toggleDarkMode() })
         }
 
-        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = colors.outlineVariant)
+        HorizontalDivider()
 
-        Text(
-            "App-Verwaltung",
-            style = MaterialTheme.typography.headlineSmall,
-            color = colors.onBackground
-        )
+        Text("App-Verwaltung", style = MaterialTheme.typography.headlineSmall)
 
         Button(
             onClick = onClear,
             colors = ButtonDefaults.buttonColors(
-                containerColor = colors.errorContainer,
-                contentColor = colors.onErrorContainer
+                containerColor = MaterialTheme.colorScheme.errorContainer
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
-                imageVector = Icons.Default.Delete,
+                painter = painterResource(id = R.drawable.delete_icon),
                 contentDescription = "Löschen"
             )
             Spacer(Modifier.width(8.dp))

@@ -1,58 +1,69 @@
 package com.example.foundbuddy.controller
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.foundbuddy.model.User
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class UserViewModel : ViewModel() {
 
-    var currentUser = mutableStateOf<User?>(null)
-    var username = mutableStateOf("")
-    var email = mutableStateOf("")
-    var isDarkMode = mutableStateOf(false)
+    private val _currentUserFlow = MutableStateFlow<User?>(null)
+    val currentUserFlow: StateFlow<User?> = _currentUserFlow.asStateFlow()
+
+    private val _username = MutableStateFlow("")
+    val username: StateFlow<String> = _username.asStateFlow()
+
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email.asStateFlow()
+
+    private val _isDarkMode = MutableStateFlow(false)
+    val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
 
     private val users = mutableListOf<User>()
 
     fun register(username: String, email: String, password: String): Boolean {
-        if (users.any { it.email == email }) return false
-        val newUser = User(username = username, email = email, password = password)
+        if (username.isBlank() || email.isBlank() || password.isBlank()) return false
+        if (users.any { it.email.equals(email, ignoreCase = true) }) return false
+
+        val newUser = User(username = username, email = email.lowercase(), password = password)
         users.add(newUser)
-        currentUser.value = newUser
-        this.username.value = newUser.username
-        this.email.value = newUser.email
+
+        _currentUserFlow.value = newUser
+        _username.value = username
+        _email.value = email.lowercase()
         return true
     }
 
     fun login(email: String, password: String): Boolean {
-        val user = users.find { it.email == email && it.password == password }
-        if (user != null) {
-            currentUser.value = user
-            username.value = user.username
-            this.email.value = user.email
-            return true
-        }
-        return false
+        val user = users.find {
+            it.email.equals(email, ignoreCase = true) && it.password == password
+        } ?: return false
+
+        _currentUserFlow.value = user
+        _username.value = user.username
+        _email.value = user.email
+        return true
     }
 
     fun logout() {
-        currentUser.value = null
+        _currentUserFlow.value = null
+        _username.value = ""
+        _email.value = ""
     }
 
     fun updateUsername(newName: String) {
-        username.value = newName
-        currentUser.value = currentUser.value?.copy(username = newName)
-    }
-
-    fun updateEmail(newEmail: String) {
-        email.value = newEmail
-        currentUser.value = currentUser.value?.copy(email = newEmail)
-    }
-
-    fun toggleDarkMode() {
-        isDarkMode.value = !isDarkMode.value
+        if (newName.isNotBlank()) {
+            _username.value = newName
+            _currentUserFlow.value = _currentUserFlow.value?.copy(username = newName)
+        }
     }
 
     fun updateProfileImage(uri: String?) {
-        currentUser.value = currentUser.value?.copy(profileImage = uri)
+        _currentUserFlow.value = _currentUserFlow.value?.copy(profileImage = uri)
+    }
+
+    fun toggleDarkMode() {
+        _isDarkMode.value = !_isDarkMode.value
     }
 }
