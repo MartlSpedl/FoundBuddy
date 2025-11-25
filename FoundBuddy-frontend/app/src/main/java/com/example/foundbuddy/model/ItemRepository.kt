@@ -7,7 +7,8 @@ object ItemRepository {
 
     fun search(query: String): List<Item> {
         return itemsList.filter {
-            it.title.contains(query, ignoreCase = true) || it.description.contains(query, ignoreCase = true)
+            it.title.contains(query, ignoreCase = true) ||
+                    it.description.contains(query, ignoreCase = true)
         }
     }
 
