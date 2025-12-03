@@ -1,5 +1,8 @@
 package com.example.foundbuddy.model
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class User(
     val id: String = System.currentTimeMillis().toString(),
     val username: String,

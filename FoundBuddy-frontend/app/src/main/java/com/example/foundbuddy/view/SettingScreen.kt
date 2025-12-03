@@ -11,6 +11,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.UserViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
@@ -20,6 +21,7 @@ fun SettingsScreen(
 ) {
     var username by remember { mutableStateOf(userViewModel.username.value) }
     var email by remember { mutableStateOf(userViewModel.email.value) }
+    val scope = rememberCoroutineScope()
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
 
     Column(
@@ -35,7 +37,10 @@ fun SettingsScreen(
             value = username,
             onValueChange = {
                 username = it
-                userViewModel.updateUsername(it)
+                scope.launch {
+                    userViewModel.updateUsername(it)
+                }
+
             },
             label = { Text("Benutzername") },
             modifier = Modifier.fillMaxWidth()
@@ -50,7 +55,11 @@ fun SettingsScreen(
         )
 
         Button(
-            onClick = { userViewModel.updateUsername(username) },
+            onClick = {
+                scope.launch {
+                    userViewModel.updateUsername(username)
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Profil speichern")

@@ -115,21 +115,12 @@ public class UserController {
                 return ResponseEntity.notFound().build();
             }
 
-            User existing = snapshot.toObject(User.class);
-            if (existing == null) existing = new User();
-            existing.setId(id);
+            updated.setId(id);
+            docRef.set(updated).get();
 
-            existing.setUserName(updated.getUserName());
-            existing.setFullName(updated.getFullName());
-            existing.setBio(updated.getBio());
-            existing.setProfileImageUri(updated.getProfileImageUri());
+            return ResponseEntity.ok(updated);
 
-            ApiFuture<WriteResult> result = docRef.set(existing);
-            result.get();
-
-            return ResponseEntity.ok(existing);
-
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }

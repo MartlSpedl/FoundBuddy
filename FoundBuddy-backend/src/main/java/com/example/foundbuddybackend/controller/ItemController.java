@@ -160,4 +160,23 @@ public class ItemController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll() {
+        try {
+            Firestore db = getFirestore();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+            for (QueryDocumentSnapshot doc : docs) {
+                db.collection(COLLECTION_NAME).document(doc.getId()).delete();
+            }
+
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

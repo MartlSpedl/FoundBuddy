@@ -15,6 +15,8 @@ public class Item {
     private String description;
     private ItemStatus status;
     private Long timestamp;
+    private Boolean resolved = false;
+
 
     /**
      * Optional URI to a photo of the item.  May be {@code null}.
@@ -79,4 +81,13 @@ public class Item {
     public void setPhotoUri(String photoUri) {
         this.photoUri = photoUri;
     }
+
+    public Boolean getResolved() {
+        return resolved;
+    }
+
+    public void setResolved(Boolean resolved) {
+        this.resolved = resolved;
+    }
+
 }
