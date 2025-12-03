@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="h2 auf firebase umstellen" />
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="password- and email verification">
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/config/FirebaseConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/config/FirebaseConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -84,7 +93,7 @@
 }</component>
   <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13" javaHome="$USER_HOME$/.jdks/liberica-full-17.0.17" gradleVersion="8.13" />
   <component name="HttpClientEndpointsTabState">
-    <option name="cachedRequestData" value="&lt;CachedHttpClientTabRequests&gt;&#10;  &lt;entry key=&quot;c2bc910b4ab16b15c1ee7c3174f9cd783751dbed&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/users&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;username&amp;quot;: &amp;quot;Test&amp;quot;,&amp;#10;  &amp;quot;email&amp;quot;: &amp;quot;test@test.com&amp;quot;,&amp;#10;  &amp;quot;password&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;profileImage&amp;quot;: null&amp;#10;}&amp;#10;&quot; /&gt;&#10;  &lt;entry key=&quot;ab30ba7bcc94700e01822b8800600602279f12c7&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/users&quot; /&gt;&#10;  &lt;entry key=&quot;b8340223bede6eefabcec750e47344d373b84867&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/items&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;test1&amp;quot;,&amp;#10;  &amp;quot;title&amp;quot;: &amp;quot;Testitem&amp;quot;,&amp;#10;  &amp;quot;description&amp;quot;: &amp;quot;ein Item&amp;quot;,&amp;#10;  &amp;quot;status&amp;quot;: &amp;quot;LOST&amp;quot;,&amp;#10;  &amp;quot;timestamp&amp;quot;: 0,&amp;#10;  &amp;quot;photoUri&amp;quot;: &amp;quot;&amp;quot;&amp;#10;}&quot; /&gt;&#10;  &lt;entry key=&quot;e24c0c5159b89153d7410163bb64e860c5524417&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/items/test1&quot; /&gt;&#10;&lt;/CachedHttpClientTabRequests&gt;" />
+    <option name="cachedRequestData" value="&lt;CachedHttpClientTabRequests&gt;&#10;  &lt;entry key=&quot;c2bc910b4ab16b15c1ee7c3174f9cd783751dbed&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/users&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;username&amp;quot;: &amp;quot;Test&amp;quot;,&amp;#10;  &amp;quot;email&amp;quot;: &amp;quot;test@test.com&amp;quot;,&amp;#10;  &amp;quot;password&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;profileImage&amp;quot;: null&amp;#10;}&amp;#10;&quot; /&gt;&#10;  &lt;entry key=&quot;1526298878f1479b25aceb05374181881d0370bd&quot; value=&quot;###&amp;#10;DELETE http://localhost:8080/api/users/{{id}}&quot; /&gt;&#10;  &lt;entry key=&quot;ab30ba7bcc94700e01822b8800600602279f12c7&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/users&quot; /&gt;&#10;  &lt;entry key=&quot;b8340223bede6eefabcec750e47344d373b84867&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/items&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;test1&amp;quot;,&amp;#10;  &amp;quot;title&amp;quot;: &amp;quot;Testitem&amp;quot;,&amp;#10;  &amp;quot;description&amp;quot;: &amp;quot;ein Item&amp;quot;,&amp;#10;  &amp;quot;status&amp;quot;: &amp;quot;LOST&amp;quot;,&amp;#10;  &amp;quot;timestamp&amp;quot;: 0,&amp;#10;  &amp;quot;photoUri&amp;quot;: &amp;quot;&amp;quot;&amp;#10;}&quot; /&gt;&#10;  &lt;entry key=&quot;e24c0c5159b89153d7410163bb64e860c5524417&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/items/test1&quot; /&gt;&#10;&lt;/CachedHttpClientTabRequests&gt;" />
   </component>
   <component name="HttpClientOnboardingState">{
   &quot;isOnboardingCommentShown&quot;: true
@@ -236,7 +245,7 @@
       <workItem from="1762960064105" duration="717000" />
       <workItem from="1764687795708" duration="3387000" />
       <workItem from="1764739159075" duration="2693000" />
-      <workItem from="1764748604180" duration="1253000" />
+      <workItem from="1764748604180" duration="3402000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
@@ -246,7 +255,31 @@
       <option name="project" value="LOCAL" />
       <updated>1762522437753</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="password- and email verification">
+      <option name="closed" value="true" />
+      <created>1764750018457</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1764750018457</updated>
+    </task>
+    <task id="LOCAL-00003" summary="password- and email verification">
+      <option name="closed" value="true" />
+      <created>1764750030258</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1764750030258</updated>
+    </task>
+    <task id="LOCAL-00004" summary="password- and email verification">
+      <option name="closed" value="true" />
+      <created>1764750040976</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1764750040976</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -254,6 +287,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="h2 auf firebase umstellen" />
-    <option name="LAST_COMMIT_MESSAGE" value="h2 auf firebase umstellen" />
+    <MESSAGE value="password- and email verification" />
+    <option name="LAST_COMMIT_MESSAGE" value="password- and email verification" />
   </component>
 </project>

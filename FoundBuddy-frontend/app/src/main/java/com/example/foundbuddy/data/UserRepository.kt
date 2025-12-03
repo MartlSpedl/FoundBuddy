@@ -20,7 +20,9 @@ sealed class RegistrationResult {
 
 class UserRepository {
 
-    private val baseUrl = "http://10.0.2.2:8080"
+    // private val baseUrl = "http://10.0.2.2:8080"
+    private val baseUrl: String = "http://10.139.211.167:8080"
+
 
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())

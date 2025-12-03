@@ -18,7 +18,8 @@ class FoundItemRepository(private val context: Context) {
      * - Emulator (AVD): 10.0.2.2 statt localhost verwenden
      * - Physisches Gerät im WLAN: IP deines PCs, z. B. http://192.168.0.10:8080
      */
-    private val baseUrl: String = "http://10.0.2.2:8080"
+    // private val baseUrl: String = "http://10.0.2.2:8080"
+    private val baseUrl: String = "http://10.139.211.167:8080"
 
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
