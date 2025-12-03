@@ -14,12 +14,12 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
-    // H2
-    // implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    // implementation("com.h2database:h2") // statt runtimeOnly
+    // Spring Mail für Email-Versand
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    // Bean Validation
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     // Firebase Admin SDK
     implementation("com.google.firebase:firebase-admin:9.2.0")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

@@ -8,5 +8,7 @@ data class User(
     val username: String,
     val email: String,
     val password: String,
-    val profileImage: String? = null
+    val profileImage: String? = null,
+    val emailVerified: Boolean = false,
+    val verificationToken: String? = null
 )

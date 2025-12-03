@@ -1,11 +1,30 @@
 package com.example.foundbuddy.controller
 
 import androidx.lifecycle.ViewModel
+import com.example.foundbuddy.data.RegistrationResult
 import com.example.foundbuddy.data.UserRepository
 import com.example.foundbuddy.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Ergebnis einer Registrierung für die UI
+ */
+sealed class RegisterResult {
+    data class Success(val user: User, val emailSent: Boolean = true) : RegisterResult()
+    data class ValidationErrors(val errors: Map<String, List<String>>) : RegisterResult()
+    data class Error(val message: String) : RegisterResult()
+}
+
+/**
+ * Ergebnis eines Login-Versuchs
+ */
+sealed class LoginResult {
+    data object Success : LoginResult()
+    data object InvalidCredentials : LoginResult()
+    data class EmailNotVerified(val email: String) : LoginResult()
+}
 
 class UserViewModel : ViewModel() {
     private val api = UserRepository()
@@ -24,8 +43,17 @@ class UserViewModel : ViewModel() {
 
     private val users = mutableListOf<User>()
 
-    suspend fun register(username: String, email: String, password: String): Boolean {
-        if (username.isBlank() || email.isBlank() || password.isBlank()) return false
+    /**
+     * Registriert einen neuen User mit Validierung
+     */
+    suspend fun register(username: String, email: String, password: String): RegisterResult {
+        if (username.isBlank() || email.isBlank() || password.isBlank()) {
+            val errors = mutableMapOf<String, List<String>>()
+            if (username.isBlank()) errors["username"] = listOf("Benutzername darf nicht leer sein")
+            if (email.isBlank()) errors["email"] = listOf("E-Mail darf nicht leer sein")
+            if (password.isBlank()) errors["password"] = listOf("Passwort darf nicht leer sein")
+            return RegisterResult.ValidationErrors(errors)
+        }
 
         val newUser = User(
             id = System.currentTimeMillis().toString(),
@@ -35,26 +63,41 @@ class UserViewModel : ViewModel() {
             profileImage = null
         )
 
-        val created = api.create(newUser)
-        if (created != null) {
-            _currentUserFlow.value = created
-            _username.value = created.username
-            _email.value = created.email
-            return true
+        return when (val result = api.create(newUser)) {
+            is RegistrationResult.Success -> {
+                // User wurde erstellt, aber noch nicht einloggen (Email muss erst bestätigt werden)
+                RegisterResult.Success(result.user)
+            }
+            is RegistrationResult.ValidationError -> {
+                RegisterResult.ValidationErrors(result.errors)
+            }
+            is RegistrationResult.Error -> {
+                RegisterResult.Error(result.message)
+            }
         }
-        return false
     }
 
-    suspend fun login(email: String, password: String): Boolean {
+    /**
+     * Login - prüft auch ob Email verifiziert ist
+     */
+    suspend fun login(email: String, password: String): LoginResult {
         val users = api.getAll()
         val user = users.find {
             it.email.equals(email, ignoreCase = true) && it.password == password
-        } ?: return false
+        } ?: return LoginResult.InvalidCredentials
+
+        if (!user.emailVerified) {
+            return LoginResult.EmailNotVerified(user.email)
+        }
 
         _currentUserFlow.value = user
         _username.value = user.username
         _email.value = user.email
-        return true
+        return LoginResult.Success
+    }
+
+    suspend fun resendVerificationEmail(email: String): Boolean {
+        return api.resendVerificationEmail(email)
     }
 
     fun logout() {

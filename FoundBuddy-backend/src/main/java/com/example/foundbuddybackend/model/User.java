@@ -6,8 +6,11 @@ public class User {
     private String username;
     private String email;
     private String password;
-
-    private String profileImage; // entspricht frontend
+    private String profileImage;
+    
+    // Email Verification Felder
+    private boolean emailVerified = false;
+    private String verificationToken;
 
     public User() {}
 
@@ -16,6 +19,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.profileImage = profileImage;
+        this.emailVerified = false;
     }
 
     public String getId() {
@@ -56,5 +60,21 @@ public class User {
 
     public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
     }
 }

@@ -5,6 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="h2 auf firebase umstellen">
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/checksums/md5-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.13/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/checksums/sha1-checksums.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/executionHistory/executionHistory.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.13/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.13/fileHashes/fileHashes.bin" afterDir="false" />
@@ -13,31 +16,19 @@
       <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/FoundItemController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/FoundItemController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/ItemController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/ItemController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/UserController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/controller/UserController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/Item.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/Item.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/example/foundbuddybackend/model/User.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" afterPath="$PROJECT_DIR$/build/reports/problems/problems-report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resources/main/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/FoundItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/FoundItemController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/ItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/ItemController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/controller/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/Item.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend.zip" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend.zip" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/.idea/deploymentTargetSelector.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend.zip" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/UserViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/UserViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/model/User.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/model/User.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/AuthScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/AuthScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ProfileScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ProfileScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/SettingScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/SettingScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/gradlew" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,7 +107,7 @@
     &quot;accountId&quot;: &quot;db78f575-f6f6-4d92-a6fb-29cff98d59a9&quot;
   }
 }</component>
-  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$/../FoundBuddy-frontend" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13" javaHome="$USER_HOME$/.jdks/liberica-full-17.0.17" gradleVersion="8.13" />
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="$USER_HOME$/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13" javaHome="$USER_HOME$/.jdks/liberica-full-17.0.17" gradleVersion="8.13" />
   <component name="HttpClientEndpointsTabState">
     <option name="cachedRequestData" value="&lt;CachedHttpClientTabRequests&gt;&#10;  &lt;entry key=&quot;c2bc910b4ab16b15c1ee7c3174f9cd783751dbed&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/users&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;username&amp;quot;: &amp;quot;Test&amp;quot;,&amp;#10;  &amp;quot;email&amp;quot;: &amp;quot;test@test.com&amp;quot;,&amp;#10;  &amp;quot;password&amp;quot;: &amp;quot;123&amp;quot;,&amp;#10;  &amp;quot;profileImage&amp;quot;: null&amp;#10;}&amp;#10;&quot; /&gt;&#10;  &lt;entry key=&quot;ab30ba7bcc94700e01822b8800600602279f12c7&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/users&quot; /&gt;&#10;  &lt;entry key=&quot;b8340223bede6eefabcec750e47344d373b84867&quot; value=&quot;###&amp;#10;POST http://localhost:8080/api/items&amp;#10;Content-Type: application/json&amp;#10;&amp;#10;{&amp;#10;  &amp;quot;id&amp;quot;: &amp;quot;test1&amp;quot;,&amp;#10;  &amp;quot;title&amp;quot;: &amp;quot;Testitem&amp;quot;,&amp;#10;  &amp;quot;description&amp;quot;: &amp;quot;ein Item&amp;quot;,&amp;#10;  &amp;quot;status&amp;quot;: &amp;quot;LOST&amp;quot;,&amp;#10;  &amp;quot;timestamp&amp;quot;: 0,&amp;#10;  &amp;quot;photoUri&amp;quot;: &amp;quot;&amp;quot;&amp;#10;}&quot; /&gt;&#10;  &lt;entry key=&quot;e24c0c5159b89153d7410163bb64e860c5524417&quot; value=&quot;###&amp;#10;GET http://localhost:8080/api/items/test1&quot; /&gt;&#10;&lt;/CachedHttpClientTabRequests&gt;" />
   </component>
@@ -269,7 +260,8 @@
       <workItem from="1762873315726" duration="1107000" />
       <workItem from="1762960064105" duration="717000" />
       <workItem from="1764687795708" duration="3387000" />
-      <workItem from="1764739159075" duration="1064000" />
+      <workItem from="1764739159075" duration="2693000" />
+      <workItem from="1764748604180" duration="546000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
