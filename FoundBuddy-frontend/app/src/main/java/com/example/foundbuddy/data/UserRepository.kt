@@ -20,8 +20,7 @@ sealed class RegistrationResult {
 
 class UserRepository {
 
-    // private val baseUrl = "http://10.0.2.2:8080"
-    private val baseUrl: String = "http://10.139.211.167:8080"
+    private val baseUrl = "https://foundbuddy.onrender.com"
 
 
     private val moshi = Moshi.Builder()
