@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.UserViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,8 +38,14 @@ fun ProfileScreen(
     val email by userViewModel.email.collectAsState(initial = "nicht angemeldet")
     val profileImageUri = currentUser?.profileImage
 
+    val scope = rememberCoroutineScope()
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { userViewModel.updateProfileImage(it.toString()) }
+        uri?.let { newUri ->
+            scope.launch {
+                userViewModel.updateProfileImage(newUri.toString())
+            }
+        }
     }
 
     Column(

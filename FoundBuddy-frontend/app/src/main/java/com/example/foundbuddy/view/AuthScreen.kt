@@ -11,12 +11,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.controller.UserViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(
     userViewModel: UserViewModel,
     onLoginSuccess: () -> Unit
 ) {
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
@@ -25,6 +27,10 @@ fun AuthScreen(
 
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
 
+    // Coroutine scope für suspend-Funktionen
+    val scope = rememberCoroutineScope()
+
+    // Wenn der User erfolgreich eingeloggt wurde → weiterleiten
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
             onLoginSuccess()
@@ -83,21 +89,27 @@ fun AuthScreen(
         Button(
             onClick = {
                 errorMessage = ""
-                if (isRegister) {
-                    val success = userViewModel.register(username, email, password)
-                    if (!success) {
-                        errorMessage = "E-Mail schon vergeben oder Eingaben unvollständig!"
-                    }
-                } else {
-                    val success = userViewModel.login(email, password)
-                    if (!success) {
-                        errorMessage = "Falsche Anmeldedaten!"
+
+                scope.launch {
+                    if (isRegister) {
+                        val success = userViewModel.register(username, email, password)
+                        if (!success) {
+                            errorMessage = "E-Mail schon vergeben oder Eingaben unvollständig!"
+                        }
+                    } else {
+                        val success = userViewModel.login(email, password)
+                        if (!success) {
+                            errorMessage = "Falsche Anmeldedaten!"
+                        }
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text(if (isRegister) "Registrieren" else "Anmelden", fontSize = 18.sp)
+            Text(
+                if (isRegister) "Registrieren" else "Anmelden",
+                fontSize = 18.sp
+            )
         }
 
         Spacer(Modifier.height(16.dp))

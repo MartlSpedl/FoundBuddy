@@ -1,12 +1,14 @@
 package com.example.foundbuddy.controller
 
 import androidx.lifecycle.ViewModel
+import com.example.foundbuddy.data.UserRepository
 import com.example.foundbuddy.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserViewModel : ViewModel() {
+    private val api = UserRepository()
 
     private val _currentUserFlow = MutableStateFlow<User?>(null)
     val currentUserFlow: StateFlow<User?> = _currentUserFlow.asStateFlow()
@@ -22,20 +24,29 @@ class UserViewModel : ViewModel() {
 
     private val users = mutableListOf<User>()
 
-    fun register(username: String, email: String, password: String): Boolean {
+    suspend fun register(username: String, email: String, password: String): Boolean {
         if (username.isBlank() || email.isBlank() || password.isBlank()) return false
-        if (users.any { it.email.equals(email, ignoreCase = true) }) return false
 
-        val newUser = User(username = username, email = email.lowercase(), password = password)
-        users.add(newUser)
+        val newUser = User(
+            id = System.currentTimeMillis().toString(),
+            username = username,
+            email = email,
+            password = password,
+            profileImage = null
+        )
 
-        _currentUserFlow.value = newUser
-        _username.value = username
-        _email.value = email.lowercase()
-        return true
+        val created = api.create(newUser)
+        if (created != null) {
+            _currentUserFlow.value = created
+            _username.value = created.username
+            _email.value = created.email
+            return true
+        }
+        return false
     }
 
-    fun login(email: String, password: String): Boolean {
+    suspend fun login(email: String, password: String): Boolean {
+        val users = api.getAll()
         val user = users.find {
             it.email.equals(email, ignoreCase = true) && it.password == password
         } ?: return false
@@ -52,16 +63,21 @@ class UserViewModel : ViewModel() {
         _email.value = ""
     }
 
-    fun updateUsername(newName: String) {
-        if (newName.isNotBlank()) {
-            _username.value = newName
-            _currentUserFlow.value = _currentUserFlow.value?.copy(username = newName)
-        }
+    suspend fun updateUsername(newName: String) {
+        val user = _currentUserFlow.value ?: return
+        val updated = user.copy(username = newName)
+        api.update(updated)
+        _currentUserFlow.value = updated
+        _username.value = newName
     }
 
-    fun updateProfileImage(uri: String?) {
-        _currentUserFlow.value = _currentUserFlow.value?.copy(profileImage = uri)
+    suspend fun updateProfileImage(uri: String?) {
+        val user = _currentUserFlow.value ?: return
+        val updated = user.copy(profileImage = uri)
+        api.update(updated)
+        _currentUserFlow.value = updated
     }
+
 
     fun toggleDarkMode() {
         _isDarkMode.value = !_isDarkMode.value

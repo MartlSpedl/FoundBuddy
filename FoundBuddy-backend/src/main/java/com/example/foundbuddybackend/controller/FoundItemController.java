@@ -116,6 +116,30 @@ public class FoundItemController {
         }
     }
 
+    @PutMapping("/{id}/resolve")
+    public ResponseEntity<Void> resolve(@PathVariable String id) {
+        try {
+            Firestore db = getFirestore();
+            DocumentReference ref = db.collection(COLLECTION_NAME).document(id);
+            DocumentSnapshot snapshot = ref.get().get();
+
+            if (!snapshot.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> update = new HashMap<>();
+            update.put("resolved", true);
+
+            ref.update(update).get();
+
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     /**
      * Deletes all found items in the Firestore collection.
      */

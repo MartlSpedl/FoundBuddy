@@ -77,4 +77,7 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+
+    // ViewModel Compose - benötigt für viewModel() Funktion
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
 }
