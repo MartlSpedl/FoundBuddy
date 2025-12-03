@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="update code for render">
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UserRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/config/FirebaseConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/config/FirebaseConfig.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -239,7 +238,7 @@
       <workItem from="1762960064105" duration="717000" />
       <workItem from="1764687795708" duration="3387000" />
       <workItem from="1764739159075" duration="2693000" />
-      <workItem from="1764748604180" duration="4064000" />
+      <workItem from="1764748604180" duration="4525000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
