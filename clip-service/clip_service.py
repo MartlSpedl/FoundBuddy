@@ -57,4 +57,5 @@ def embed_image(req: ImageRequest):
     return embedding[0].cpu().tolist()
 
 
-# start uvicorn clip_service:app --host 127.0.0.1 --port 8001
+# start
+# uvicorn clip_service:app --host 127.0.0.1 --port 8001
