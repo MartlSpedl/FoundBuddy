@@ -4,17 +4,16 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Initializes Firebase on application startup.
- * Supports both local file and environment variable (for cloud deployment).
+ * Initialisiert Firebase beim Anwendungsstart.
+ * Lädt den Service‑Account entweder aus einer Umgebungsvariablen oder aus der Ressource.
  */
 @Configuration
 public class FirebaseConfig {
@@ -23,21 +22,20 @@ public class FirebaseConfig {
     public void init() {
         try {
             InputStream serviceAccount;
-            
-            // Prüfe ob Umgebungsvariable gesetzt ist (für Cloud-Deployment)
-            String firebaseKeyBase64 = System.getenv("FIREBASE_KEY_BASE64");
-            
-            if (firebaseKeyBase64 != null && !firebaseKeyBase64.isEmpty()) {
-                System.out.println("🔑 FIREBASE_KEY_BASE64 gefunden, Länge: " + firebaseKeyBase64.length());
-                // Decode Base64 und verwende als InputStream
-                byte[] decoded = Base64.getDecoder().decode(firebaseKeyBase64);
-                serviceAccount = new ByteArrayInputStream(decoded);
-                System.out.println("🔑 Firebase Key aus Umgebungsvariable geladen (" + decoded.length + " bytes)");
+
+            // Service‑Account aus Umgebungsvariable lesen (kompletter JSON‑Inhalt)
+            String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+            if (firebaseJson != null && !firebaseJson.isBlank()) {
+                System.out.println("🔑 FIREBASE_SERVICE_ACCOUNT_JSON gefunden, Länge: " + firebaseJson.length());
+                serviceAccount = new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8));
+                System.out.println("🔑 Firebase Key aus Umgebungsvariable geladen");
             } else {
-                System.out.println("⚠️ FIREBASE_KEY_BASE64 nicht gesetzt, versuche lokale Datei...");
-                // Fallback: Lokale Datei verwenden
-                serviceAccount = new FileInputStream("firebase-key.json");
-                System.out.println("🔑 Firebase Key aus lokaler Datei geladen");
+                System.out.println("⚠️ Keine Umgebungsvariable für den Firebase‑Key gesetzt – lade Schlüssel aus der Resource");
+                // Fallback: Schlüssel als Ressource laden
+                // Die Datei `firebase-key.json` muss unter src/main/resources liegen, damit sie im JAR enthalten ist.
+                serviceAccount = new ClassPathResource("firebase-key.json").getInputStream();
+                System.out.println("🔑 Firebase Key aus Resource geladen");
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
@@ -52,8 +50,7 @@ public class FirebaseConfig {
         } catch (Exception e) {
             System.err.println("❌ Firebase Initialisierung fehlgeschlagen: " + e.getMessage());
             e.printStackTrace();
-            // App trotzdem starten lassen (für Debugging)
-            System.err.println("⚠️ App startet ohne Firebase - einige Features funktionieren nicht!");
+            System.err.println("⚠️ App startet ohne Firebase – einige Features funktionieren nicht!");
         }
     }
 }
