@@ -1,9 +1,11 @@
 package com.example.foundbuddybackend.controller;
 
+import com.example.foundbuddybackend.ai.EmbeddingService;
 import com.example.foundbuddybackend.model.FoundItem;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,9 @@ public class FoundItemController {
     private Firestore getFirestore() {
         return FirestoreClient.getFirestore();
     }
+
+    @Autowired
+    private EmbeddingService embeddingService;
 
     /**
      * Returns all found items sorted by descending creation time.
@@ -96,21 +101,30 @@ public class FoundItemController {
     public ResponseEntity<FoundItem> create(@RequestBody FoundItem item) {
         try {
             Firestore db = getFirestore();
+
             if (item.getId() == null || item.getId().isBlank()) {
                 item.setId(UUID.randomUUID().toString());
             }
+
             if (item.getCreatedAt() == null) {
-                item.setCreatedAt(Instant.now().toEpochMilli());
+                item.setCreatedAt(System.currentTimeMillis());
             }
 
-            ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
+            // 🔴 HIER ist der entscheidende Punkt
+            // imageUri ist z. B. ein lokaler Pfad
+            if (item.getImageUri() != null && item.getImageEmbedding() == null) {
+                item.setImageEmbedding(
+                        embeddingService.embedImage(item.getImageUri())
+                );
+            }
+
+            db.collection("found_items")
                     .document(item.getId())
                     .set(item);
-            result.get(); // wait for completion
 
-            return new ResponseEntity<>(item, HttpStatus.CREATED);
+            return ResponseEntity.ok(item);
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }

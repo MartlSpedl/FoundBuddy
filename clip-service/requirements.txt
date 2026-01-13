@@ -1,0 +1,9 @@
+torch
+torchvision
+open-clip-torch
+pillow
+fastapi
+uvicorn
+requests
+
+pydantic
