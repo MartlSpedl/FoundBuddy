@@ -11,33 +11,33 @@ public class AiSearchResult {
     private double textScore;
     private double recencyScore;
 
+    public AiSearchResult() {}
 
-    public AiSearchResult(FoundItem item, double score, double clip, double text, double recency) {
+    public AiSearchResult(FoundItem item, double score) {
         this.item = item;
         this.score = score;
-        this.clipScore = clip;
-        this.textScore = text;
-        this.recencyScore = recency;
-
     }
 
-    public FoundItem getItem() {
-        return item;
+    public AiSearchResult(FoundItem item, double score, double clipScore, double textScore, double recencyScore) {
+        this.item = item;
+        this.score = score;
+        this.clipScore = clipScore;
+        this.textScore = textScore;
+        this.recencyScore = recencyScore;
     }
 
-    public double getScore() {
-        return score;
-    }
+    public FoundItem getItem() { return item; }
+    public void setItem(FoundItem item) { this.item = item; }
 
-    public double getClipScore() {
-        return clipScore;
-    }
+    public double getScore() { return score; }
+    public void setScore(double score) { this.score = score; }
 
-    public double getTextScore() {
-        return textScore;
-    }
+    public double getClipScore() { return clipScore; }
+    public void setClipScore(double clipScore) { this.clipScore = clipScore; }
 
-    public double getRecencyScore() {
-        return recencyScore;
-    }
+    public double getTextScore() { return textScore; }
+    public void setTextScore(double textScore) { this.textScore = textScore; }
+
+    public double getRecencyScore() { return recencyScore; }
+    public void setRecencyScore(double recencyScore) { this.recencyScore = recencyScore; }
 }
