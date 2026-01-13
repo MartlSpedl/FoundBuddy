@@ -18,7 +18,7 @@ target/
 Thumbs.db
 
 # Secrets - WICHTIG: Firebase Key niemals committen!
-firebase-key.json
+src/main/resources/firebase-key.json
 *.pem
 *.key
 
