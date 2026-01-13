@@ -1,26 +1,24 @@
 package com.example.foundbuddybackend.model;
-/**
- * Entity representing a found item posted by a user.  A found item consists of
- * a title, description and an optional image URI.  The timestamp is stored
- * separately as {@code createdAt} in milliseconds since the epoch.
- */
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 public class FoundItem {
+
     private String id;
     private String title;
     private String description;
-
-    /**
-     * URI pointing to an image asset.  This can be a relative path on the
-     * client, a data URI, or a link to an uploaded asset.  The backend
-     * preserves the value without interpretation.
-     */
     private String imageUri;
+    private Long createdAt;
 
     /**
-     * Creation timestamp in milliseconds since UNIX epoch.
+     * KI-Embedding des Bildes (z. B. 512 Dimensionen)
+     * Wird einmal beim Erstellen berechnet und in Firestore gespeichert
      */
-    private Long createdAt;
+    @JsonIgnore
+    private List<Double> imageEmbedding;
+
+    public FoundItem() {}
 
     public FoundItem(String title, String description, String imageUri, Long createdAt) {
         this.title = title;
@@ -67,5 +65,14 @@ public class FoundItem {
 
     public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @JsonIgnore
+    public List<Double> getImageEmbedding() {
+        return imageEmbedding;
+    }
+
+    public void setImageEmbedding(List<Double> imageEmbedding) {
+        this.imageEmbedding = imageEmbedding;
     }
 }
