@@ -1,11 +1,9 @@
 FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 
-COPY FoundBuddy-backend/gradle gradle
-COPY FoundBuddy-backend/gradlew .
-COPY FoundBuddy-backend/build.gradle.kts .
-COPY FoundBuddy-backend/settings.gradle.kts .
-COPY FoundBuddy-backend/src .
+COPY gradle gradle
+COPY gradlew build.gradle.kts settings.gradle.kts ./
+COPY src src
 
 RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
 
@@ -14,4 +12,3 @@ WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
