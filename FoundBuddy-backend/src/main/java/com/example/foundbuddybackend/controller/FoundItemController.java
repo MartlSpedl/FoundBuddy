@@ -175,4 +175,13 @@ public class FoundItemController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) throws Exception {
+        getFirestore()
+                .collection("found_items")
+                .document(id)
+                .delete()
+                .get();
+    }
 }

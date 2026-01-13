@@ -18,6 +18,9 @@ public class FoundItem {
     @JsonIgnore
     private List<Double> imageEmbedding;
 
+    @JsonIgnore
+    private List<Double> textEmbedding;
+
     public FoundItem() {}
 
     public FoundItem(String title, String description, String imageUri, Long createdAt) {
@@ -75,4 +78,9 @@ public class FoundItem {
     public void setImageEmbedding(List<Double> imageEmbedding) {
         this.imageEmbedding = imageEmbedding;
     }
+
+    @JsonIgnore
+    public List<Double> getTextEmbedding() { return textEmbedding; }
+
+    public void setTextEmbedding(List<Double> textEmbedding) { this.textEmbedding = textEmbedding; }
 }
