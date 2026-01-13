@@ -5,7 +5,7 @@ COPY FoundBuddy-backend/gradle gradle
 COPY FoundBuddy-backend/gradlew .
 COPY FoundBuddy-backend/build.gradle.kts .
 COPY FoundBuddy-backend/settings.gradle.kts .
-COPY FoundBuddy-backend/src src
+COPY FoundBuddy-backend/src .
 
 RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
 

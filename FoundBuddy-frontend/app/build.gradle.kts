@@ -80,4 +80,10 @@ dependencies {
 
     // ViewModel Compose - benötigt für viewModel() Funktion
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+
+
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
 }
