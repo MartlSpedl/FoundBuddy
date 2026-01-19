@@ -1,5 +1,6 @@
 package com.example.foundbuddybackend.ai;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -9,13 +10,14 @@ import java.util.Map;
 @Service
 public class EmbeddingService {
 
-    private static final String CLIP_URL = "http://127.0.0.1:8001";
-
     private final RestTemplate rest = new RestTemplate();
+
+    @Value("${ai.clip.url}")
+    private String clipUrl;
 
     public List<Double> embedText(String text) {
         return rest.postForObject(
-                CLIP_URL + "/embed/text",
+                clipUrl + "/embed/text",
                 Map.of("text", text),
                 List.class
         );
@@ -23,8 +25,8 @@ public class EmbeddingService {
 
     public List<Double> embedImage(String imageUri) {
         return rest.postForObject(
-                CLIP_URL + "/embed/image",
-                Map.of("image_uri", imageUri),   // ✅ korrekt
+                clipUrl + "/embed/image",
+                Map.of("image_uri", imageUri),
                 List.class
         );
     }

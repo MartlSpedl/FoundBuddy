@@ -1,5 +1,6 @@
 package com.example.foundbuddybackend.ai;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -12,13 +13,15 @@ import java.util.Map;
 @Service
 public class TranslationService {
 
-    private static final String URL = "http://127.0.0.1:5000/translate";
+    @Value("${ai.translate.url}")
+    private String url;
+
     private final RestTemplate rest;
 
     public TranslationService() {
         SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
         f.setConnectTimeout(5_000);
-        f.setReadTimeout(60_000); // erster Call kann dauern, danach schnell
+        f.setReadTimeout(60_000);
         this.rest = new RestTemplate(f);
     }
 
@@ -38,7 +41,7 @@ public class TranslationService {
             );
 
             ResponseEntity<Map> resp = rest.exchange(
-                    URL,
+                    url,
                     HttpMethod.POST,
                     new HttpEntity<>(body, headers),
                     Map.class
@@ -48,8 +51,7 @@ public class TranslationService {
             return translated == null ? text : translated.toString();
 
         } catch (RestClientException ex) {
-            // Fallback: wenn Translator down ist, einfach Original-Text verwenden
-            return text;
+            return text; // fallback
         }
     }
 }

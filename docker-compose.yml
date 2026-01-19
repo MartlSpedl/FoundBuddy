@@ -1,0 +1,16 @@
+services:
+  clip:
+    build: ./clip-service
+    ports:
+      - "8001:8001"
+
+  backend:
+    build: ./FoundBuddy-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - CLIP_URL=http://clip:8001
+      # optional:
+      # - TRANSLATE_URL=http://translate:5000/translate
+    depends_on:
+      - clip
