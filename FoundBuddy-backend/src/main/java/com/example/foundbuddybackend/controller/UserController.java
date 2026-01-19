@@ -239,7 +239,8 @@ public class UserController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Fehler beim Senden der E-Mail.");
+            return ResponseEntity.status(503)
+                    .body("Mailservice derzeit nicht erreichbar. Bitte später erneut versuchen.");
         }
     }
 
