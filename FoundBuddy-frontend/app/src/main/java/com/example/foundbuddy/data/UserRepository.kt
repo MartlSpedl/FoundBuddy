@@ -5,6 +5,7 @@ import com.example.foundbuddy.model.ValidationErrorResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -47,17 +48,26 @@ class UserRepository {
 
     suspend fun create(user: User): RegistrationResult = withContext(Dispatchers.IO) {
         try {
+            when (val warm = warmUpServer()) {
+                is WarmUpResult.Failed -> {
+                    return@withContext RegistrationResult.Error(friendlyServerStartingMessage())
+                }
+                WarmUpResult.Ready -> { /* weiter */ }
+            }
+
             val url = java.net.URL("$baseUrl/api/users")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
 
             val json = adapter.toJson(user)
             conn.outputStream.use { it.write(json.toByteArray()) }
 
             val responseCode = conn.responseCode
-            
+
             if (responseCode == HttpURLConnection.HTTP_CREATED || responseCode == HttpURLConnection.HTTP_OK) {
                 conn.inputStream.use {
                     val res = it.bufferedReader().readText()
@@ -78,12 +88,15 @@ class UserRepository {
                         RegistrationResult.Error("Validierungsfehler")
                     }
                 }
+            } else if (responseCode == 502 || responseCode == 503 || responseCode == 504) {
+                RegistrationResult.Error(friendlyServerStartingMessage())
             } else {
                 RegistrationResult.Error("Server-Fehler: $responseCode")
             }
+
         } catch (e: Exception) {
             e.printStackTrace()
-            RegistrationResult.Error(e.message ?: "Unbekannter Fehler")
+            RegistrationResult.Error(friendlyServerStartingMessage())
         }
     }
 
@@ -115,4 +128,58 @@ class UserRepository {
             false
         }
     }
+
+    private suspend fun warmUpServer(): WarmUpResult {
+        val url = java.net.URL("$baseUrl/api/health")
+
+        var lastCode: Int? = null
+        var lastException: Exception? = null
+
+        // 3 Versuche: 0s, 2s, 5s (Render Cold Start)
+        val delays = listOf(0L, 2000L, 5000L)
+
+        for (d in delays) {
+            if (d > 0) delay(d)
+
+            try {
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 12_000
+                    readTimeout = 12_000
+                }
+
+                val code = conn.responseCode
+                lastCode = code
+
+                if (code == HttpURLConnection.HTTP_OK) {
+                    return WarmUpResult.Ready
+                }
+
+                // typische Render-Codes beim Aufwachen
+                if (code == 502 || code == 503 || code == 504) {
+                    continue
+                }
+
+                // alles andere: nicht “Cold start”, sondern echter Fehler
+                return WarmUpResult.Failed(code, null)
+
+            } catch (e: Exception) {
+                lastException = e
+                // Timeouts/IO beim Starten sind normal -> nächster Versuch
+                continue
+            }
+        }
+
+        return WarmUpResult.Failed(lastCode, lastException)
+    }
+
+    private sealed class WarmUpResult {
+        data object Ready : WarmUpResult()
+        data class Failed(val code: Int?, val exception: Exception?) : WarmUpResult()
+    }
+
+    private fun friendlyServerStartingMessage(): String {
+        return "Server startet gerade. Bitte warte 10–30 Sekunden und versuche es nochmal."
+    }
+
 }
