@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="aktuelle version?" />
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="aktuelle version?">
+      <change afterPath="$PROJECT_DIR$/../clip-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/ai/EmbeddingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/ai/EmbeddingService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/ai/TranslationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/foundbuddybackend/ai/TranslationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -254,7 +260,8 @@
       <workItem from="1765894052249" duration="5920000" />
       <workItem from="1766491587722" duration="48000" />
       <workItem from="1768313933691" duration="3237000" />
-      <workItem from="1768823264037" duration="650000" />
+      <workItem from="1768823264037" duration="1180000" />
+      <workItem from="1768849551206" duration="1325000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
