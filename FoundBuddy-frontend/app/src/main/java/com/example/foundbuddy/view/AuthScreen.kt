@@ -28,23 +28,28 @@ fun AuthScreen(
     var username by remember { mutableStateOf("") }
     var isRegister by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
-    
+
     // Fehler pro Feld
     var usernameErrors by remember { mutableStateOf<List<String>>(emptyList()) }
     var emailErrors by remember { mutableStateOf<List<String>>(emptyList()) }
     var passwordErrors by remember { mutableStateOf<List<String>>(emptyList()) }
     var generalError by remember { mutableStateOf("") }
-    
+
     // Registrierung erfolgreich - Email-Bestätigung anzeigen
     var showEmailConfirmation by remember { mutableStateOf(false) }
     var registeredEmail by remember { mutableStateOf("") }
-    
+
     // Email nicht verifiziert
     var showEmailNotVerified by remember { mutableStateOf(false) }
     var unverifiedEmail by remember { mutableStateOf("") }
 
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
+
+    // Passwort zurücksetzen
+    var showResetPassword by remember { mutableStateOf(false) }
+    var resetEmail by remember { mutableStateOf("") }
+    var resetInfo by remember { mutableStateOf("") }
 
     // Wenn der User erfolgreich eingeloggt wurde → weiterleiten
     LaunchedEffect(currentUser) {
@@ -61,6 +66,10 @@ fun AuthScreen(
         generalError = ""
         showEmailConfirmation = false
         showEmailNotVerified = false
+
+        // Reset-Dialog sauber schließen
+        showResetPassword = false
+        resetInfo = ""
     }
 
     // Email-Bestätigung Dialog
@@ -136,6 +145,77 @@ fun AuthScreen(
         )
     }
 
+    // >>> Passwort zurücksetzen Dialog
+    if (showResetPassword) {
+        AlertDialog(
+            onDismissRequest = { showResetPassword = false },
+            title = { Text("Passwort zurücksetzen") },
+            text = {
+                Column {
+                    Text(
+                        "Gib deine E-Mail-Adresse ein. Wenn ein Account existiert, senden wir dir eine Reset-Mail."
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("E-Mail") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (resetInfo.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            resetInfo,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            val mail = resetEmail.trim()
+                            if (mail.isBlank()) {
+                                resetInfo = "Bitte E-Mail eingeben."
+                                return@launch
+                            }
+
+                            isLoading = true
+                            val ok = userViewModel.requestPasswordReset(mail)
+                            isLoading = false
+
+                            // Security Best Practice: nicht verraten, ob Account existiert
+                            resetInfo = if (ok) {
+                                "Wenn ein Account existiert, wurde eine E-Mail gesendet."
+                            } else {
+                                "Senden fehlgeschlagen. Bitte später erneut versuchen."
+                            }
+                        }
+                    },
+                    enabled = !isLoading
+                ) {
+                    Text("Reset-Mail senden")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showResetPassword = false
+                        resetInfo = ""
+                    }
+                ) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -155,7 +235,7 @@ fun AuthScreen(
         if (isRegister) {
             OutlinedTextField(
                 value = username,
-                onValueChange = { 
+                onValueChange = {
                     username = it
                     usernameErrors = emptyList()
                 },
@@ -172,7 +252,7 @@ fun AuthScreen(
 
         OutlinedTextField(
             value = email,
-            onValueChange = { 
+            onValueChange = {
                 email = it
                 emailErrors = emptyList()
             },
@@ -189,7 +269,7 @@ fun AuthScreen(
 
         OutlinedTextField(
             value = password,
-            onValueChange = { 
+            onValueChange = {
                 password = it
                 passwordErrors = emptyList()
             },
@@ -197,7 +277,7 @@ fun AuthScreen(
             visualTransformation = PasswordVisualTransformation(),
             isError = passwordErrors.isNotEmpty(),
             supportingText = if (passwordErrors.isNotEmpty()) {
-                { 
+                {
                     Column {
                         passwordErrors.forEach { error ->
                             Text(error, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
@@ -211,10 +291,29 @@ fun AuthScreen(
             singleLine = true
         )
 
+        // >>> "Passwort vergessen?" Button nur im Login-Modus
+        if (!isRegister) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        resetEmail = email // übernimmt die E-Mail aus dem Login-Feld
+                        resetInfo = ""
+                        showResetPassword = true
+                    },
+                    enabled = !isLoading
+                ) {
+                    Text("Passwort vergessen?")
+                }
+            }
+        }
+
         if (generalError.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text(
-                generalError, 
+                generalError,
                 color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
