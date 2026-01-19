@@ -30,6 +30,9 @@ public class EmailService {
         if (senderEmail == null || senderEmail.isBlank()) {
             throw new IllegalStateException("BREVO_SENDER_EMAIL ist nicht gesetzt.");
         }
+        if (appBaseUrl == null || appBaseUrl.isBlank()) {
+            throw new IllegalStateException("APP_BASE_URL ist nicht gesetzt.");
+        }
 
         String verifyUrl = appBaseUrl + "/api/users/verify?token=" + verificationToken;
 
@@ -46,7 +49,45 @@ public class EmailService {
                 verifyUrl
         );
 
-        // Minimales JSON (ohne externe JSON-Libs)
+        String json = "{"
+                + "\"sender\":{\"name\":\"" + escapeJson(senderName) + "\",\"email\":\"" + escapeJson(senderEmail) + "\"},"
+                + "\"to\":[{\"email\":\"" + escapeJson(toEmail) + "\"}],"
+                + "\"subject\":\"" + escapeJson(subject) + "\","
+                + "\"htmlContent\":\"" + escapeJson(html) + "\""
+                + "}";
+
+        postToBrevo(json);
+    }
+
+    public void sendPasswordResetEmail(String toEmail, String username, String resetToken) {
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+            throw new IllegalStateException("BREVO_API_KEY ist nicht gesetzt.");
+        }
+        if (senderEmail == null || senderEmail.isBlank()) {
+            throw new IllegalStateException("BREVO_SENDER_EMAIL ist nicht gesetzt.");
+        }
+        if (appBaseUrl == null || appBaseUrl.isBlank()) {
+            throw new IllegalStateException("APP_BASE_URL ist nicht gesetzt.");
+        }
+
+        // Wenn du noch keinen Reset-Screen hast, ist das trotzdem okay – Mail kommt an.
+        // Später kannst du daraus einen Deep-Link in die App machen.
+        String resetUrl = appBaseUrl + "/reset-password?token=" + resetToken;
+
+        String subject = "FoundBuddy: Passwort zuruecksetzen";
+        String html = """
+                <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+                  <h2>Passwort zuruecksetzen%s</h2>
+                  <p>Du hast ein Zuruecksetzen deines Passworts angefordert.</p>
+                  <p>Klicke auf den Link, um ein neues Passwort zu setzen:</p>
+                  <p><a href="%s">Passwort zuruecksetzen</a></p>
+                  <p style="color: #666;">Wenn du das nicht warst, ignoriere diese Mail.</p>
+                </div>
+                """.formatted(
+                (username != null && !username.isBlank()) ? (", " + username) : "",
+                resetUrl
+        );
+
         String json = "{"
                 + "\"sender\":{\"name\":\"" + escapeJson(senderName) + "\",\"email\":\"" + escapeJson(senderEmail) + "\"},"
                 + "\"to\":[{\"email\":\"" + escapeJson(toEmail) + "\"}],"

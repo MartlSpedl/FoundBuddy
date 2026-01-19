@@ -15,10 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-/**
- * REST controller for managing user profiles using Firebase Firestore.
- * Includes email/password validation and email verification.
- */
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
@@ -36,9 +32,6 @@ public class UserController {
         return FirestoreClient.getFirestore();
     }
 
-    /**
-     * Returns all users.
-     */
     @GetMapping
     public ResponseEntity<List<User>> getAll() {
         try {
@@ -61,9 +54,6 @@ public class UserController {
         }
     }
 
-    /**
-     * Retrieves a single user by Firestore document ID.
-     */
     @GetMapping("/{id}")
     public ResponseEntity<User> getById(@PathVariable String id) {
         try {
@@ -85,14 +75,9 @@ public class UserController {
         }
     }
 
-    /**
-     * Creates a new user profile with validation and email verification.
-     * The {@code id} field is ignored and replaced by a UUID.
-     */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody User user) {
         try {
-            // Validierung
             Map<String, List<String>> errors = new HashMap<>();
 
             String usernameError = validationService.validateUsername(user.getUsername());
@@ -112,27 +97,24 @@ public class UserController {
 
             if (!errors.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(new ValidationErrorResponse("Validierungsfehler", errors));
+                        .body(new ValidationErrorResponse("Validierungsfehler", errors));
             }
 
             Firestore db = getFirestore();
 
-            // Prüfen ob Email bereits existiert
             ApiFuture<QuerySnapshot> emailCheck = db.collection(COLLECTION_NAME)
                     .whereEqualTo("email", user.getEmail())
                     .get();
             if (!emailCheck.get().isEmpty()) {
                 errors.put("email", List.of("Diese E-Mail-Adresse ist bereits registriert"));
                 return ResponseEntity.badRequest()
-                    .body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
+                        .body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
             }
 
-            // User erstellen
             if (user.getId() == null || user.getId().isBlank()) {
                 user.setId(UUID.randomUUID().toString());
             }
 
-            // Verification Token generieren
             String verificationToken = UUID.randomUUID().toString();
             user.setVerificationToken(verificationToken);
             user.setEmailVerified(false);
@@ -142,11 +124,9 @@ public class UserController {
                     .set(user);
             result.get();
 
-            // Bestätigungs-Email senden
             try {
                 emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), verificationToken);
             } catch (Exception e) {
-                // Email-Versand fehlgeschlagen, aber User wurde erstellt
                 System.err.println("Email konnte nicht gesendet werden: " + e.getMessage());
             }
 
@@ -158,15 +138,11 @@ public class UserController {
         }
     }
 
-    /**
-     * Verifies a user's email address using the verification token.
-     */
     @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
         try {
             Firestore db = getFirestore();
 
-            // User mit diesem Token finden
             ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
                     .whereEqualTo("verificationToken", token)
                     .get();
@@ -174,24 +150,23 @@ public class UserController {
 
             if (docs.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body("Ungültiger oder abgelaufener Bestätigungslink.");
+                        .body("Ungültiger oder abgelaufener Bestätigungslink.");
             }
 
-            // User verifizieren
             DocumentSnapshot doc = docs.get(0);
             User user = doc.toObject(User.class);
             user.setId(doc.getId());
             user.setEmailVerified(true);
-            user.setVerificationToken(null); // Token löschen
+            user.setVerificationToken(null);
 
             db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
 
             return ResponseEntity.ok(
-                "<html><body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                "<h1 style='color: #4CAF50;'>E-Mail bestätigt!</h1>" +
-                "<p>Deine E-Mail-Adresse wurde erfolgreich bestätigt.</p>" +
-                "<p>Du kannst dich jetzt in der FoundBuddy App anmelden.</p>" +
-                "</body></html>"
+                    "<html><body style='font-family: Arial; text-align: center; padding: 50px;'>" +
+                            "<h1 style='color: #4CAF50;'>E-Mail bestätigt!</h1>" +
+                            "<p>Deine E-Mail-Adresse wurde erfolgreich bestätigt.</p>" +
+                            "<p>Du kannst dich jetzt in der FoundBuddy App anmelden.</p>" +
+                            "</body></html>"
             );
 
         } catch (InterruptedException | ExecutionException e) {
@@ -200,15 +175,11 @@ public class UserController {
         }
     }
 
-    /**
-     * Resends the verification email for a user.
-     */
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestParam String email) {
         try {
             Firestore db = getFirestore();
 
-            // User mit dieser Email finden
             ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
                     .whereEqualTo("email", email)
                     .get();
@@ -226,13 +197,11 @@ public class UserController {
                 return ResponseEntity.badRequest().body("E-Mail ist bereits verifiziert.");
             }
 
-            // Neuen Token generieren
             String newToken = UUID.randomUUID().toString();
             user.setVerificationToken(newToken);
 
             db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
 
-            // Email erneut senden
             emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), newToken);
 
             return ResponseEntity.ok().body("Bestätigungs-E-Mail wurde erneut gesendet.");
@@ -244,9 +213,43 @@ public class UserController {
         }
     }
 
-    /**
-     * Updates an existing user profile. Returns 404 if not found.
-     */
+    // >>> NEU: Passwort-Reset anfordern
+    @PostMapping("/request-password-reset")
+    public ResponseEntity<?> requestPasswordReset(@RequestParam String email) {
+        try {
+            Firestore db = getFirestore();
+
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("email", email)
+                    .get();
+            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+            // Security: immer OK zurückgeben
+            if (docs.isEmpty()) {
+                return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
+            }
+
+            DocumentSnapshot doc = docs.get(0);
+            User user = doc.toObject(User.class);
+            user.setId(doc.getId());
+
+            String resetToken = UUID.randomUUID().toString();
+            user.setPasswordResetToken(resetToken);
+            user.setPasswordResetRequestedAt(System.currentTimeMillis());
+
+            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetToken);
+
+            return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(503)
+                    .body("Mailservice derzeit nicht erreichbar. Bitte später erneut versuchen.");
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<User> update(@PathVariable String id, @RequestBody User updated) {
         try {
@@ -269,9 +272,6 @@ public class UserController {
         }
     }
 
-    /**
-     * Deletes a user by ID.
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {

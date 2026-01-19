@@ -6,21 +6,15 @@ public class User {
     private String username;
     private String email;
     private String password;
-    private String profileImage;
-    
-    // Email Verification Felder
-    private boolean emailVerified = false;
+
+    private boolean emailVerified;
     private String verificationToken;
 
-    public User() {}
+    // Passwort Reset
+    private String passwordResetToken;
+    private Long passwordResetRequestedAt;
 
-    public User(String username, String email, String password, String profileImage) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.profileImage = profileImage;
-        this.emailVerified = false;
-    }
+    public User() {}
 
     public String getId() {
         return id;
@@ -54,14 +48,6 @@ public class User {
         this.password = password;
     }
 
-    public String getProfileImage() {
-        return profileImage;
-    }
-
-    public void setProfileImage(String profileImage) {
-        this.profileImage = profileImage;
-    }
-
     public boolean isEmailVerified() {
         return emailVerified;
     }
@@ -76,5 +62,21 @@ public class User {
 
     public void setVerificationToken(String verificationToken) {
         this.verificationToken = verificationToken;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
+    }
+
+    public Long getPasswordResetRequestedAt() {
+        return passwordResetRequestedAt;
+    }
+
+    public void setPasswordResetRequestedAt(Long passwordResetRequestedAt) {
+        this.passwordResetRequestedAt = passwordResetRequestedAt;
     }
 }
