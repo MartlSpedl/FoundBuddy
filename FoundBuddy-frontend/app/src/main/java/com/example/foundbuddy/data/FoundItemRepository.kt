@@ -11,16 +11,8 @@ import kotlinx.coroutines.withContext
 
 class FoundItemRepository(private val context: Context) {
 
-    /**
-     * Base-URL des Backends.
-     *
-     * WICHTIG:
-     * - Emulator (AVD): 10.0.2.2 statt localhost verwenden
-     * - Physisches Gerät im WLAN: IP deines PCs, z. B. http://192.168.0.10:8080
-     */
-    // private val baseUrl: String = "https://foundbuddy.onrender.com"
-    private val baseUrl: String = "http://10.0.2.2:8080"
-
+ //   private val baseUrl: String = "http://10.0.2.2:8080"
+    private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()
