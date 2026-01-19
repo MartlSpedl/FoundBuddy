@@ -100,6 +100,16 @@ class UserViewModel : ViewModel() {
         return api.resendVerificationEmail(email)
     }
 
+    /**
+     * Passwort zurücksetzen (Request)
+     *
+     * Hinweis: Das Backend muss dafür einen Endpoint bereitstellen.
+     */
+    suspend fun requestPasswordReset(email: String): Boolean {
+        return api.requestPasswordReset(email)
+    }
+
+
     fun logout() {
         _currentUserFlow.value = null
         _username.value = ""

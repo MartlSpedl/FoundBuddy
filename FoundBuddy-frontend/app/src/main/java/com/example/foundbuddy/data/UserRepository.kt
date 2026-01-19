@@ -128,6 +128,33 @@ class UserRepository {
             false
         }
     }
+    /**
+     * Startet den Passwort-Reset Flow.
+     *
+     * Erwarteter Backend Endpoint:
+     * POST /api/users/request-password-reset?email=...
+     */
+    suspend fun requestPasswordReset(email: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            when (val warm = warmUpServer()) {
+                is WarmUpResult.Failed -> return@withContext false
+                WarmUpResult.Ready -> { /* weiter */ }
+            }
+
+            val encoded = java.net.URLEncoder.encode(email, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/users/request-password-reset?email=$encoded")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
+
+            conn.responseCode == HttpURLConnection.HTTP_OK
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
 
     private suspend fun warmUpServer(): WarmUpResult {
         val url = java.net.URL("$baseUrl/api/health")
