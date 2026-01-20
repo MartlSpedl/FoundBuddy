@@ -45,9 +45,18 @@ class FoundItemRepository(private val context: Context) {
     }
 
     suspend fun createFoundItem(item: com.example.foundbuddy.model.FoundItem): com.example.foundbuddy.model.FoundItem {
-        val resp = api.createFoundItem(item)
+        val req = com.example.foundbuddy.network.FoundItemCreateRequest(
+            id = item.id,
+            title = item.title,
+            description = item.description,
+            imageUri = item.imagePath,                 // ✅ URL aus Upload -> ins Backend Feld imageUri
+            createdAt = item.timestamp,                // ✅ timestamp -> createdAt
+            resolved = item.isResolved                 // ✅ isResolved -> resolved
+        )
+
+        val resp = api.createFoundItem(req)
         if (!resp.isSuccessful) {
-            throw IllegalStateException("POST item fehlgeschlagen: HTTP ${resp.code()}")
+            throw IllegalStateException("POST /api/found-items fehlgeschlagen: HTTP ${resp.code()}")
         }
         return resp.body() ?: throw IllegalStateException("Create Antwort ist leer")
     }
