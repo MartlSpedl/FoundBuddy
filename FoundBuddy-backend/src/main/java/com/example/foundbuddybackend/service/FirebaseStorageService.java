@@ -52,8 +52,7 @@ public class FirebaseStorageService {
                 .setMetadata(metadata)
                 .build();
 
-        Blob blob = bucket.create(blobInfo, file.getBytes());
-
+        Blob blob = bucket.getStorage().create(blobInfo, file.getBytes());
         String bucketName = bucket.getName();
         String encodedPath = URLEncoder.encode(blob.getName(), StandardCharsets.UTF_8);
         return "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + encodedPath + "?alt=media&token=" + token;

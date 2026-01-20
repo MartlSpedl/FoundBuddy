@@ -157,9 +157,8 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 "upload" -> UploadScreen(
-                                    onUpload = { newItem ->
+                                    onUpload = { _ ->
                                         scope.launch {
-                                            repository.addItem(newItem)
                                             homeViewModel.refreshItems(repository.getAll())
                                         }
                                         selectedTab = "feed"
