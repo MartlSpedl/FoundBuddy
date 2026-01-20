@@ -8,19 +8,31 @@ import retrofit2.http.*
 
 interface FoundBuddyApi {
 
-    @GET("health")
-    suspend fun health(): Response<String>
-
-    // ✅ Items laden
     @GET("api/found-items")
     suspend fun getFoundItems(): Response<List<FoundItem>>
 
-    // ✅ Item speichern
+    // ✅ Backend erwartet FoundItem-Form (imageUri, createdAt, resolved)
     @POST("api/found-items")
-    suspend fun createFoundItem(@Body item: FoundItem): Response<FoundItem>
+    suspend fun createFoundItem(@Body body: FoundItemCreateRequest): Response<FoundItem>
 
-    // ✅ Bild Upload
     @Multipart
     @POST("api/images")
     suspend fun uploadImage(@Part file: MultipartBody.Part): Response<UploadImageResponse>
 }
+
+/**
+ * DTO passend zu deinem Backend FoundItemController:
+ * - imageUri statt imagePath
+ * - createdAt statt timestamp
+ * - resolved statt isResolved
+ *
+ * title/description sind safe. Alles andere ignoriert Backend (oder existiert dort nicht).
+ */
+data class FoundItemCreateRequest(
+    val id: String? = null,
+    val title: String,
+    val description: String? = null,
+    val imageUri: String? = null,
+    val createdAt: Long? = null,
+    val resolved: Boolean = false
+)
