@@ -8,6 +8,9 @@ import retrofit2.http.*
 
 interface FoundBuddyApi {
 
+    @GET("health")
+    suspend fun health(): retrofit2.Response<String>
+
     @GET("api/found-items")
     suspend fun getFoundItems(): Response<List<FoundItem>>
 
