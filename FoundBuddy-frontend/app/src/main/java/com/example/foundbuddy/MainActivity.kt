@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
@@ -34,6 +35,9 @@ class MainActivity : ComponentActivity() {
             val userViewModel: UserViewModel = viewModel()
             val homeViewModel: HomeViewModel = viewModel()
             val navController: NavHostController = rememberNavController()
+
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
 
             val isDarkMode by userViewModel.isDarkMode.collectAsState(
                 initial = isSystemInDarkTheme()
@@ -59,15 +63,31 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = currentUser != null
                 val scope = rememberCoroutineScope()
 
+                // ✅ Wenn Login-State wechselt, routen wir sauber um
                 LaunchedEffect(isLoggedIn) {
                     if (isLoggedIn) {
+                        // Daten laden
                         homeViewModel.refreshItems(repository.getAll())
+
+                        // Wenn wir gerade noch im Auth sind -> rüber ins Main
+                        if (currentRoute == "auth") {
+                            navController.navigate("main") {
+                                popUpTo("auth") { inclusive = true }
+                            }
+                        }
+                    } else {
+                        // Wenn ausgeloggt und wir nicht im Auth sind -> zurück
+                        if (currentRoute != null && currentRoute != "auth") {
+                            navController.navigate("auth") {
+                                popUpTo("main") { inclusive = true }
+                            }
+                        }
                     }
                 }
 
                 NavHost(
                     navController = navController,
-                    startDestination = if (isLoggedIn) "main" else "auth"
+                    startDestination = "auth"
                 ) {
                     composable("auth") {
                         AuthScreen(
@@ -163,21 +183,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("detail/{itemId}") { backStackEntry ->
-                        val itemId = backStackEntry.arguments?.getString("itemId")
-
-                        if (itemId.isNullOrBlank()) {
-                            ItemDetailScreen(
-                                itemId = "",
-                                navController = navController,
-                                vm = homeViewModel
-                            )
-                        } else {
-                            ItemDetailScreen(
-                                itemId = itemId,
-                                navController = navController,
-                                vm = homeViewModel
-                            )
-                        }
+                        val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
+                        ItemDetailScreen(
+                            itemId = itemId,
+                            navController = navController,
+                            vm = homeViewModel
+                        )
                     }
                 }
             }
