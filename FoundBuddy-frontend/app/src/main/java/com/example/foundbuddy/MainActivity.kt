@@ -20,16 +20,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
-import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.view.*
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val repository = FoundItemRepository(this)
 
         setContent {
             val userViewModel: UserViewModel = viewModel()
@@ -63,25 +61,30 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = currentUser != null
                 val scope = rememberCoroutineScope()
 
-                // ✅ Wenn Login-State wechselt, routen wir sauber um
+                /* ---------------------------------------------------------
+                   🔑 LOGIN / LOGOUT HANDLING (STABIL)
+                   --------------------------------------------------------- */
                 LaunchedEffect(isLoggedIn) {
-                    if (isLoggedIn) {
-                        // Daten laden
-                        homeViewModel.refreshItems(repository.getAll())
+                    try {
+                        if (isLoggedIn) {
+                            // ✅ NUR ViewModel lädt Daten (mit try/catch)
+                            homeViewModel.refresh()
 
-                        // Wenn wir gerade noch im Auth sind -> rüber ins Main
-                        if (currentRoute == "auth") {
-                            navController.navigate("main") {
-                                popUpTo("auth") { inclusive = true }
+                            if (currentRoute == "auth") {
+                                navController.navigate("main") {
+                                    popUpTo("auth") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            if (currentRoute != null && currentRoute != "auth") {
+                                navController.navigate("auth") {
+                                    popUpTo("main") { inclusive = true }
+                                }
                             }
                         }
-                    } else {
-                        // Wenn ausgeloggt und wir nicht im Auth sind -> zurück
-                        if (currentRoute != null && currentRoute != "auth") {
-                            navController.navigate("auth") {
-                                popUpTo("main") { inclusive = true }
-                            }
-                        }
+                    } catch (e: Exception) {
+                        // Prevent crash from navigation issues
+                        println("Navigation error: ${e.message}")
                     }
                 }
 
@@ -89,6 +92,8 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = "auth"
                 ) {
+
+                    /* ---------------- AUTH ---------------- */
                     composable("auth") {
                         AuthScreen(
                             userViewModel = userViewModel,
@@ -100,6 +105,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    /* ---------------- MAIN ---------------- */
                     composable("main") {
 
                         var selectedTab by remember { mutableStateOf("feed") }
@@ -148,24 +154,32 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { padding ->
+
                             when (selectedTab) {
+
+                                /* -------- FEED -------- */
                                 "feed" -> FeedScreen(
                                     vm = homeViewModel,
                                     navController = navController,
-                                    onItemClick = { id -> navController.navigate("detail/$id") },
+                                    onItemClick = { id ->
+                                        navController.navigate("detail/$id")
+                                    },
                                     modifier = Modifier.padding(padding)
                                 )
 
+                                /* -------- UPLOAD -------- */
                                 "upload" -> UploadScreen(
-                                    onUpload = { _ ->
+                                    onUpload = {
+                                        // ✅ Nach Upload: Feed neu laden, ohne Crash
                                         scope.launch {
-                                            homeViewModel.refreshItems(repository.getAll())
+                                            homeViewModel.refresh()
                                         }
                                         selectedTab = "feed"
                                     },
                                     modifier = Modifier.padding(padding)
                                 )
 
+                                /* -------- PROFILE -------- */
                                 "profile" -> Box(modifier = Modifier.padding(padding)) {
                                     ProfileScreen(
                                         userViewModel = userViewModel,
@@ -181,8 +195,12 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    /* ---------------- DETAIL ---------------- */
                     composable("detail/{itemId}") { backStackEntry ->
-                        val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
+                        val itemId = backStackEntry.arguments
+                            ?.getString("itemId")
+                            .orEmpty()
+
                         ItemDetailScreen(
                             itemId = itemId,
                             navController = navController,

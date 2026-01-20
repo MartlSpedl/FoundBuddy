@@ -11,7 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.foundbuddy.R
 
 @Composable
 fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
@@ -25,30 +29,43 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
+    var imageLoadFailed by remember { mutableStateOf(false) }
 
-    AsyncImage(
-        model = url,
-        contentDescription = "Zoombares Bild",
-        contentScale = ContentScale.Fit,
-        modifier = modifier
-            .fillMaxSize()
-            .graphicsLayer(
-                scaleX = scale.coerceAtLeast(1f),
-                scaleY = scale.coerceAtLeast(1f),
-                translationX = offsetX,
-                translationY = offsetY
-            )
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    } else {
-                        offsetX = 0f
-                        offsetY = 0f
-                    }
-                }
+    Box(modifier = modifier.fillMaxSize()) {
+        if (imageLoadFailed) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
             }
-    )
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(url)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Zoombares Bild",
+                contentScale = ContentScale.Fit,
+                onError = { imageLoadFailed = true },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale.coerceAtLeast(1f),
+                        scaleY = scale.coerceAtLeast(1f),
+                        translationX = offsetX,
+                        translationY = offsetY
+                    )
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            if (scale > 1f) {
+                                offsetX += pan.x
+                                offsetY += pan.y
+                            } else {
+                                offsetX = 0f
+                                offsetY = 0f
+                            }
+                        }
+                    }
+            )
+        }
+    }
 }
