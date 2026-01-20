@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -146,26 +147,37 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(padding)
                                 )
 
-                                "profile" -> ProfileScreen(
-                                    userViewModel = userViewModel,
-                                    onLogout = {
-                                        userViewModel.logout()
-                                        navController.navigate("auth") {
-                                            popUpTo("main") { inclusive = true }
+                                "profile" -> Box(modifier = Modifier.padding(padding)) {
+                                    ProfileScreen(
+                                        userViewModel = userViewModel,
+                                        onLogout = {
+                                            userViewModel.logout()
+                                            navController.navigate("auth") {
+                                                popUpTo("main") { inclusive = true }
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
 
                     composable("detail/{itemId}") { backStackEntry ->
-                        val itemId = backStackEntry.arguments?.getString("itemId")!!
-                        ItemDetailScreen(
-                            itemId = itemId,
-                            navController = navController,
-                            vm = homeViewModel
-                        )
+                        val itemId = backStackEntry.arguments?.getString("itemId")
+
+                        if (itemId.isNullOrBlank()) {
+                            ItemDetailScreen(
+                                itemId = "",
+                                navController = navController,
+                                vm = homeViewModel
+                            )
+                        } else {
+                            ItemDetailScreen(
+                                itemId = itemId,
+                                navController = navController,
+                                vm = homeViewModel
+                            )
+                        }
                     }
                 }
             }

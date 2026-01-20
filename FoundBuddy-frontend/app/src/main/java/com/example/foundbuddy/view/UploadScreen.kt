@@ -3,9 +3,14 @@ package com.example.foundbuddy.view
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,8 +37,11 @@ fun UploadScreen(
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
+
+    // Moderner Photo Picker (besser als GetContent)
     val imagePicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         imageUri = uri
     }
@@ -51,18 +59,19 @@ fun UploadScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Neuer Eintrag", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
 
         // ----------------------------------------------------------
         // 1) Auswahl: Gefunden oder Verloren
         // ----------------------------------------------------------
         if (selectedType == null) {
             Text("Was möchtest du melden?", style = MaterialTheme.typography.bodyLarge)
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
             // Button: Gefunden
             Button(
@@ -79,14 +88,14 @@ fun UploadScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.camera_icon),
                     contentDescription = null,
-                    tint = Color.Unspecified, // ← Damit die PNG-Farbe erhalten bleibt
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(30.dp)
                 )
                 Spacer(Modifier.width(12.dp))
                 Text("Ich habe etwas gefunden")
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Button: Verloren
             Button(
@@ -117,11 +126,10 @@ fun UploadScreen(
         // 2) Auswahl: Art des Gegenstands
         // ----------------------------------------------------------
         Text(
-            text = if (selectedType == "Gefunden") "Ich habe etwas gefunden"
-            else "Ich habe etwas verloren",
+            text = if (selectedType == "Gefunden") "Ich habe etwas gefunden" else "Ich habe etwas verloren",
             style = MaterialTheme.typography.titleMedium
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -132,9 +140,7 @@ fun UploadScreen(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Gegenstand auswählen") },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor()
                     .fillMaxWidth()
@@ -168,64 +174,123 @@ fun UploadScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
 
         // ----------------------------------------------------------
-        // 4) Bildauswahl
+        // 4) Bildauswahl (besser UX: große Vorschau + klickbar + entfernen)
         // ----------------------------------------------------------
-        Button(
-            onClick = { imagePicker.launch("image/*") },
+        Text(
+            text = "Bild",
+            style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.fillMaxWidth()
+        )
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .clickable { // direkt auf die Vorschau tippen -> Picker
+                    imagePicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Icon(
-                painterResource(id = R.drawable.camera_icon),
-                contentDescription = null,
-                tint = Color.Unspecified
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(if (imageUri == null) "Bild hinzufügen" else "Bild ändern")
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (imageUri == null) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.camera_icon),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(42.dp)
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text("Tippe hier, um ein Bild auszuwählen")
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Galerie öffnet sich automatisch",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Vorschau",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(16.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
         }
 
-        imageUri?.let { uri ->
-            Spacer(Modifier.height(16.dp))
-            AsyncImage(
-                model = uri,
-                contentDescription = "Vorschau",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop
-            )
+        Spacer(Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Button(
+                onClick = {
+                    imagePicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    painterResource(id = R.drawable.camera_icon),
+                    contentDescription = null,
+                    tint = Color.Unspecified
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(if (imageUri == null) "Bild auswählen" else "Bild ändern")
+            }
+
+            OutlinedButton(
+                onClick = { imageUri = null },
+                enabled = imageUri != null,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Entfernen")
+            }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
 
         // ----------------------------------------------------------
         // 5) Item hochladen
         // ----------------------------------------------------------
+        val canUpload = selectedItem.isNotBlank() && selectedType != null
+
         Button(
             onClick = {
-                if (selectedItem.isNotBlank()) {
-                    onUpload(
-                        FoundItem(
-                            id = UUID.randomUUID().toString(),
-                            title = selectedItem,
-                            description = if (desc.isBlank()) null else desc,
-                            imagePath = imageUri?.toString(),
-                            status = selectedType!!,
-                            isResolved = false
-                        )
-                    )
+                val type = selectedType ?: return@Button
+                if (!canUpload) return@Button
 
-                    // Formular zurücksetzen
-                    selectedType = null
-                    selectedItem = ""
-                    desc = ""
-                    imageUri = null
-                }
+                onUpload(
+                    FoundItem(
+                        id = UUID.randomUUID().toString(),
+                        title = selectedItem,
+                        description = if (desc.isBlank()) null else desc,
+                        imagePath = imageUri?.toString(),
+                        status = type,
+                        isResolved = false
+                    )
+                )
+
+                // Formular zurücksetzen
+                selectedType = null
+                selectedItem = ""
+                desc = ""
+                imageUri = null
             },
-            enabled = selectedItem.isNotBlank(),
+            enabled = canUpload,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -242,15 +307,19 @@ fun UploadScreen(
             Text("Hochladen")
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-        TextButton(onClick = {
-            selectedType = null
-            selectedItem = ""
-            desc = ""
-            imageUri = null
-        }) {
+        TextButton(
+            onClick = {
+                selectedType = null
+                selectedItem = ""
+                desc = ""
+                imageUri = null
+            }
+        ) {
             Text("Abbrechen")
         }
+
+        Spacer(Modifier.height(10.dp))
     }
 }

@@ -19,6 +19,12 @@ sealed class RegistrationResult {
     data class Error(val message: String) : RegistrationResult()
 }
 
+// Result type for user operations
+sealed class UserOperationResult {
+    data object Success : UserOperationResult()
+    data class Error(val message: String) : UserOperationResult()
+}
+
 class UserRepository {
     // private val baseUrl: String = "http://10.0.2.2:8080"
     private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
@@ -100,20 +106,45 @@ class UserRepository {
         }
     }
 
-    suspend fun update(user: User) = withContext(Dispatchers.IO) {
+    suspend fun getCurrentUser(userId: String): User? = withContext(Dispatchers.IO) {
+        try {
+            val url = java.net.URL("$baseUrl/api/users/$userId")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
+            
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                conn.inputStream.use {
+                    val json = it.bufferedReader().readText()
+                    adapter.fromJson(json)
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun update(user: User): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = java.net.URL("$baseUrl/api/users/${user.id}")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "PUT"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
 
             val json = adapter.toJson(user)
             conn.outputStream.use { it.write(json.toByteArray()) }
 
-            conn.inputStream.readBytes()
+            conn.responseCode == HttpURLConnection.HTTP_OK
         } catch (e: Exception) {
             e.printStackTrace()
+            false
         }
     }
 

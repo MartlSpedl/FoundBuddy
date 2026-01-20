@@ -54,7 +54,13 @@ fun FeedScreen(
                 .padding(16.dp)
         )
 
+        // IMPORTANT:
+        // LazyColumn muss innerhalb einer Column eine begrenzte Hoehe bekommen,
+        // sonst kann Compose "infinite height constraints" werfen.
         LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
