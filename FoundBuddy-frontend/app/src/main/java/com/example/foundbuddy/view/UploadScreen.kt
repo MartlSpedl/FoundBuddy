@@ -22,8 +22,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
+import com.example.foundbuddy.data.FoundItemApiRepository
 import com.example.foundbuddy.model.FoundItem
-import com.example.foundbuddy.util.ImageStorage
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,12 +34,17 @@ fun UploadScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val apiRepo = remember { FoundItemApiRepository(context) }
 
     var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedItem by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var expanded by remember { mutableStateOf(false) }
+
+    var isUploading by remember { mutableStateOf(false) }
+    var uploadError by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
 
@@ -177,7 +183,7 @@ fun UploadScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp)
-                .clickable {
+                .clickable(enabled = !isUploading) {
                     imagePicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
@@ -229,6 +235,7 @@ fun UploadScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 },
+                enabled = !isUploading,
                 modifier = Modifier.weight(1f)
             ) {
                 Icon(
@@ -242,7 +249,7 @@ fun UploadScreen(
 
             OutlinedButton(
                 onClick = { imageUri = null },
-                enabled = imageUri != null,
+                enabled = imageUri != null && !isUploading,
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Entfernen")
@@ -256,28 +263,47 @@ fun UploadScreen(
         Button(
             onClick = {
                 val type = selectedType ?: return@Button
-                if (!canUpload) return@Button
+                if (!canUpload || isUploading) return@Button
 
-                // ✅ Bild dauerhaft lokal speichern und file:// URI verwenden
-                val persistedUri = imageUri?.let { ImageStorage.persistToInternalFiles(context, it) }
+                uploadError = null
+                isUploading = true
 
-                onUpload(
-                    FoundItem(
-                        id = UUID.randomUUID().toString(),
-                        title = selectedItem,
-                        description = if (desc.isBlank()) null else desc,
-                        imagePath = persistedUri?.toString(),
-                        status = type,
-                        isResolved = false
-                    )
-                )
+                scope.launch {
+                    try {
+                        // 1) Bild muss vorhanden sein
+                        val uri = imageUri ?: throw IllegalStateException("Bitte ein Bild auswählen")
 
-                selectedType = null
-                selectedItem = ""
-                desc = ""
-                imageUri = null
+                        // 2) Upload -> URL (multiuser tauglich)
+                        val imageUrl = apiRepo.uploadImageAndGetUrl(uri)
+
+                        // 3) Item mit URL speichern
+                        val created = apiRepo.createFoundItem(
+                            FoundItem(
+                                id = UUID.randomUUID().toString(),
+                                title = selectedItem,
+                                description = if (desc.isBlank()) null else desc,
+                                imagePath = imageUrl, // ✅ URL statt content:// oder file://
+                                status = type,
+                                isResolved = false
+                            )
+                        )
+
+                        // 4) UI aktualisieren
+                        onUpload(created)
+
+                        // Reset
+                        selectedType = null
+                        selectedItem = ""
+                        desc = ""
+                        imageUri = null
+                    } catch (e: Exception) {
+                        uploadError = e.message ?: "Upload fehlgeschlagen"
+                    } finally {
+                        isUploading = false
+                    }
+                }
             },
-            enabled = canUpload,
+            enabled = canUpload && !isUploading,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -286,22 +312,29 @@ fun UploadScreen(
             )
         ) {
             Icon(
-                painterResource(id = R.drawable.save_icon),
+                painter = painterResource(id = R.drawable.save_icon),
                 contentDescription = null,
                 tint = Color.Unspecified
             )
             Spacer(Modifier.width(8.dp))
-            Text("Hochladen")
+            Text(if (isUploading) "Lade hoch..." else "Hochladen")
+        }
+
+        uploadError?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = MaterialTheme.colorScheme.error)
         }
 
         Spacer(Modifier.height(12.dp))
 
         TextButton(
             onClick = {
+                if (isUploading) return@TextButton
                 selectedType = null
                 selectedItem = ""
                 desc = ""
                 imageUri = null
+                uploadError = null
             }
         ) {
             Text("Abbrechen")

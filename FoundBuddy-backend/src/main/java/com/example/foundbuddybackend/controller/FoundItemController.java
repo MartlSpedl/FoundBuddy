@@ -110,12 +110,17 @@ public class FoundItemController {
                 item.setCreatedAt(System.currentTimeMillis());
             }
 
-            // 🔴 HIER ist der entscheidende Punkt
-            // imageUri ist z. B. ein lokaler Pfad
-            if (item.getImageUri() != null && item.getImageEmbedding() == null) {
-                item.setImageEmbedding(
-                        embeddingService.embedImage(item.getImageUri())
-                );
+            // Multi-User: imageUri muss eine von allen Clients erreichbare URL sein
+            if (item.getImageUri() != null) {
+                String uri = item.getImageUri();
+                if (uri.startsWith("content://") || uri.startsWith("file://")) {
+                    return ResponseEntity.badRequest().build();
+                }
+
+                // Embedding nur berechnen, wenn noch nicht vorhanden
+                if (item.getImageEmbedding() == null) {
+                    item.setImageEmbedding(embeddingService.embedImage(uri));
+                }
             }
 
             db.collection("found_items")
