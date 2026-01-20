@@ -102,30 +102,43 @@ public class FoundItemController {
         try {
             Firestore db = getFirestore();
 
+            // ID setzen, falls nicht vorhanden
             if (item.getId() == null || item.getId().isBlank()) {
                 item.setId(UUID.randomUUID().toString());
             }
 
+            // Timestamp setzen, falls nicht vorhanden
             if (item.getCreatedAt() == null) {
                 item.setCreatedAt(System.currentTimeMillis());
             }
 
-            // Multi-User: imageUri muss eine von allen Clients erreichbare URL sein
+            // Image-URI validieren (muss öffentlich erreichbar sein)
             if (item.getImageUri() != null) {
                 String uri = item.getImageUri();
+
+                // Lokale URIs blocken (Frontend-Fehler)
                 if (uri.startsWith("content://") || uri.startsWith("file://")) {
                     return ResponseEntity.badRequest().build();
                 }
 
-                // Embedding nur berechnen, wenn noch nicht vorhanden
+                // 🔑 Embedding ist OPTIONAL – darf niemals den Request killen
                 if (item.getImageEmbedding() == null) {
-                    item.setImageEmbedding(embeddingService.embedImage(uri));
+                    try {
+                        item.setImageEmbedding(embeddingService.embedImage(uri));
+                    } catch (Exception e) {
+                        // Wichtig: nur loggen, NICHT abbrechen
+                        System.err.println("⚠️ Embedding fehlgeschlagen – Item wird ohne Embedding gespeichert");
+                        e.printStackTrace();
+                        item.setImageEmbedding(null);
+                    }
                 }
             }
 
-            db.collection("found_items")
+            // In Firestore speichern
+            db.collection(COLLECTION_NAME)
                     .document(item.getId())
-                    .set(item);
+                    .set(item)
+                    .get();
 
             return ResponseEntity.ok(item);
 
@@ -134,6 +147,7 @@ public class FoundItemController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 
     @PutMapping("/{id}/resolve")
     public ResponseEntity<Void> resolve(@PathVariable String id) {
