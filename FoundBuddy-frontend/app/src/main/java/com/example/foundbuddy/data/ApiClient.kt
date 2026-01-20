@@ -1,5 +1,6 @@
 package com.example.foundbuddy.data
 
+import com.example.foundbuddy.network.ApiService
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
