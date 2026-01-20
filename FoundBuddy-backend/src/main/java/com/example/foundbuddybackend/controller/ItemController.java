@@ -97,7 +97,6 @@ public class ItemController {
         try {
             Firestore db = getFirestore();
 
-            // Generate UUID if missing
             if (item.getId() == null || item.getId().isBlank()) {
                 item.setId(UUID.randomUUID().toString());
             }
@@ -106,15 +105,22 @@ public class ItemController {
                 item.setTimestamp(Instant.now().toEpochMilli());
             }
 
-            // Validate status
             if (item.getStatus() == null) {
                 return ResponseEntity.badRequest().build();
+            }
+
+            // Multi-User: photoUri muss eine erreichbare URL sein (z.B. Firebase Storage)
+            if (item.getPhotoUri() != null) {
+                String uri = item.getPhotoUri();
+                if (uri.startsWith("content://") || uri.startsWith("file://")) {
+                    return ResponseEntity.badRequest().build();
+                }
             }
 
             ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
                     .document(item.getId())
                     .set(item);
-            result.get(); // wait for completion
+            result.get();
 
             return new ResponseEntity<>(item, HttpStatus.CREATED);
 
