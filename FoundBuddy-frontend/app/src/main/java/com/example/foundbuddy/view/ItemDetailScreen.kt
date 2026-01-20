@@ -37,6 +37,10 @@ fun ItemDetailScreen(
     var commentText by remember { mutableStateOf("") }
     val comments by vm.getComments(itemId).collectAsState(initial = emptyList())
 
+    val statusRaw = item?.status?.trim().orEmpty()
+    val statusLower = statusRaw.lowercase()
+    val statusLabel = if (statusRaw.isBlank()) "UNBEKANNT" else statusRaw.uppercase()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -113,9 +117,9 @@ fun ItemDetailScreen(
 
                     AssistChip(
                         onClick = { },
-                        label = { Text(item.status.uppercase()) },
+                        label = { Text(statusLabel) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = when (item.status.lowercase()) {
+                            containerColor = when (statusLower) {
                                 "verloren" -> MaterialTheme.colorScheme.errorContainer
                                 "gefunden" -> MaterialTheme.colorScheme.tertiaryContainer
                                 else -> MaterialTheme.colorScheme.surfaceVariant
