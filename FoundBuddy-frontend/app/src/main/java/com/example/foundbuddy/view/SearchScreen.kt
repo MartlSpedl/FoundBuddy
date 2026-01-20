@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,7 +32,14 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
             Spacer(Modifier.padding(8.dp))
             Button(onClick = { vm.search(q) }) { Text("Suchen") }
             Spacer(Modifier.padding(8.dp))
-            LazyColumn {
+            // IMPORTANT:
+            // LazyColumn in einer Column braucht eine definierte Hoehe (z.B. weight(1f)),
+            // sonst kann Compose "infinite height constraints" werfen.
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
                 items(results) { item ->
                     ListItem(
                         headlineContent = { Text(item.title) },

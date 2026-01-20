@@ -7,6 +7,10 @@ import com.example.foundbuddy.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.viewModelScope
 
 /**
  * Ergebnis einer Registrierung für die UI
@@ -29,6 +33,7 @@ sealed class LoginResult {
 class UserViewModel : ViewModel() {
     private val api = UserRepository()
 
+    // User state
     private val _currentUserFlow = MutableStateFlow<User?>(null)
     val currentUserFlow: StateFlow<User?> = _currentUserFlow.asStateFlow()
 
@@ -38,8 +43,15 @@ class UserViewModel : ViewModel() {
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
+    // UI state
     private val _isDarkMode = MutableStateFlow(false)
     val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val users = mutableListOf<User>()
 
@@ -116,23 +128,91 @@ class UserViewModel : ViewModel() {
         _email.value = ""
     }
 
-    suspend fun updateUsername(newName: String) {
-        val user = _currentUserFlow.value ?: return
-        val updated = user.copy(username = newName)
-        api.update(updated)
-        _currentUserFlow.value = updated
-        _username.value = newName
+    suspend fun updateUsername(newName: String): Boolean {
+        _isLoading.value = true
+        _errorMessage.value = null
+        
+        return try {
+            val user = _currentUserFlow.value ?: run {
+                _errorMessage.value = "Kein Benutzer angemeldet"
+                return false
+            }
+            
+            val updated = user.copy(username = newName)
+            val success = api.update(updated)
+            
+            if (success) {
+                _currentUserFlow.value = updated
+                _username.value = newName
+                true
+            } else {
+                _errorMessage.value = "Benutzername konnte nicht aktualisiert werden"
+                false
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Fehler beim Aktualisieren des Benutzernamens: ${e.message}"
+            false
+        } finally {
+            _isLoading.value = false
+        }
     }
 
-    suspend fun updateProfileImage(uri: String?) {
-        val user = _currentUserFlow.value ?: return
-        val updated = user.copy(profileImage = uri)
-        api.update(updated)
-        _currentUserFlow.value = updated
+    suspend fun updateProfileImage(uri: String?): Boolean {
+        _isLoading.value = true
+        _errorMessage.value = null
+        
+        return try {
+            val user = _currentUserFlow.value ?: run {
+                _errorMessage.value = "Kein Benutzer angemeldet"
+                return false
+            }
+            
+            val updated = user.copy(profileImage = uri)
+            val success = api.update(updated)
+            
+            if (success) {
+                _currentUserFlow.value = updated
+                true
+            } else {
+                _errorMessage.value = "Profilbild konnte nicht aktualisiert werden"
+                false
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Fehler beim Aktualisieren des Profilbilds: ${e.message}"
+            false
+        } finally {
+            _isLoading.value = false
+        }
     }
 
 
     fun toggleDarkMode() {
         _isDarkMode.value = !_isDarkMode.value
+    }
+    
+    // Load the current user's data
+    suspend fun loadCurrentUser(userId: String) {
+        _isLoading.value = true
+        _errorMessage.value = null
+        
+        try {
+            val user = api.getCurrentUser(userId)
+            user?.let {
+                _currentUserFlow.value = it
+                _username.value = it.username
+                _email.value = it.email
+            } ?: run {
+                _errorMessage.value = "Benutzerdaten konnten nicht geladen werden"
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Fehler beim Laden des Benutzers: ${e.message}"
+        } finally {
+            _isLoading.value = false
+        }
+    }
+    
+    // Clear any error messages
+    fun clearErrorMessage() {
+        _errorMessage.value = null
     }
 }

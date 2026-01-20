@@ -212,25 +212,32 @@ fun ZoomableImage(imagePath: String?, modifier: Modifier = Modifier) {
                         context.packageName
                     )
                 }
-                if (resourceId != 0) {
-                    Image(
-                        painter = painterResource(resourceId),
-                        contentDescription = "Item Bild",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                            .pointerInput(Unit) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    scale = (scale * zoom).coerceIn(0.8f, 6f)
-                                    if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                val isAppResourceId = (resourceId and 0xFF000000.toInt()) == 0x7F000000
+                if (resourceId != 0 && isAppResourceId) {
+                    val painter = runCatching { painterResource(resourceId) }.getOrNull()
+
+                    if (painter != null) {
+                        Image(
+                            painter = painter,
+                            contentDescription = "Item Bild",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                                .pointerInput(Unit) {
+                                    detectTransformGestures { _, pan, zoom, _ ->
+                                        scale = (scale * zoom).coerceIn(0.8f, 6f)
+                                        if (scale > 1f) {
+                                            offsetX += pan.x
+                                            offsetY += pan.y
+                                        }
                                     }
                                 }
-                            }
-                    )
+                        )
+                    } else {
+                        PlaceholderImage()
+                    }
                 } else {
                     PlaceholderImage()
                 }
