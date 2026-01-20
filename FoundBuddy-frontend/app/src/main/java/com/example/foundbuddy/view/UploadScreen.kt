@@ -22,7 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
-import com.example.foundbuddy.data.FoundItemApiRepository
+import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.model.FoundItem
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -35,7 +35,7 @@ fun UploadScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val apiRepo = remember { FoundItemApiRepository(context) }
+    val apiRepo = remember { FoundItemRepository(context) }
 
     var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedItem by remember { mutableStateOf("") }
