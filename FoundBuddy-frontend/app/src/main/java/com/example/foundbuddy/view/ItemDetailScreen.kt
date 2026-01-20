@@ -35,7 +35,7 @@ fun ItemDetailScreen(
 ) {
     val item = vm.getItemById(itemId)
     var commentText by remember { mutableStateOf("") }
-    val comments by vm.getComments(itemId).collectAsState(initial = emptyList())
+    val comments = vm.comments.collectAsState().value[itemId] ?: emptyList()
 
     val statusRaw = item?.status?.trim().orEmpty()
     val statusLower = statusRaw.lowercase()
@@ -117,9 +117,9 @@ fun ItemDetailScreen(
 
                     AssistChip(
                         onClick = { },
-                        label = { Text(statusLabel) },
+                        label = { Text((item.status ?: "Unbekannt").uppercase()) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = when (statusLower) {
+                            containerColor = when (item.status?.lowercase()) {
                                 "verloren" -> MaterialTheme.colorScheme.errorContainer
                                 "gefunden" -> MaterialTheme.colorScheme.tertiaryContainer
                                 else -> MaterialTheme.colorScheme.surfaceVariant

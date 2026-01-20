@@ -4,7 +4,8 @@ data class FoundItemCreateRequest(
     val id: String,
     val title: String,
     val description: String?,
-    val imageUri: String?,   // WICHTIG: Backend erwartet imageUri
-    val createdAt: Long,     // WICHTIG: Backend erwartet createdAt
-    val resolved: Boolean
+    val imageUri: String?,
+    val createdAt: Long,
+    val resolved: Boolean,
+    val status: String? // ✅ "Gefunden" oder "Verloren"
 )

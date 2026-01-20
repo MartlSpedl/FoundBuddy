@@ -26,15 +26,23 @@ fun FeedScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredItems = remember(items, searchQuery) {
-        items.filter { !it.isResolved }.filter { item ->
-            searchQuery.isBlank() ||
-                    item.title.contains(searchQuery, ignoreCase = true) ||
-                    item.description?.contains(searchQuery, ignoreCase = true) == true
+        try {
+            items.filter { !it.isResolved }.filter { item ->
+                searchQuery.isBlank() ||
+                        item.title.contains(searchQuery, ignoreCase = true) ||
+                        item.description?.contains(searchQuery, ignoreCase = true) == true
+            }
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
     val foundItems = filteredItems.filter { it.status.equals("Gefunden", ignoreCase = true) }
     val lostItems = filteredItems.filter { it.status.equals("Verloren", ignoreCase = true) }
+    val otherItems = filteredItems.filter { item ->
+        !item.status.equals("Gefunden", ignoreCase = true) &&
+                !item.status.equals("Verloren", ignoreCase = true)
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         CenterAlignedTopAppBar(
@@ -100,6 +108,26 @@ fun FeedScreen(
                     )
                 }
             }
+
+            if (otherItems.isNotEmpty()) {
+                item {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        "Andere",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                items(otherItems) { item ->
+                    FoundItemCard(
+                        item = item,
+                        onClick = { onItemClick(item.id) },
+                        onLike = { vm.toggleLike(item.id) }
+                    )
+                }
+            }
+
 
             if (filteredItems.isEmpty()) {
                 item {

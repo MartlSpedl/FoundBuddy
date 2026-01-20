@@ -7,14 +7,15 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    // Render Backend URL (achte auf trailing slash!)
-    private const val BASE_URL = "https://foundbuddy-rzyh.onrender.com/"
+    // Emulator: http://10.0.2.2:8080/
+    // Handy im WLAN: http://DEIN-PC-IP:8080/
+    private const val BASE_URL = "https://foundbuddy-rzyh.onrender.com"
 
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

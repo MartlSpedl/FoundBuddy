@@ -97,10 +97,12 @@ class FoundItemRepository(private val context: Context) {
             id = item.id,
             title = item.title,
             description = item.description,
-            imageUri = url,                 // <- jetzt garantiert String (nicht nullable)
+            imageUri = url,
             createdAt = item.timestamp,
-            resolved = item.isResolved
+            resolved = item.isResolved,
+            status = item.status // ✅ jetzt wird es ans Backend geschickt
         )
+
 
         Log.d("FoundItemRepository", "POST /api/found-items -> $req")
 
