@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.lifecycle.viewmodel.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -60,16 +61,15 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    // Für Bilder (falls noch nicht da)
+
+    // Bilder
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-
-    // Compose + Material3 (Versionen ggf. zu deinem Projekt passend)
+    // Material / Compose
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.activity:activity-compose:1.9.2")
-    implementation("io.coil-kt:coil-compose:2.6.0")
 
-// JSON (Moshi) + Kotlin-Support
+    // JSON (Moshi) + Kotlin-Support
     implementation("com.squareup.moshi:moshi:1.15.1")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
@@ -78,12 +78,14 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
-    // ViewModel Compose - benötigt für viewModel() Funktion
+    // ViewModel Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
 
-
+    // Retrofit/OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // ✅ DataStore (Session speichern)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }

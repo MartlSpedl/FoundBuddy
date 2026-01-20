@@ -1,16 +1,16 @@
 package com.example.foundbuddy.controller
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.foundbuddy.data.RegistrationResult
+import com.example.foundbuddy.data.SessionStore
 import com.example.foundbuddy.data.UserRepository
 import com.example.foundbuddy.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import androidx.lifecycle.viewModelScope
 
 /**
  * Ergebnis einer Registrierung für die UI
@@ -30,8 +30,10 @@ sealed class LoginResult {
     data class EmailNotVerified(val email: String) : LoginResult()
 }
 
-class UserViewModel : ViewModel() {
+class UserViewModel(application: Application) : AndroidViewModel(application) {
+
     private val api = UserRepository()
+    private val sessionStore = SessionStore(application.applicationContext)
 
     // User state
     private val _currentUserFlow = MutableStateFlow<User?>(null)
@@ -53,7 +55,29 @@ class UserViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private val users = mutableListOf<User>()
+    init {
+        // ✅ Beim App-Start Session wiederherstellen (wenn vorhanden)
+        viewModelScope.launch {
+            restoreSession()
+        }
+    }
+
+    private suspend fun restoreSession() {
+        val userId = sessionStore.loadUserId() ?: return
+        try {
+            val user = api.getCurrentUser(userId)
+            if (user != null) {
+                _currentUserFlow.value = user
+                _username.value = user.username
+                _email.value = user.email
+            } else {
+                sessionStore.clear()
+            }
+        } catch (_: Exception) {
+            // Wenn Backend gerade nicht erreichbar ist, lassen wir die Session-ID mal drin.
+            // User bleibt dann ggf. "ausgeloggt", bis wieder Netzwerk da ist.
+        }
+    }
 
     /**
      * Registriert einen neuen User mit Validierung
@@ -76,16 +100,9 @@ class UserViewModel : ViewModel() {
         )
 
         return when (val result = api.create(newUser)) {
-            is RegistrationResult.Success -> {
-                // User wurde erstellt, aber noch nicht einloggen (Email muss erst bestätigt werden)
-                RegisterResult.Success(result.user)
-            }
-            is RegistrationResult.ValidationError -> {
-                RegisterResult.ValidationErrors(result.errors)
-            }
-            is RegistrationResult.Error -> {
-                RegisterResult.Error(result.message)
-            }
+            is RegistrationResult.Success -> RegisterResult.Success(result.user)
+            is RegistrationResult.ValidationError -> RegisterResult.ValidationErrors(result.errors)
+            is RegistrationResult.Error -> RegisterResult.Error(result.message)
         }
     }
 
@@ -105,6 +122,10 @@ class UserViewModel : ViewModel() {
         _currentUserFlow.value = user
         _username.value = user.username
         _email.value = user.email
+
+        // ✅ Session speichern
+        sessionStore.saveUserId(user.id)
+
         return LoginResult.Success
     }
 
@@ -112,17 +133,14 @@ class UserViewModel : ViewModel() {
         return api.resendVerificationEmail(email)
     }
 
-    /**
-     * Passwort zurücksetzen (Request)
-     *
-     * Hinweis: Das Backend muss dafür einen Endpoint bereitstellen.
-     */
     suspend fun requestPasswordReset(email: String): Boolean {
         return api.requestPasswordReset(email)
     }
 
-
     fun logout() {
+        viewModelScope.launch {
+            sessionStore.clear()
+        }
         _currentUserFlow.value = null
         _username.value = ""
         _email.value = ""
@@ -131,16 +149,16 @@ class UserViewModel : ViewModel() {
     suspend fun updateUsername(newName: String): Boolean {
         _isLoading.value = true
         _errorMessage.value = null
-        
+
         return try {
             val user = _currentUserFlow.value ?: run {
                 _errorMessage.value = "Kein Benutzer angemeldet"
                 return false
             }
-            
+
             val updated = user.copy(username = newName)
             val success = api.update(updated)
-            
+
             if (success) {
                 _currentUserFlow.value = updated
                 _username.value = newName
@@ -160,16 +178,16 @@ class UserViewModel : ViewModel() {
     suspend fun updateProfileImage(uri: String?): Boolean {
         _isLoading.value = true
         _errorMessage.value = null
-        
+
         return try {
             val user = _currentUserFlow.value ?: run {
                 _errorMessage.value = "Kein Benutzer angemeldet"
                 return false
             }
-            
+
             val updated = user.copy(profileImage = uri)
             val success = api.update(updated)
-            
+
             if (success) {
                 _currentUserFlow.value = updated
                 true
@@ -185,16 +203,14 @@ class UserViewModel : ViewModel() {
         }
     }
 
-
     fun toggleDarkMode() {
         _isDarkMode.value = !_isDarkMode.value
     }
-    
-    // Load the current user's data
+
     suspend fun loadCurrentUser(userId: String) {
         _isLoading.value = true
         _errorMessage.value = null
-        
+
         try {
             val user = api.getCurrentUser(userId)
             user?.let {
@@ -210,8 +226,7 @@ class UserViewModel : ViewModel() {
             _isLoading.value = false
         }
     }
-    
-    // Clear any error messages
+
     fun clearErrorMessage() {
         _errorMessage.value = null
     }

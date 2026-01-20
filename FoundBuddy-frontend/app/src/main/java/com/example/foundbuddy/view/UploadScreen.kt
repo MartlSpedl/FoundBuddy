@@ -1,4 +1,3 @@
-// File: view/UploadScreen.kt
 package com.example.foundbuddy.view
 
 import android.net.Uri
@@ -18,11 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
 import com.example.foundbuddy.model.FoundItem
+import com.example.foundbuddy.util.ImageStorage
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +32,8 @@ fun UploadScreen(
     onUpload: (FoundItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedItem by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
@@ -39,7 +42,6 @@ fun UploadScreen(
 
     val scrollState = rememberScrollState()
 
-    // Moderner Photo Picker (besser als GetContent)
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -66,14 +68,10 @@ fun UploadScreen(
         Text("Neuer Eintrag", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(24.dp))
 
-        // ----------------------------------------------------------
-        // 1) Auswahl: Gefunden oder Verloren
-        // ----------------------------------------------------------
         if (selectedType == null) {
             Text("Was möchtest du melden?", style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(24.dp))
 
-            // Button: Gefunden
             Button(
                 onClick = { selectedType = "Gefunden" },
                 modifier = Modifier
@@ -97,7 +95,6 @@ fun UploadScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Button: Verloren
             Button(
                 onClick = { selectedType = "Verloren" },
                 modifier = Modifier
@@ -122,9 +119,6 @@ fun UploadScreen(
             return@Column
         }
 
-        // ----------------------------------------------------------
-        // 2) Auswahl: Art des Gegenstands
-        // ----------------------------------------------------------
         Text(
             text = if (selectedType == "Gefunden") "Ich habe etwas gefunden" else "Ich habe etwas verloren",
             style = MaterialTheme.typography.titleMedium
@@ -163,9 +157,6 @@ fun UploadScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ----------------------------------------------------------
-        // 3) Beschreibungstext
-        // ----------------------------------------------------------
         OutlinedTextField(
             value = desc,
             onValueChange = { desc = it },
@@ -176,9 +167,6 @@ fun UploadScreen(
 
         Spacer(Modifier.height(18.dp))
 
-        // ----------------------------------------------------------
-        // 4) Bildauswahl (besser UX: große Vorschau + klickbar + entfernen)
-        // ----------------------------------------------------------
         Text(
             text = "Bild",
             style = MaterialTheme.typography.titleSmall,
@@ -189,7 +177,7 @@ fun UploadScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp)
-                .clickable { // direkt auf die Vorschau tippen -> Picker
+                .clickable {
                     imagePicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
@@ -263,9 +251,6 @@ fun UploadScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ----------------------------------------------------------
-        // 5) Item hochladen
-        // ----------------------------------------------------------
         val canUpload = selectedItem.isNotBlank() && selectedType != null
 
         Button(
@@ -273,18 +258,20 @@ fun UploadScreen(
                 val type = selectedType ?: return@Button
                 if (!canUpload) return@Button
 
+                // ✅ Bild dauerhaft lokal speichern und file:// URI verwenden
+                val persistedUri = imageUri?.let { ImageStorage.persistToInternalFiles(context, it) }
+
                 onUpload(
                     FoundItem(
                         id = UUID.randomUUID().toString(),
                         title = selectedItem,
                         description = if (desc.isBlank()) null else desc,
-                        imagePath = imageUri?.toString(),
+                        imagePath = persistedUri?.toString(),
                         status = type,
                         isResolved = false
                     )
                 )
 
-                // Formular zurücksetzen
                 selectedType = null
                 selectedItem = ""
                 desc = ""

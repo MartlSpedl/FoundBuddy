@@ -181,7 +181,11 @@ fun ZoomableImage(imagePath: String?, modifier: Modifier = Modifier) {
         when {
             imagePath.isNullOrBlank() -> PlaceholderImage()
 
-            imagePath.startsWith("http://") || imagePath.startsWith("https://") -> {
+            // ✅ Jetzt auch file:// und content:// (und eigentlich alles sinnvolle)
+            imagePath.startsWith("http://", true) ||
+                    imagePath.startsWith("https://", true) ||
+                    imagePath.startsWith("file://", true) ||
+                    imagePath.startsWith("content://", true) -> {
                 AsyncImage(
                     model = imagePath,
                     contentDescription = "Item Bild",
@@ -205,6 +209,7 @@ fun ZoomableImage(imagePath: String?, modifier: Modifier = Modifier) {
             }
 
             else -> {
+                // optional: drawable-resourcenamen unterstützen
                 val resourceId = remember(imagePath) {
                     context.resources.getIdentifier(
                         imagePath.substringAfterLast("/").substringBeforeLast("."),
@@ -215,7 +220,6 @@ fun ZoomableImage(imagePath: String?, modifier: Modifier = Modifier) {
                 val isAppResourceId = (resourceId and 0xFF000000.toInt()) == 0x7F000000
                 if (resourceId != 0 && isAppResourceId) {
                     val painter = runCatching { painterResource(resourceId) }.getOrNull()
-
                     if (painter != null) {
                         Image(
                             painter = painter,
