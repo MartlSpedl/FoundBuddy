@@ -1,6 +1,9 @@
 package com.example.foundbuddy.data
 
 import android.content.Context
+import android.util.Log
+import com.example.foundbuddy.network.FoundBuddyApi
+import com.example.foundbuddy.model.AiSearchResult
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
 import com.squareup.moshi.JsonClass
@@ -11,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 
-class FoundItemRepository(private val context: Context) {
+class FoundItemRepository(private val context: Context, private val api: FoundBuddyApi) {
 
     private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
     private val moshi = Moshi.Builder()
@@ -341,6 +344,20 @@ class FoundItemRepository(private val context: Context) {
             throw Exception("Erstellen des Items fehlgeschlagen: ${e.message}")
         }
     }
+
+    suspend fun aiSearch(query: String): List<AiSearchResult> {
+        val q = query.trim()
+        if (q.isBlank()) return emptyList()
+
+        val resp = api.aiSearch(mapOf("query" to q))
+        if (!resp.isSuccessful) {
+            val err = resp.errorBody()?.string()
+            Log.e("FoundItemRepository", "POST /api/ai/search failed HTTP ${resp.code()} body=$err")
+            throw IllegalStateException("AI-Suche fehlgeschlagen: HTTP ${resp.code()} ${err ?: ""}")
+        }
+        return resp.body() ?: emptyList()
+    }
+
 }
 
 /**

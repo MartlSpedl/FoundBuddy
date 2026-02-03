@@ -20,6 +20,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.data.FoundItemRepository
+import com.example.foundbuddy.network.ApiClient
+import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.view.*
 import kotlinx.coroutines.launch
 
@@ -28,7 +30,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val repository = FoundItemRepository(this)
+        val api = ApiClient.retrofit.create(FoundBuddyApi::class.java)
+        val repository = FoundItemRepository(this, api)
 
         setContent {
             val userViewModel: UserViewModel = viewModel()
@@ -165,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                     vm = homeViewModel,
                                     userViewModel = userViewModel,
                                     navController = navController,
-                                    onItemClick = { id ->
+                                    onItemClick = { id: String ->
                                         homeViewModel.loadStatusHistory(id)
                                         navController.navigate("detail/$id")
                                     },

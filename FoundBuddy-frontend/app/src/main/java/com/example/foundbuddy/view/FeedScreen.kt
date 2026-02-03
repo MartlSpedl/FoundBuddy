@@ -25,33 +25,49 @@ fun FeedScreen(
     navController: NavHostController
 ) {
     val items by vm.items.collectAsState(initial = emptyList())
-    var searchQuery by remember { mutableStateOf("") }
-    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val aiItems by vm.searchResults.collectAsState(initial = emptyList())
+    val isSearching by vm.isSearching.collectAsState(initial = false)
 
-    val filteredItems = remember(items, searchQuery) {
-        items.filter { !it.isResolved }.filter { item ->
-            searchQuery.isBlank() ||
-                    item.title.contains(searchQuery, ignoreCase = true) ||
-                    item.description?.contains(searchQuery, ignoreCase = true) == true ||
-                    item.workflowStatus.contains(searchQuery, ignoreCase = true)
-        }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Wenn Suchfeld leer -> normaler Feed
+    // Wenn Suchfeld nicht leer -> AI-Ergebnisse
+    val listToShow = remember(items, aiItems, searchQuery) {
+        if (searchQuery.isBlank()) items
+        else aiItems
+    }
+
+    val filteredItems = remember(listToShow) {
+        listToShow.filter { !it.isResolved }
     }
 
     val foundItems = filteredItems.filter { it.status.equals("Gefunden", ignoreCase = true) }
     val lostItems = filteredItems.filter { it.status.equals("Verloren", ignoreCase = true) }
+    val otherItems = filteredItems.filter { item ->
+        !item.status.equals("Gefunden", ignoreCase = true) &&
+                !item.status.equals("Verloren", ignoreCase = true)
+    }
+
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
 
     Column(modifier = modifier.fillMaxSize()) {
         CenterAlignedTopAppBar(
-            title = {
-                Text("FoundBuddy", fontWeight = FontWeight.Bold)
-            }
+            title = { Text("FoundBuddy", fontWeight = FontWeight.Bold) }
         )
 
         OutlinedTextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Suche nach Titel, Beschreibung oder Status…") },
+            onValueChange = {
+                searchQuery = it
+                vm.searchAi(it) // <<< DAS ist der Switch auf Bildsuche
+            },
+            placeholder = { Text("Suche nach Bildinhalt…") },
             leadingIcon = { Icon(Icons.Filled.Search, "Suche") },
+            trailingIcon = {
+                if (isSearching) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                }
+            },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -65,24 +81,27 @@ fun FeedScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // Gefunden Items
             if (foundItems.isNotEmpty()) {
                 item {
                     Text(
-                        "Gefundene Sachen",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Gefundene Gegenstände (${foundItems.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Spacer(Modifier.height(8.dp))
                 }
                 items(foundItems) { item ->
                     FoundItemCard(
                         item = item,
                         onClick = { onItemClick(item.id) },
-                        onLike = { vm.toggleLike(item.id) },
+                        onLike = { 
+                            vm.toggleLike(item.id)
+                        },
                         userViewModel = userViewModel,
                         onFavorite = {
-                            currentUser?.id?.let { userId ->
-                                vm.toggleFavorite(item.id, userId)
+                            currentUser?.let { user ->
+                                vm.toggleFavorite(item.id, user.id)
                             }
                         },
                         vm = vm
@@ -90,25 +109,55 @@ fun FeedScreen(
                 }
             }
 
+            // Verlorene Items
             if (lostItems.isNotEmpty()) {
                 item {
-                    Spacer(Modifier.height(24.dp))
                     Text(
-                        "Verlorene Sachen",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.error
+                        text = "Verlorene Gegenstände (${lostItems.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Spacer(Modifier.height(8.dp))
                 }
                 items(lostItems) { item ->
                     FoundItemCard(
                         item = item,
                         onClick = { onItemClick(item.id) },
-                        onLike = { vm.toggleLike(item.id) },
+                        onLike = { 
+                            vm.toggleLike(item.id)
+                        },
                         userViewModel = userViewModel,
                         onFavorite = {
-                            currentUser?.id?.let { userId ->
-                                vm.toggleFavorite(item.id, userId)
+                            currentUser?.let { user ->
+                                vm.toggleFavorite(item.id, user.id)
+                            }
+                        },
+                        vm = vm
+                    )
+                }
+            }
+
+            // Andere Items
+            if (otherItems.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Andere (${otherItems.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+                items(otherItems) { item ->
+                    FoundItemCard(
+                        item = item,
+                        onClick = { onItemClick(item.id) },
+                        onLike = { 
+                            vm.toggleLike(item.id)
+                        },
+                        userViewModel = userViewModel,
+                        onFavorite = {
+                            currentUser?.let { user ->
+                                vm.toggleFavorite(item.id, user.id)
                             }
                         },
                         vm = vm

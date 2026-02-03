@@ -110,23 +110,59 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
      * Login - prüft auch ob Email verifiziert ist
      */
     suspend fun login(email: String, password: String): LoginResult {
-        val users = api.getAll()
-        val user = users.find {
-            it.email.equals(email, ignoreCase = true) && it.password == password
-        } ?: return LoginResult.InvalidCredentials
-
-        if (!user.emailVerified) {
-            return LoginResult.EmailNotVerified(user.email)
+        try {
+            // Eingabe bereinigen (Leerzeichen am Anfang/Ende entfernen)
+            val cleanEmail = email.trim()
+            val cleanPassword = password.trim()
+            
+            // Hole alle Benutzer vom Backend
+            val users = api.getAll()
+            
+            // Debug: Logge die Anzahl der gefundenen Benutzer
+            println("DEBUG: Gefundene Benutzer: ${users.size}")
+            println("DEBUG: Eingabe bereinigt - E-Mail: '$cleanEmail', Passwort: '$cleanPassword'")
+            
+            // Suche nach Benutzer mit passender E-Mail (case-insensitive)
+            val userByEmail = users.find { 
+                it.email.equals(cleanEmail, ignoreCase = true) 
+            }
+            
+            if (userByEmail == null) {
+                println("DEBUG: Kein Benutzer mit E-Mail '$cleanEmail' gefunden")
+                return LoginResult.InvalidCredentials
+            }
+            
+            // Debug: Logge Passwortvergleich
+            println("DEBUG: Passwortvergleich - Eingabe: '$cleanPassword' vs Gespeichert: '${userByEmail.password}'")
+            println("DEBUG: Passwörter gleich: ${userByEmail.password == cleanPassword}")
+            
+            // Prüfe Passwort
+            if (userByEmail.password != cleanPassword) {
+                return LoginResult.InvalidCredentials
+            }
+            
+            // Prüfe Email-Verifizierung
+            if (!userByEmail.emailVerified) {
+                println("DEBUG: E-Mail nicht verifiziert für Benutzer: ${userByEmail.email}")
+                return LoginResult.EmailNotVerified(userByEmail.email)
+            }
+            
+            // Login erfolgreich - User im ViewModel speichern
+            _currentUserFlow.value = userByEmail
+            _username.value = userByEmail.username
+            _email.value = userByEmail.email
+            
+            // Session speichern
+            sessionStore.saveUserId(userByEmail.id)
+            
+            println("DEBUG: Login erfolgreich für Benutzer: ${userByEmail.username}")
+            return LoginResult.Success
+            
+        } catch (e: Exception) {
+            println("DEBUG: Login-Fehler: ${e.message}")
+            e.printStackTrace()
+            return LoginResult.InvalidCredentials
         }
-
-        _currentUserFlow.value = user
-        _username.value = user.username
-        _email.value = user.email
-
-        // ✅ Session speichern
-        sessionStore.saveUserId(user.id)
-
-        return LoginResult.Success
     }
 
     suspend fun resendVerificationEmail(email: String): Boolean {
