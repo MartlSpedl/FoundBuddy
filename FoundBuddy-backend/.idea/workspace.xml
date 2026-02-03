@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="make ki web">
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="make ki web again">
       <change beforePath="$PROJECT_DIR$/../render.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/../render.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -263,7 +263,7 @@
       <workItem from="1769521845097" duration="1304000" />
       <workItem from="1769528348311" duration="895000" />
       <workItem from="1769691633728" duration="57000" />
-      <workItem from="1770122625774" duration="434000" />
+      <workItem from="1770122625774" duration="820000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
@@ -393,7 +393,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770123058939</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="make ki web again">
+      <option name="closed" value="true" />
+      <created>1770123210045</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1770123210045</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -413,6 +421,7 @@
     <MESSAGE value="render.yaml  verschoben" />
     <MESSAGE value="render.yaml geändert" />
     <MESSAGE value="make ki web" />
-    <option name="LAST_COMMIT_MESSAGE" value="make ki web" />
+    <MESSAGE value="make ki web again" />
+    <option name="LAST_COMMIT_MESSAGE" value="make ki web again" />
   </component>
 </project>
