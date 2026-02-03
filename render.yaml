@@ -1,23 +1,23 @@
 services:
-  # 1) Private CLIP service (nur intern erreichbar)
+  # 1) CLIP service (öffentlich, kostenlos)
   - type: web
     name: foundbuddy-clip
     env: docker
     rootDir: clip-service
-    plan: starter
+    plan: free
     autoDeploy: true
 
-  # 2) Backend (öffentlich)
+  # 2) Backend
   - type: web
     name: foundbuddy-backend
     env: docker
     rootDir: FoundBuddy-backend
-    plan: starter
+    plan: free
     autoDeploy: true
     envVars:
-      - key: CLIP_HOSTPORT
+      - key: CLIP_URL
         fromService:
           name: foundbuddy-clip
-          type: pserv
-          property: hostport
+          type: web
+          property: url
 
