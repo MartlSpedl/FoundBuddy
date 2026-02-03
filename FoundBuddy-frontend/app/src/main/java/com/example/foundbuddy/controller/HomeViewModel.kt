@@ -6,8 +6,11 @@ import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.model.Comment
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
@@ -18,10 +21,21 @@ class HomeViewModel : ViewModel() {
     private val _favorites = MutableStateFlow<List<FoundItem>>(emptyList())
     val favorites: StateFlow<List<FoundItem>> = _favorites
 
-    private var repository: FoundItemRepository? = null
+    private var repo: FoundItemRepository? = null
+
+    private val _searchResults = MutableStateFlow<List<FoundItem>>(emptyList())
+    val searchResults: StateFlow<List<FoundItem>> = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private var searchJob: Job? = null
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     fun setRepository(repo: FoundItemRepository) {
-        repository = repo
+        this@HomeViewModel.repo = repo
     }
 
     // Wird aus MainActivity aufgerufen, wenn aus Repository geladen wurde
@@ -37,7 +51,7 @@ class HomeViewModel : ViewModel() {
 
     fun loadFavorites(userId: String) {
         viewModelScope.launch {
-            repository?.getFavorites(userId)?.let { favorites ->
+            repo?.getFavorites(userId)?.let { favorites ->
                 _favorites.value = favorites
             }
         }
@@ -88,7 +102,7 @@ class HomeViewModel : ViewModel() {
 
         // Backend-Call
         viewModelScope.launch {
-            repository?.toggleFavorite(itemId, currentUserId)
+            repo?.toggleFavorite(itemId, currentUserId)
         }
     }
 
@@ -128,13 +142,13 @@ class HomeViewModel : ViewModel() {
 
         // Backend-Call
         viewModelScope.launch {
-            repository?.updateWorkflowStatus(itemId, newStatus, userId, username, comment)
+            repo?.updateWorkflowStatus(itemId, newStatus, userId, username, comment)
         }
     }
 
     fun loadStatusHistory(itemId: String) {
         viewModelScope.launch {
-            repository?.getStatusHistory(itemId)?.let { history ->
+            repo?.getStatusHistory(itemId)?.let { history ->
                 val list = _items.value.toMutableList()
                 val index = list.indexOfFirst { it.id == itemId }
                 if (index != -1) {
@@ -179,4 +193,33 @@ class HomeViewModel : ViewModel() {
             else -> emptyList()
         }
     }
+
+    fun searchAi(query: String) {
+        searchJob?.cancel()
+
+        val q = query.trim()
+        if (q.isBlank()) {
+            _searchResults.value = emptyList()
+            _isSearching.value = false
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            _isSearching.value = true
+            try {
+                // kleines Debounce, damit nicht bei jedem Buchstaben ein Request rausgeht
+                delay(350)
+
+                val results = repo?.aiSearch(q)
+                // wir zeigen nur die Items an (Scores könnten wir später auch anzeigen)
+                _searchResults.value = results?.map { it.item }!!
+                _errorMessage.value = null
+            } catch (e: Exception) {
+                _errorMessage.value = e.message ?: "Fehler bei der KI-Suche"
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
 }

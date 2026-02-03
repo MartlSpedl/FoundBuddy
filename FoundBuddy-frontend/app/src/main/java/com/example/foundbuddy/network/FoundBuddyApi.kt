@@ -1,5 +1,6 @@
 package com.example.foundbuddy.network
 
+import com.example.foundbuddy.model.AiSearchResult
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -30,6 +31,11 @@ interface FoundBuddyApi {
     suspend fun getStatusHistory(
         @Path("itemId") itemId: String
     ): Response<List<StatusChangeResponse>>
+
+    @POST("api/ai/search")
+    suspend fun aiSearch(
+        @Body body: Map<String, String>
+    ): Response<List<AiSearchResult>>
 }
 
 data class UpdateStatusRequest(

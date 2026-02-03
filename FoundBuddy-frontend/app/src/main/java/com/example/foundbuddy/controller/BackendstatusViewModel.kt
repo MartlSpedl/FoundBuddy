@@ -3,6 +3,8 @@ package com.example.foundbuddy.controller
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foundbuddy.data.BackendRepository
+import com.example.foundbuddy.network.ApiClient
+import com.example.foundbuddy.network.FoundBuddyApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,9 +14,9 @@ data class BackendStatusState(
     val message: String = "Noch nicht getestet"
 )
 
-class BackendStatusViewModel(
-    private val repo: BackendRepository = BackendRepository()
-) : ViewModel() {
+class BackendStatusViewModel : ViewModel() {
+    private val api = ApiClient.retrofit.create(FoundBuddyApi::class.java)
+    private val repo = BackendRepository(api)
 
     private val _state = MutableStateFlow(BackendStatusState())
     val state: StateFlow<BackendStatusState> = _state
