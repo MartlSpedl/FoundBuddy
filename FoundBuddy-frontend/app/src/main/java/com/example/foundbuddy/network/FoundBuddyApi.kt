@@ -1,35 +1,60 @@
 package com.example.foundbuddy.network
 
-import com.example.foundbuddy.data.UploadImageResponse
-import com.example.foundbuddy.model.FoundItem
-import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface FoundBuddyApi {
 
-    // Health
     @GET("health")
     suspend fun health(): Response<String>
 
-    // Items
-    @GET("api/found-items")
-    suspend fun getFoundItems(): Response<List<FoundItem>>
+    // Sprint 5: Neue Endpoints
+    @PUT("api/items/{itemId}/favorite")
+    suspend fun toggleFavorite(
+        @Path("itemId") itemId: String,
+        @Query("userId") userId: String
+    ): Response<Unit>
 
-    @POST("api/found-items")
-    suspend fun createFoundItem(
-        @Body req: FoundItemCreateRequest
-    ): Response<FoundItem>
+    @PUT("api/items/{itemId}/status")
+    suspend fun updateWorkflowStatus(
+        @Path("itemId") itemId: String,
+        @Body request: UpdateStatusRequest
+    ): Response<Unit>
 
-    @PUT("api/found-items/{id}/resolve")
-    suspend fun resolveFoundItem(
-        @Path("id") id: String
-    ): Response<FoundItem>
+    @GET("api/users/{userId}/favorites")
+    suspend fun getUserFavorites(
+        @Path("userId") userId: String
+    ): Response<List<ItemResponse>>
 
-    // Image Upload (Backend liefert { "imageUrl": "https://..." })
-    @Multipart
-    @POST("api/images")
-    suspend fun uploadImage(
-        @Part file: MultipartBody.Part
-    ): Response<UploadImageResponse>
+    @GET("api/items/{itemId}/status-history")
+    suspend fun getStatusHistory(
+        @Path("itemId") itemId: String
+    ): Response<List<StatusChangeResponse>>
 }
+
+data class UpdateStatusRequest(
+    val newStatus: String,
+    val userId: String,
+    val username: String,
+    val comment: String?
+)
+
+data class ItemResponse(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val status: String,
+    val workflowStatus: String = "Gemeldet",
+    val isFavorite: Boolean = false,
+    val statusHistory: List<StatusChangeResponse> = emptyList(),
+    val allowedEditors: List<String> = emptyList()
+)
+
+data class StatusChangeResponse(
+    val userId: String,
+    val username: String,
+    val oldStatus: String,
+    val newStatus: String,
+    val timestamp: Long,
+    val comment: String?
+)
