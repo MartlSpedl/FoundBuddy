@@ -16,26 +16,29 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
+import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.view.*
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val repository = FoundItemRepository(this)
 
         setContent {
             val userViewModel: UserViewModel = viewModel()
             val homeViewModel: HomeViewModel = viewModel()
             val navController: NavHostController = rememberNavController()
 
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
+            // Repository im ViewModel setzen
+            LaunchedEffect(Unit) {
+                homeViewModel.setRepository(repository)
+            }
 
             val isDarkMode by userViewModel.isDarkMode.collectAsState(
                 initial = isSystemInDarkTheme()
@@ -61,39 +64,19 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = currentUser != null
                 val scope = rememberCoroutineScope()
 
-                /* ---------------------------------------------------------
-                   🔑 LOGIN / LOGOUT HANDLING (STABIL)
-                   --------------------------------------------------------- */
                 LaunchedEffect(isLoggedIn) {
-                    try {
-                        if (isLoggedIn) {
-                            // ✅ NUR ViewModel lädt Daten (mit try/catch)
-                            homeViewModel.refresh()
-
-                            if (currentRoute == "auth") {
-                                navController.navigate("main") {
-                                    popUpTo("auth") { inclusive = true }
-                                }
-                            }
-                        } else {
-                            if (currentRoute != null && currentRoute != "auth") {
-                                navController.navigate("auth") {
-                                    popUpTo("main") { inclusive = true }
-                                }
-                            }
+                    if (isLoggedIn) {
+                        homeViewModel.refreshItems(repository.getAll())
+                        currentUser?.id?.let { userId ->
+                            homeViewModel.loadFavorites(userId)
                         }
-                    } catch (e: Exception) {
-                        // Prevent crash from navigation issues
-                        println("Navigation error: ${e.message}")
                     }
                 }
 
                 NavHost(
                     navController = navController,
-                    startDestination = "auth"
+                    startDestination = if (isLoggedIn) "main" else "auth"
                 ) {
-
-                    /* ---------------- AUTH ---------------- */
                     composable("auth") {
                         AuthScreen(
                             userViewModel = userViewModel,
@@ -105,9 +88,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    /* ---------------- MAIN ---------------- */
                     composable("main") {
-
                         var selectedTab by remember { mutableStateOf("feed") }
 
                         Scaffold(
@@ -118,7 +99,7 @@ class MainActivity : ComponentActivity() {
                                         onClick = { selectedTab = "feed" },
                                         icon = {
                                             Icon(
-                                                painterResource(id = R.drawable.home_icon),
+                                                painter = painterResource(id = R.drawable.home_icon),
                                                 contentDescription = "Feed",
                                                 tint = Color.Unspecified
                                             )
@@ -126,12 +107,26 @@ class MainActivity : ComponentActivity() {
                                         label = { Text("Feed") }
                                     )
 
+                                    // Sprint 5: Neue Favoriten-Tab
+                                    NavigationBarItem(
+                                        selected = selectedTab == "favorites",
+                                        onClick = { selectedTab = "favorites" },
+                                        icon = {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_star_filled),
+                                                contentDescription = "Favoriten",
+                                                tint = Color.Unspecified
+                                            )
+                                        },
+                                        label = { Text("Favoriten") }
+                                    )
+
                                     NavigationBarItem(
                                         selected = selectedTab == "upload",
                                         onClick = { selectedTab = "upload" },
                                         icon = {
                                             Icon(
-                                                painterResource(id = R.drawable.camera_icon),
+                                                painter = painterResource(id = R.drawable.camera_icon),
                                                 contentDescription = "Upload",
                                                 tint = Color.Unspecified
                                             )
@@ -144,7 +139,7 @@ class MainActivity : ComponentActivity() {
                                         onClick = { selectedTab = "profile" },
                                         icon = {
                                             Icon(
-                                                painterResource(id = R.drawable.profile_icon),
+                                                painter = painterResource(id = R.drawable.profile_icon),
                                                 contentDescription = "Profil",
                                                 tint = Color.Unspecified
                                             )
@@ -154,32 +149,40 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { padding ->
-
                             when (selectedTab) {
-
-                                /* -------- FEED -------- */
                                 "feed" -> FeedScreen(
                                     vm = homeViewModel,
+                                    userViewModel = userViewModel,
                                     navController = navController,
                                     onItemClick = { id ->
+                                        homeViewModel.loadStatusHistory(id)
                                         navController.navigate("detail/$id")
                                     },
                                     modifier = Modifier.padding(padding)
                                 )
 
-                                /* -------- UPLOAD -------- */
+                                "favorites" -> FavoritesScreen(
+                                    vm = homeViewModel,
+                                    userViewModel = userViewModel,
+                                    navController = navController,
+                                    onItemClick = { id ->
+                                        homeViewModel.loadStatusHistory(id)
+                                        navController.navigate("detail/$id")
+                                    },
+                                    modifier = Modifier.padding(padding)
+                                )
+
                                 "upload" -> UploadScreen(
-                                    onUpload = {
-                                        // ✅ Nach Upload: Feed neu laden, ohne Crash
+                                    onUpload = { newItem ->
                                         scope.launch {
-                                            homeViewModel.refresh()
+                                            repository.addItem(newItem)
+                                            homeViewModel.refreshItems(repository.getAll())
                                         }
                                         selectedTab = "feed"
                                     },
                                     modifier = Modifier.padding(padding)
                                 )
 
-                                /* -------- PROFILE -------- */
                                 "profile" -> Box(modifier = Modifier.padding(padding)) {
                                     ProfileScreen(
                                         userViewModel = userViewModel,
@@ -195,17 +198,24 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    /* ---------------- DETAIL ---------------- */
                     composable("detail/{itemId}") { backStackEntry ->
-                        val itemId = backStackEntry.arguments
-                            ?.getString("itemId")
-                            .orEmpty()
+                        val itemId = backStackEntry.arguments?.getString("itemId")
 
-                        ItemDetailScreen(
-                            itemId = itemId,
-                            navController = navController,
-                            vm = homeViewModel
-                        )
+                        if (itemId.isNullOrBlank()) {
+                            ItemDetailScreen(
+                                itemId = "",
+                                navController = navController,
+                                vm = homeViewModel,
+                                userViewModel = userViewModel
+                            )
+                        } else {
+                            ItemDetailScreen(
+                                itemId = itemId,
+                                navController = navController,
+                                vm = homeViewModel,
+                                userViewModel = userViewModel
+                            )
+                        }
                     }
                 }
             }

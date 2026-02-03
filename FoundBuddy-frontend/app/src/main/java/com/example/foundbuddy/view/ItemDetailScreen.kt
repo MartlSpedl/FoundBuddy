@@ -1,45 +1,47 @@
 package com.example.foundbuddy.view
 
-import androidx.compose.foundation.Image
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
-import kotlin.math.roundToInt
+import com.example.foundbuddy.controller.UserViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemDetailScreen(
     itemId: String,
     navController: NavController,
-    vm: HomeViewModel
+    vm: HomeViewModel,
+    userViewModel: UserViewModel
 ) {
     val item = vm.getItemById(itemId)
     var commentText by remember { mutableStateOf("") }
-    val comments = vm.comments.collectAsState().value[itemId] ?: emptyList()
+    val comments by vm.getComments(itemId).collectAsState(initial = emptyList())
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
 
-    val statusRaw = item?.status?.trim().orEmpty()
-    val statusLower = statusRaw.lowercase()
-    val statusLabel = if (statusRaw.isBlank()) "UNBEKANNT" else statusRaw.uppercase()
+    // Sprint 5: Status-Änderungs-Dialog
+    var showStatusDialog by remember { mutableStateOf(false) }
+    var selectedNewStatus by remember { mutableStateOf("") }
+    var statusComment by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -48,6 +50,40 @@ fun ItemDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                    }
+                },
+                actions = {
+                    // Favoriten-Button
+                    IconButton(onClick = {
+                        currentUser?.id?.let { userId ->
+                            vm.toggleFavorite(itemId, userId)
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(
+                                if (item?.isFavorite == true) R.drawable.ic_star_filled else R.drawable.ic_star_outline
+                            ),
+                            contentDescription = if (item?.isFavorite == true)
+                                "Aus Favoriten entfernen"
+                            else
+                                "Zu Favoriten hinzufügen",
+                            tint = if (item?.isFavorite == true) Color(0xFFFFD700) else LocalContentColor.current
+                        )
+                    }
+
+                    // Status-Änderungs-Button (nur wenn berechtigt)
+                    if (item != null && currentUser != null) {
+                        val user = currentUser
+                        if (item.allowedEditors.isEmpty() || item.allowedEditors.contains(user?.id)) {
+                            IconButton(onClick = { showStatusDialog = true }) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(vm.getStatusColor(item.workflowStatus)))
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -100,7 +136,12 @@ fun ItemDetailScreen(
                 .padding(innerPadding)
         ) {
             item {
-                ZoomableImage(imagePath = item.imagePath)
+                ZoomImage(
+                    url = item.imagePath,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                )
                 Spacer(Modifier.height(16.dp))
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -115,17 +156,90 @@ fun ItemDetailScreen(
                     }
                     Spacer(Modifier.height(16.dp))
 
-                    AssistChip(
-                        onClick = { },
-                        label = { Text((item.status ?: "Unbekannt").uppercase()) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = when (item.status?.lowercase()) {
-                                "verloren" -> MaterialTheme.colorScheme.errorContainer
-                                "gefunden" -> MaterialTheme.colorScheme.tertiaryContainer
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            }
+                    // Status-Chips
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(item.status.uppercase()) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = when (item.status.lowercase()) {
+                                    "verloren" -> MaterialTheme.colorScheme.errorContainer
+                                    "gefunden" -> MaterialTheme.colorScheme.tertiaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            )
                         )
+
+                        AssistChip(
+                            onClick = { showStatusDialog = true },
+                            label = { Text(item.workflowStatus) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        "Hochgeladen von ${item.uploaderName} • ${vm.formatTimeAgo(item.timestamp)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                // Sprint 5: Status-Workflow Abschnitt
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "Status-Verlauf",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+
+                // Aktueller Status
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(Color(vm.getStatusColor(item.workflowStatus)))
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Aktuell: ${item.workflowStatus}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Status-Verlauf
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    if (item.statusHistory.isEmpty()) {
+                        Text(
+                            "Noch keine Statusänderungen",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    } else {
+                        item.statusHistory.forEachIndexed { index, change ->
+                            StatusChangeItem(change = change, vm = vm, isLast = index == item.statusHistory.size - 1)
+                            if (index < item.statusHistory.size - 1) {
+                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -165,112 +279,161 @@ fun ItemDetailScreen(
             item { Spacer(Modifier.height(100.dp)) }
         }
     }
-}
 
-@Composable
-fun ZoomableImage(imagePath: String?, modifier: Modifier = Modifier) {
-    var scale by remember { mutableStateOf(1f) }
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
-    val context = LocalContext.current
+    // Sprint 5: Status-Änderungs-Dialog
+    if (showStatusDialog && item != null && currentUser != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showStatusDialog = false
+                selectedNewStatus = ""
+                statusComment = ""
+            },
+            title = { Text("Status ändern") },
+            text = {
+                Column {
+                    Text("Aktueller Status: ${item.workflowStatus}")
+                    Spacer(Modifier.height(16.dp))
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(320.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        when {
-            imagePath.isNullOrBlank() -> PlaceholderImage()
+                    val possibleStatuses = vm.getNextPossibleStatus(item.workflowStatus)
 
-            // ✅ Jetzt auch file:// und content:// (und eigentlich alles sinnvolle)
-            imagePath.startsWith("http://", true) ||
-                    imagePath.startsWith("https://", true) ||
-                    imagePath.startsWith("file://", true) ||
-                    imagePath.startsWith("content://", true) -> {
-                AsyncImage(
-                    model = imagePath,
-                    contentDescription = "Item Bild",
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(android.R.drawable.ic_menu_gallery),
-                    error = painterResource(android.R.drawable.ic_menu_gallery),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                scale = (scale * zoom).coerceIn(0.8f, 6f)
-                                if (scale > 1f) {
-                                    offsetX += pan.x
-                                    offsetY += pan.y
-                                }
-                            }
-                        }
-                )
-            }
-
-            else -> {
-                // optional: drawable-resourcenamen unterstützen
-                val resourceId = remember(imagePath) {
-                    context.resources.getIdentifier(
-                        imagePath.substringAfterLast("/").substringBeforeLast("."),
-                        "drawable",
-                        context.packageName
-                    )
-                }
-                val isAppResourceId = (resourceId and 0xFF000000.toInt()) == 0x7F000000
-                if (resourceId != 0 && isAppResourceId) {
-                    val painter = runCatching { painterResource(resourceId) }.getOrNull()
-                    if (painter != null) {
-                        Image(
-                            painter = painter,
-                            contentDescription = "Item Bild",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-                                .graphicsLayer(scaleX = scale, scaleY = scale)
-                                .pointerInput(Unit) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        scale = (scale * zoom).coerceIn(0.8f, 6f)
-                                        if (scale > 1f) {
-                                            offsetX += pan.x
-                                            offsetY += pan.y
-                                        }
-                                    }
-                                }
+                    if (possibleStatuses.isEmpty()) {
+                        Text(
+                            "Keine weiteren Statusänderungen möglich.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
-                        PlaceholderImage()
+                        possibleStatuses.forEach { status ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedNewStatus = status }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedNewStatus == status,
+                                    onClick = { selectedNewStatus = status }
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    status,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = statusComment,
+                            onValueChange = { statusComment = it },
+                            label = { Text("Kommentar (optional)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                } else {
-                    PlaceholderImage()
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (selectedNewStatus.isNotBlank() &&
+                            selectedNewStatus != item.workflowStatus &&
+                            vm.getNextPossibleStatus(item.workflowStatus).contains(selectedNewStatus)
+                        ) {
+                            val user = currentUser ?: return@TextButton
+                            vm.updateWorkflowStatus(
+                                itemId = item.id,
+                                newStatus = selectedNewStatus,
+                                userId = user.id,
+                                username = user.username,
+                                comment = if (statusComment.isNotBlank()) statusComment else null
+                            )
+                            showStatusDialog = false
+                            selectedNewStatus = ""
+                            statusComment = ""
+                        }
+                    },
+                    enabled = selectedNewStatus.isNotBlank() &&
+                            selectedNewStatus != item.workflowStatus &&
+                            vm.getNextPossibleStatus(item.workflowStatus).contains(selectedNewStatus)
+                ) {
+                    Text("Status aktualisieren")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showStatusDialog = false
+                    selectedNewStatus = ""
+                    statusComment = ""
+                }) {
+                    Text("Abbrechen")
                 }
             }
-        }
+        )
     }
 }
 
 @Composable
-private fun PlaceholderImage() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
+fun StatusChangeItem(
+    change: com.example.foundbuddy.model.StatusChange,
+    vm: HomeViewModel,
+    isLast: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = "Broken image",
-            fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Kein Bild verfügbar",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
+        // Timeline
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(40.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+            if (!isLast) {
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        // Details
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                "${change.oldStatus} → ${change.newStatus}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "von ${change.username}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            change.comment?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Kommentar: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                vm.formatTimeAgo(change.timestamp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

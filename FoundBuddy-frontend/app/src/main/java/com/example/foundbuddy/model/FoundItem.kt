@@ -1,32 +1,33 @@
 package com.example.foundbuddy.model
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.JsonClass
 
+@JsonClass(generateAdapter = true)
 data class FoundItem(
     val id: String,
-
     val title: String,
-
-    val description: String? = null,
-
-    // Backend liefert "imageUri", UI nutzt item.imagePath -> deshalb Mapping:
-    @SerializedName("imageUri")
-    val imagePath: String? = null,
-
-    // "Gefunden" / "Verloren"
-    val status: String = "",
-
-    // Backend nutzt oft "resolved"
-    @SerializedName("resolved")
-    val isResolved: Boolean = false,
-
+    val description: String?,
+    val imagePath: String?,
+    val status: String,          // "Gefunden" oder "Verloren"
+    val isResolved: Boolean,
     val uploaderName: String = "Unbekannt",
-
     val likes: Int = 0,
-
     val likedByUser: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis(),
+    // Sprint 5: Neue Felder
+    val workflowStatus: String = "Gemeldet", // Gemeldet, In Kontakt, Abgeschlossen
+    val isFavorite: Boolean = false,
+    val statusHistory: List<StatusChange> = emptyList(),
+    val allowedEditors: List<String> = emptyList() // User-IDs die Status ändern dürfen
+)
 
-    // Backend nutzt oft "createdAt"
-    @SerializedName("createdAt")
-    val timestamp: Long = System.currentTimeMillis()
+// Neues Modell für Statusverlauf
+@JsonClass(generateAdapter = true)
+data class StatusChange(
+    val userId: String,
+    val username: String,
+    val oldStatus: String,
+    val newStatus: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val comment: String? = null
 )

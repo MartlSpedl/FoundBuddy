@@ -13,36 +13,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     vm: HomeViewModel,
+    userViewModel: UserViewModel,
     onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    navController: NavHostController // aktuell nicht genutzt, aber gelassen
+    navController: NavHostController
 ) {
     val items by vm.items.collectAsState(initial = emptyList())
     var searchQuery by remember { mutableStateOf("") }
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
 
     val filteredItems = remember(items, searchQuery) {
-        try {
-            items.filter { !it.isResolved }.filter { item ->
-                searchQuery.isBlank() ||
-                        item.title.contains(searchQuery, ignoreCase = true) ||
-                        item.description?.contains(searchQuery, ignoreCase = true) == true
-            }
-        } catch (e: Exception) {
-            emptyList()
+        items.filter { !it.isResolved }.filter { item ->
+            searchQuery.isBlank() ||
+                    item.title.contains(searchQuery, ignoreCase = true) ||
+                    item.description?.contains(searchQuery, ignoreCase = true) == true ||
+                    item.workflowStatus.contains(searchQuery, ignoreCase = true)
         }
     }
 
     val foundItems = filteredItems.filter { it.status.equals("Gefunden", ignoreCase = true) }
     val lostItems = filteredItems.filter { it.status.equals("Verloren", ignoreCase = true) }
-    val otherItems = filteredItems.filter { item ->
-        !item.status.equals("Gefunden", ignoreCase = true) &&
-                !item.status.equals("Verloren", ignoreCase = true)
-    }
 
     Column(modifier = modifier.fillMaxSize()) {
         CenterAlignedTopAppBar(
@@ -54,7 +50,7 @@ fun FeedScreen(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Suche nach Titel oder Beschreibung…") },
+            placeholder = { Text("Suche nach Titel, Beschreibung oder Status…") },
             leadingIcon = { Icon(Icons.Filled.Search, "Suche") },
             singleLine = true,
             modifier = Modifier
@@ -62,9 +58,6 @@ fun FeedScreen(
                 .padding(16.dp)
         )
 
-        // IMPORTANT:
-        // LazyColumn muss innerhalb einer Column eine begrenzte Hoehe bekommen,
-        // sonst kann Compose "infinite height constraints" werfen.
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -85,7 +78,14 @@ fun FeedScreen(
                     FoundItemCard(
                         item = item,
                         onClick = { onItemClick(item.id) },
-                        onLike = { vm.toggleLike(item.id) }
+                        onLike = { vm.toggleLike(item.id) },
+                        userViewModel = userViewModel,
+                        onFavorite = {
+                            currentUser?.id?.let { userId ->
+                                vm.toggleFavorite(item.id, userId)
+                            }
+                        },
+                        vm = vm
                     )
                 }
             }
@@ -104,30 +104,17 @@ fun FeedScreen(
                     FoundItemCard(
                         item = item,
                         onClick = { onItemClick(item.id) },
-                        onLike = { vm.toggleLike(item.id) }
+                        onLike = { vm.toggleLike(item.id) },
+                        userViewModel = userViewModel,
+                        onFavorite = {
+                            currentUser?.id?.let { userId ->
+                                vm.toggleFavorite(item.id, userId)
+                            }
+                        },
+                        vm = vm
                     )
                 }
             }
-
-            if (otherItems.isNotEmpty()) {
-                item {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        "Andere",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                items(otherItems) { item ->
-                    FoundItemCard(
-                        item = item,
-                        onClick = { onItemClick(item.id) },
-                        onLike = { vm.toggleLike(item.id) }
-                    )
-                }
-            }
-
 
             if (filteredItems.isEmpty()) {
                 item {
