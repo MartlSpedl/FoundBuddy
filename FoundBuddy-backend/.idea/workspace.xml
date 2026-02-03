@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="adding some KI">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="make ki web">
+      <change beforePath="$PROJECT_DIR$/../render.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/../render.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -263,6 +263,7 @@
       <workItem from="1769521845097" duration="1304000" />
       <workItem from="1769528348311" duration="895000" />
       <workItem from="1769691633728" duration="57000" />
+      <workItem from="1770122625774" duration="434000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
@@ -368,7 +369,31 @@
       <option name="project" value="LOCAL" />
       <updated>1769528908924</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="render.yaml  verschoben">
+      <option name="closed" value="true" />
+      <created>1770122656384</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1770122656384</updated>
+    </task>
+    <task id="LOCAL-00015" summary="render.yaml geändert">
+      <option name="closed" value="true" />
+      <created>1770122873245</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1770122873245</updated>
+    </task>
+    <task id="LOCAL-00016" summary="make ki web">
+      <option name="closed" value="true" />
+      <created>1770123058939</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1770123058939</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -385,6 +410,9 @@
     <MESSAGE value="fix it hopefully" />
     <MESSAGE value="fix it hopefully again" />
     <MESSAGE value="adding some KI" />
-    <option name="LAST_COMMIT_MESSAGE" value="adding some KI" />
+    <MESSAGE value="render.yaml  verschoben" />
+    <MESSAGE value="render.yaml geändert" />
+    <MESSAGE value="make ki web" />
+    <option name="LAST_COMMIT_MESSAGE" value="make ki web" />
   </component>
 </project>
