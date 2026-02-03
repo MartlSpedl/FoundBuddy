@@ -1,5 +1,5 @@
 services:
-  # 1) CLIP service (öffentlich, kostenlos)
+  # 1) CLIP Service (öffentlich, kostenlos)
   - type: web
     name: foundbuddy-clip
     env: docker
@@ -7,7 +7,7 @@ services:
     plan: free
     autoDeploy: true
 
-  # 2) Backend
+  # 2) Backend Service
   - type: web
     name: foundbuddy-backend
     env: docker
@@ -15,9 +15,9 @@ services:
     plan: free
     autoDeploy: true
     envVars:
-      - key: CLIP_URL
+      - key: CLIP_HOST
         fromService:
           name: foundbuddy-clip
           type: web
-          property: url
+          property: host
 
