@@ -6,7 +6,6 @@ services:
     rootDir: clip-service
     plan: starter
     autoDeploy: true
-    healthCheckPath: /health
 
   # 2) Backend (öffentlich)
   - type: web
@@ -21,3 +20,4 @@ services:
           name: foundbuddy-clip
           type: pserv
           property: hostport
+
