@@ -1,6 +1,6 @@
 services:
   # 1) Private CLIP service (nur intern erreichbar)
-  - type: pserv
+  - type: web
     name: foundbuddy-clip
     env: docker
     rootDir: clip-service
