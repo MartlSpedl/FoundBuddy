@@ -304,12 +304,88 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun uploadImageAndGetUrl(imageUri: android.net.Uri): String = withContext(Dispatchers.IO) {
         try {
-            // TODO: Implement actual image upload to server
-            // For now, return a placeholder URL
-            "https://placeholder.com/image.jpg"
+            println("LOGCAT: ===== START IMAGE UPLOAD =====")
+            println("LOGCAT: URI: $imageUri")
+            
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(imageUri)
+                ?: throw Exception("Konnte Bild nicht öffnen")
+            
+            // Lese die Bilddaten
+            val bytes = inputStream.use { it.readBytes() }
+            println("LOGCAT: ${bytes.size} Bytes gelesen")
+            
+            // Bestimme MIME-Type und Dateinamen
+            val mimeType = contentResolver.getType(imageUri) ?: "image/jpeg"
+            val fileName = "image_${System.currentTimeMillis()}.${mimeType.split("/")[1]}"
+            println("LOGCAT: MIME-Type: $mimeType, Filename: $fileName")
+            
+            // Erstelle Multipart-Request für Backend-Upload
+            val boundary = "----${System.currentTimeMillis()}"
+            val uploadUrl = "$baseUrl/api/images"
+            println("LOGCAT: Upload URL: $uploadUrl")
+            
+            val url = java.net.URL(uploadUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            conn.setRequestProperty("Accept", "application/json")
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 30_000
+            
+            println("LOGCAT: Sende Request...")
+            
+            // Baue Multipart-Body
+            val outputStream = conn.outputStream
+            val writer = outputStream.writer()
+            
+            // File part
+            writer.append("--$boundary\r\n")
+            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+            writer.append("Content-Type: $mimeType\r\n")
+            writer.append("\r\n")
+            writer.flush()
+            
+            println("LOGCAT: Schreibe ${bytes.size} Bytes...")
+            outputStream.write(bytes)
+            outputStream.flush()
+            
+            writer.append("\r\n")
+            writer.append("--$boundary--\r\n")
+            writer.flush()
+            writer.close()
+            
+            val responseCode = conn.responseCode
+            println("LOGCAT: Response Code: $responseCode")
+            
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val response = conn.inputStream.use { it.bufferedReader().readText() }
+                println("LOGCAT: Response Body: $response")
+                
+                // Parse JSON Response { "imageUrl": "..." }
+                val json = org.json.JSONObject(response)
+                val imageUrl = json.getString("imageUrl")
+                
+                println("LOGCAT: ===== UPLOAD SUCCESS =====")
+                println("LOGCAT: Firebase URL: $imageUrl")
+                return@withContext imageUrl
+            } else {
+                val errorResponse = conn.errorStream?.use { it.bufferedReader().readText() } ?: "Unknown error"
+                println("LOGCAT: Error Response: $errorResponse")
+                throw Exception("Upload failed: $responseCode - $errorResponse")
+            }
+            
         } catch (e: Exception) {
+            println("LOGCAT: ===== UPLOAD ERROR =====")
+            println("LOGCAT: Fehler: ${e.message}")
             e.printStackTrace()
-            throw Exception("Bild-Upload fehlgeschlagen")
+            // Fallback auf Platzhalter
+            val fallbackUrl = "https://placeholder.com/image.jpg"
+            println("LOGCAT: Fallback URL: $fallbackUrl")
+            println("LOGCAT: ===== END ERROR =====")
+            return@withContext fallbackUrl
         }
     }
 

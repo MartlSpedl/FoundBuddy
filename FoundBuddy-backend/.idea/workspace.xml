@@ -5,21 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="change prperties">
-      <change afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/model/AiSearchResult.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-backend.zip" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/MainActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/BackendstatusViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/BackendstatusViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/HomeViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/controller/HomeViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/ApiClient.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/BackendRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/BackendRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/UploadImageResponse.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/network/ApiService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/network/FoundBuddyApi.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/network/FoundBuddyApi.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/FeedScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/FeedScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/UploadScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/UploadScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../clip-service.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ZoomImage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ZoomImage.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -277,7 +265,8 @@
       <workItem from="1769521845097" duration="1304000" />
       <workItem from="1769528348311" duration="895000" />
       <workItem from="1769691633728" duration="57000" />
-      <workItem from="1770122625774" duration="2336000" />
+      <workItem from="1770122625774" duration="2964000" />
+      <workItem from="1770623330798" duration="589000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />

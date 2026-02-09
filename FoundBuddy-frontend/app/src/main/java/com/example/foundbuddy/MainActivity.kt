@@ -178,7 +178,7 @@ class MainActivity : ComponentActivity() {
                                 "upload" -> UploadScreen(
                                     onUpload = { newItem ->
                                         scope.launch {
-                                            repository.addItem(newItem)
+                                            // Lade alle Daten neu vom Backend statt lokal hinzuzufügen
                                             homeViewModel.refreshItems(repository.getAll())
                                         }
                                         selectedTab = "feed"

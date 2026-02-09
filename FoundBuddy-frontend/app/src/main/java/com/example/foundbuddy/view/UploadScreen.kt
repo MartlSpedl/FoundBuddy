@@ -300,6 +300,7 @@ fun UploadScreen(
                         desc = ""
                         imageUri = null
                     } catch (e: Exception) {
+                        e.printStackTrace()
                         uploadError = e.message ?: "Upload fehlgeschlagen"
                     } finally {
                         isUploading = false
