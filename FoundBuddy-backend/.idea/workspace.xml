@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="change prperties">
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="bildanzeige funktioniert">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/MainActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/data/FoundItemRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/UploadScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/UploadScreen.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ZoomImage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../FoundBuddy-frontend/app/src/main/java/com/example/foundbuddy/view/ZoomImage.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -266,7 +268,7 @@
       <workItem from="1769528348311" duration="895000" />
       <workItem from="1769691633728" duration="57000" />
       <workItem from="1770122625774" duration="2964000" />
-      <workItem from="1770623330798" duration="589000" />
+      <workItem from="1770623330798" duration="1431000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
@@ -412,7 +414,15 @@
       <option name="project" value="LOCAL" />
       <updated>1770123481722</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="bildanzeige funktioniert">
+      <option name="closed" value="true" />
+      <created>1770630408911</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1770630408912</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -434,6 +444,7 @@
     <MESSAGE value="make ki web" />
     <MESSAGE value="make ki web again" />
     <MESSAGE value="change prperties" />
-    <option name="LAST_COMMIT_MESSAGE" value="change prperties" />
+    <MESSAGE value="bildanzeige funktioniert" />
+    <option name="LAST_COMMIT_MESSAGE" value="bildanzeige funktioniert" />
   </component>
 </project>

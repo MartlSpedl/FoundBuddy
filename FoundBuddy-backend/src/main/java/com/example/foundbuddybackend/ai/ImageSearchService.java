@@ -31,8 +31,8 @@ public class ImageSearchService {
             return List.of();
         }
 
-        // 1) Query: DE -> EN (für Text-Embedding / CLIP-Textseite)
-        String queryEn = translationService.deToEn(description);
+        // 1) Query: DE -> EN (vorübergehend deaktiviert, direkt EN verwenden)
+        String queryEn = description; // translationService.deToEn(description);
 
         // 2) Query-Embedding (Text)
         List<Double> queryEmbedding = embeddingService.embedText(queryEn);
@@ -77,7 +77,7 @@ public class ImageSearchService {
                 String itemTextDe = buildItemTextDe(item);
 
                 if (!itemTextDe.isBlank()) {
-                    String itemTextEn = translationService.deToEn(itemTextDe);
+                    String itemTextEn = itemTextDe; // translationService.deToEn(itemTextDe);
                     List<Double> textEmb = embeddingService.embedText(itemTextEn);
                     item.setTextEmbedding(textEmb);
 
