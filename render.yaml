@@ -1,11 +1,6 @@
 services:
-  # 1) CLIP Service (öffentlich, kostenlos)
-  - type: web
-    name: foundbuddy-clip
-    env: docker
-    rootDir: clip-service
-    plan: free
-    autoDeploy: true
+  # 1) CLIP Service auf Railway (extern)
+  # - wird auf Railway deployed, nicht hier
 
   # 2) Backend Service
   - type: web
@@ -15,9 +10,6 @@ services:
     plan: free
     autoDeploy: true
     envVars:
-      - key: CLIP_HOST
-        fromService:
-          name: foundbuddy-clip
-          type: web
-          property: host
+      - key: CLIP_URL
+        value: https://foundbuddy-clip-production.up.railway.app
 

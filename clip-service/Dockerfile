@@ -18,12 +18,13 @@ RUN pip install --upgrade pip && \
       torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --default-timeout=600 --retries 20 -r requirements.txt
 
-COPY clip_service.py /app/
+# Setze Environment Variables
+ENV PYTHONPATH=/app
+ENV TRANSFORMERS_CACHE=/app/.cache
+ENV HF_HOME=/app/.cache
 
-# IMPORTANT: No preload step here (Render Free OOM)
-# RUN python -c "import open_clip; open_clip.create_model_and_transforms('ViT-B-16', pretrained='openai'); print('preloaded')"
+# Expose Port (Railway setzt dies automatisch)
+EXPOSE 8000
 
-EXPOSE 8001
-
-# IMPORTANT: bind to Render's provided PORT
-CMD ["sh", "-c", "uvicorn clip_service:app --host 0.0.0.0 --port ${PORT:-8001}"]
+# Starte den Service
+CMD ["uvicorn", "clip_service:app", "--host", "0.0.0.0", "--port", "8000"]
