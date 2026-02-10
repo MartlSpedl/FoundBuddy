@@ -43,7 +43,7 @@ public class ImageSearchService {
         
         for (QueryDocumentSnapshot doc : documents) {
             FoundItem item = doc.toObject(FoundItem.class);
-            if (item != null && item.getImagePath() != null) {
+            if (item != null && item.getImageUri() != null) {
                 // Einfache Text-Suche
                 double textScore = calculateTextScore(description.toLowerCase(), item);
                 double recencyScore = calculateRecencyScore(item);
@@ -55,7 +55,7 @@ public class ImageSearchService {
         }
         
         // Sortieren nach Score
-        results.sort((a, b) -> Double.compare(b.getOverallScore(), a.getOverallScore()));
+        results.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
         
         return results;
     }
@@ -75,7 +75,7 @@ public class ImageSearchService {
             return 0.0;
         }
         
-        long daysSinceCreation = System.currentTimeMillis() - item.getCreatedAt().toDate().getTime();
+        long daysSinceCreation = System.currentTimeMillis() - item.getCreatedAt();
         long days = daysSinceCreation / (1000 * 60 * 60 * 24);
         
         // Neuer ist besser (max 1.0)
