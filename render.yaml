@@ -1,6 +1,6 @@
 services:
-  # 1) CLIP Service auf Railway (extern)
-  # - wird auf Railway deployed, nicht hier
+  # 1) CLIP Service auf Hugging Face (extern)
+  # - wird auf Hugging Face Spaces deployed
 
   # 2) Backend Service
   - type: web
@@ -11,5 +11,5 @@ services:
     autoDeploy: true
     envVars:
       - key: CLIP_URL
-        value: https://foundbuddy-clip-production.up.railway.app
+        value: https://huggingface.co/spaces/MartlSpedl/foundbuddy-clip
 
