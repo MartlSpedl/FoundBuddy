@@ -5,6 +5,7 @@ import com.example.foundbuddybackend.model.FoundItem;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,10 +17,12 @@ public class ImageSearchService {
 
     private final EmbeddingService embeddingService;
     private final TranslationService translationService;
+    private final MockImageSearchService mockSearchService;
 
-    public ImageSearchService(EmbeddingService embeddingService, TranslationService translationService) {
+    public ImageSearchService(EmbeddingService embeddingService, TranslationService translationService, MockImageSearchService mockSearchService) {
         this.embeddingService = embeddingService;
         this.translationService = translationService;
+        this.mockSearchService = mockSearchService;
     }
 
     private Firestore db() {
@@ -28,85 +31,45 @@ public class ImageSearchService {
 
     public List<AiSearchResult> searchByDescription(String description) throws Exception {
         if (description == null || description.isBlank()) {
-            return List.of();
+            return Collections.emptyList();
         }
 
-        // 1) Query: DE -> EN (vorübergehend deaktiviert, direkt EN verwenden)
-        String queryEn = description; // translationService.deToEn(description);
+        // Temporär Mock-Service verwenden, da CLIP Service nicht erreichbar
+        try {
+            // Versuche CLIP Service
+            return searchWithEmbedding(description);
+        } catch (Exception e) {
+            System.out.println("CLIP Service nicht erreichbar, verwende Mock: " + e.getMessage());
+            // Fallback auf Mock-Suche
+            return mockSearchService.searchByDescription(description);
+        }
+    }
 
-        // 2) Query-Embedding (Text)
-        List<Double> queryEmbedding = embeddingService.embedText(queryEn);
+    private List<AiSearchResult> searchWithEmbedding(String description) throws Exception {
+        // Original CLIP Implementierung
+        String englishDescription = translationService.deToEn(description);
+        List<Double> queryEmbedding = embeddingService.embedText(englishDescription);
 
-        // 3) Firestore laden
-        ApiFuture<QuerySnapshot> future = db().collection(COLLECTION).get();
-        List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+        CollectionReference items = db().collection(COLLECTION);
+        ApiFuture<QuerySnapshot> future = items.get();
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
 
         List<AiSearchResult> results = new ArrayList<>();
-        Set<String> seenUris = new HashSet<>();
 
-        for (QueryDocumentSnapshot doc : docs) {
+        for (QueryDocumentSnapshot doc : documents) {
             FoundItem item = doc.toObject(FoundItem.class);
-            item.setId(doc.getId());
+            if (item != null && item.getImagePath() != null) {
+                String itemText = translationService.deToEn(item.getTitle() + " " + item.getDescription());
+                List<Double> itemEmbedding = embeddingService.embedText(itemText);
 
-            // Dedup möglichst früh
-            String uri = item.getImageUri();
-            if (uri != null && !uri.isBlank() && !seenUris.add(uri)) {
-                continue;
+                double clipScore = calculateCosineSimilarity(queryEmbedding, itemEmbedding);
+                double textScore = calculateTextScore(description.toLowerCase(), item);
+                double recencyScore = calculateRecencyScore(item);
+                double overallScore = 0.4 * clipScore + 0.4 * textScore + 0.2 * recencyScore;
+
+                AiSearchResult result = new AiSearchResult(item, overallScore, clipScore, textScore, recencyScore);
+                results.add(result);
             }
-
-            // A) Image-Embedding lazy erzeugen
-            if ((item.getImageEmbedding() == null || item.getImageEmbedding().isEmpty())
-                    && uri != null && !uri.isBlank()) {
-
-                List<Double> emb = embeddingService.embedImage(uri);
-                item.setImageEmbedding(emb);
-
-                // Nur Feld updaten
-                db().collection(COLLECTION)
-                        .document(item.getId())
-                        .update("imageEmbedding", emb);
-            }
-
-            if (item.getImageEmbedding() == null || item.getImageEmbedding().isEmpty()) {
-                continue;
-            }
-
-            // B) Text-Embedding lazy erzeugen (NEU)
-            // Wir embedden Titel+Beschreibung (als EN), damit es zur Query passt
-            if (item.getTextEmbedding() == null || item.getTextEmbedding().isEmpty()) {
-                String itemTextDe = buildItemTextDe(item);
-
-                if (!itemTextDe.isBlank()) {
-                    String itemTextEn = itemTextDe; // translationService.deToEn(itemTextDe);
-                    List<Double> textEmb = embeddingService.embedText(itemTextEn);
-                    item.setTextEmbedding(textEmb);
-
-                    db().collection(COLLECTION)
-                            .document(item.getId())
-                            .update("textEmbedding", textEmb);
-                }
-            }
-
-            // 1) CLIP-Score (Bild ↔ Query-Text)
-            double clipScore = embeddingService.cosineSimilarity(
-                    queryEmbedding,
-                    item.getImageEmbedding()
-            );
-
-            // 2) Text-Score (Query-Text ↔ Item-Text) via Embedding (NEU)
-            double textScore = 0.0;
-            if (item.getTextEmbedding() != null && !item.getTextEmbedding().isEmpty()) {
-                textScore = embeddingService.cosineSimilarity(
-                        queryEmbedding,
-                        item.getTextEmbedding()
-                );
-            }
-
-            // 3) Zeit-Score (Recency)
-            double recencyScore = recencyScore(item);
-
-            // Finaler Hybrid-Score (leicht angepasst)
-            double finalScore =
                     0.70 * clipScore +
                             0.25 * textScore +
                             0.05 * recencyScore;
