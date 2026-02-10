@@ -2,11 +2,20 @@
 FROM eclipse-temurin:17-jdk-jammy AS build
 WORKDIR /app
 
+# Copy gradle wrapper first for better caching
+COPY gradle/wrapper gradle/wrapper
+COPY gradlew .
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Copy the rest of the files
 COPY gradle gradle
-COPY gradlew build.gradle.kts settings.gradle.kts ./
+COPY build.gradle.kts settings.gradle.kts ./
 COPY src src
 
-RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
+# Build the application
+RUN ./gradlew bootJar --no-daemon --stacktrace
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jre-jammy
