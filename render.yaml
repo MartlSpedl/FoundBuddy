@@ -11,5 +11,5 @@ services:
     autoDeploy: true
     envVars:
       - key: CLIP_URL
-        value: https://huggingface.co/spaces/MartlSpedl/foundbuddy-clip
+        value: https://martlspedl-foundbuddy-clip.hf.space
 
