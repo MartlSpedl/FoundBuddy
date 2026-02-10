@@ -14,8 +14,8 @@ COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
 COPY src src
 
-# Build the application
-RUN ./gradlew bootJar --no-daemon --stacktrace
+# Build the application with verbose output
+RUN ./gradlew bootJar --no-daemon --info --stacktrace
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jre-jammy
