@@ -9,13 +9,13 @@ COPY gradlew .
 # Make gradlew executable
 RUN chmod +x gradlew
 
-# Copy the rest of the files
+# Copy rest of the files
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
 COPY src src
 
-# Build the application with verbose output
-RUN ./gradlew bootJar --no-daemon --info --stacktrace
+# Build the application with more memory
+RUN ./gradlew bootJar --no-daemon --info --stacktrace -Dorg.gradle.jvmargs=-Xmx2g
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jre-jammy
