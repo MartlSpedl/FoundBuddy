@@ -124,11 +124,17 @@ public class UserController {
                     .set(user);
             result.get();
 
-            try {
-                emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), verificationToken);
-            } catch (Exception e) {
-                System.err.println("Email konnte nicht gesendet werden: " + e.getMessage());
-            }
+            // E-Mail asynchron senden – damit der User sofort eine Antwort bekommt
+            final String emailToSend = user.getEmail();
+            final String usernameToSend = user.getUsername();
+            final String tokenToSend = verificationToken;
+            new Thread(() -> {
+                try {
+                    emailService.sendVerificationEmail(emailToSend, usernameToSend, tokenToSend);
+                } catch (Exception e) {
+                    System.err.println("Email konnte nicht gesendet werden: " + e.getMessage());
+                }
+            }).start();
 
             return new ResponseEntity<>(user, HttpStatus.CREATED);
 
