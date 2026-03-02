@@ -42,9 +42,27 @@ public class FirebaseConfig {
             // Beispiel: FIREBASE_STORAGE_BUCKET="<project-id>.appspot.com"
             String storageBucket = System.getenv("FIREBASE_STORAGE_BUCKET");
 
+            // Project ID MUSS gesetzt sein, sonst kann Firestore den Endpoint nicht auflösen!
+            // Entweder über eigene Env Var FIREBASE_PROJECT_ID, oder aus FIREBASE_STORAGE_BUCKET extrahieren.
+            String projectId = System.getenv("FIREBASE_PROJECT_ID");
+            if ((projectId == null || projectId.isBlank()) && storageBucket != null && storageBucket.contains(".")) {
+                // "myproject.appspot.com" → "myproject"
+                projectId = storageBucket.split("\\.")[0];
+                System.out.println("🔑 projectId aus Storage-Bucket extrahiert: " + projectId);
+            }
+            if (projectId == null || projectId.isBlank()) {
+                System.err.println("⚠️ Kein projectId gefunden! Bitte FIREBASE_PROJECT_ID oder FIREBASE_STORAGE_BUCKET setzen.");
+            } else {
+                System.out.println("🔑 Firebase projectId: " + projectId);
+            }
+
             FirebaseOptions.Builder builder = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://foundbuddy.firebaseio.com");
+
+            if (projectId != null && !projectId.isBlank()) {
+                builder.setProjectId(projectId);
+            }
 
             if (storageBucket != null && !storageBucket.isBlank()) {
                 builder.setStorageBucket(storageBucket);
