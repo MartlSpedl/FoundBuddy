@@ -103,19 +103,23 @@ public class UserController {
 
             Firestore db = getFirestore();
 
-            // Email already taken? (20s timeout)
-            ApiFuture<QuerySnapshot> emailCheck = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", user.getEmail())
+            // Use email as stable document ID (URL-safe: replace @ and .)
+            // This avoids a whereEqualTo query (which needs a Firestore index) and
+            // instead uses a direct document get() — always fast, no index required.
+            String docId = user.getEmail().replace("@", "_at_").replace(".", "_");
+
+            // Email already taken? Direct doc lookup — no index needed (20s timeout)
+            ApiFuture<DocumentSnapshot> existingCheck = db.collection(COLLECTION_NAME)
+                    .document(docId)
                     .get();
-            if (!emailCheck.get(20, TimeUnit.SECONDS).isEmpty()) {
+            DocumentSnapshot existing = existingCheck.get(20, TimeUnit.SECONDS);
+            if (existing.exists()) {
                 errors.put("email", List.of("Diese E-Mail-Adresse ist bereits registriert"));
                 return ResponseEntity.badRequest()
                         .body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
             }
 
-            if (user.getId() == null || user.getId().isBlank()) {
-                user.setId(UUID.randomUUID().toString());
-            }
+            user.setId(docId);
 
             String verificationToken = UUID.randomUUID().toString();
             user.setVerificationToken(verificationToken);
@@ -123,7 +127,7 @@ public class UserController {
 
             // Write user to Firestore (20s timeout)
             ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
-                    .document(user.getId())
+                    .document(docId)
                     .set(user);
             result.get(20, TimeUnit.SECONDS);
 
@@ -156,10 +160,11 @@ public class UserController {
         try {
             Firestore db = getFirestore();
 
+            // verificationToken lookup still needs a query (no email available here)
             ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
                     .whereEqualTo("verificationToken", token)
                     .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+            List<QueryDocumentSnapshot> docs = future.get(20, TimeUnit.SECONDS).getDocuments();
 
             if (docs.isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -172,7 +177,7 @@ public class UserController {
             user.setEmailVerified(true);
             user.setVerificationToken(null);
 
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get(20, TimeUnit.SECONDS);
 
             return ResponseEntity.ok(
                     "<html><body style='font-family: Arial; text-align: center; padding: 50px;'>" +
@@ -182,6 +187,8 @@ public class UserController {
                             "</body></html>"
             );
 
+        } catch (java.util.concurrent.TimeoutException e) {
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("Timeout – bitte nochmal versuchen.");
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Fehler bei der Verifizierung.");
@@ -192,17 +199,16 @@ public class UserController {
     public ResponseEntity<?> resendVerification(@RequestParam String email) {
         try {
             Firestore db = getFirestore();
+            String docId = email.replace("@", "_at_").replace(".", "_");
 
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+            // Direct doc lookup by email-derived ID — no index needed
+            DocumentSnapshot doc = db.collection(COLLECTION_NAME).document(docId)
+                    .get().get(20, TimeUnit.SECONDS);
 
-            if (docs.isEmpty()) {
+            if (!doc.exists()) {
                 return ResponseEntity.notFound().build();
             }
 
-            DocumentSnapshot doc = docs.get(0);
             User user = doc.toObject(User.class);
             user.setId(doc.getId());
 
@@ -213,16 +219,19 @@ public class UserController {
             String newToken = UUID.randomUUID().toString();
             user.setVerificationToken(newToken);
 
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get(20, TimeUnit.SECONDS);
 
-            emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), newToken);
+            // async email
+            final String u = user.getUsername(), t = newToken, e2 = user.getEmail();
+            new Thread(() -> { try { emailService.sendVerificationEmail(e2, u, t); } catch (Exception ex) { System.err.println(ex.getMessage()); } }).start();
 
             return ResponseEntity.ok().body("Bestätigungs-E-Mail wurde erneut gesendet.");
 
+        } catch (java.util.concurrent.TimeoutException e) {
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("Firestore-Timeout.");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(503)
-                    .body("Mailservice derzeit nicht erreichbar. Bitte später erneut versuchen.");
+            return ResponseEntity.status(503).body("Fehler beim Senden.");
         }
     }
 
@@ -231,18 +240,17 @@ public class UserController {
     public ResponseEntity<?> requestPasswordReset(@RequestParam String email) {
         try {
             Firestore db = getFirestore();
+            String docId = email.replace("@", "_at_").replace(".", "_");
 
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+            // Direct doc lookup — no index needed
+            DocumentSnapshot doc = db.collection(COLLECTION_NAME).document(docId)
+                    .get().get(20, TimeUnit.SECONDS);
 
-            // Security: immer OK zurückgeben
-            if (docs.isEmpty()) {
+            // Security: always return OK
+            if (!doc.exists()) {
                 return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
             }
 
-            DocumentSnapshot doc = docs.get(0);
             User user = doc.toObject(User.class);
             user.setId(doc.getId());
 
@@ -250,9 +258,11 @@ public class UserController {
             user.setPasswordResetToken(resetToken);
             user.setPasswordResetRequestedAt(System.currentTimeMillis());
 
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get(20, TimeUnit.SECONDS);
 
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetToken);
+            // async email
+            final String u = user.getUsername(), t = resetToken, e2 = user.getEmail();
+            new Thread(() -> { try { emailService.sendPasswordResetEmail(e2, u, t); } catch (Exception ex) { System.err.println(ex.getMessage()); } }).start();
 
             return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
 
