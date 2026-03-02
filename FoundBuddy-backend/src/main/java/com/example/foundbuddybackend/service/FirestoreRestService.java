@@ -102,8 +102,17 @@ public class FirestoreRestService {
     public void setDocument(String collection, String documentId, Map<String, Object> data) throws Exception {
         String url = base() + "/" + collection + "/" + documentId;
         String body = toFirestoreJson(data);
-        rest.exchange(url, HttpMethod.PATCH,
-                new HttpEntity<>(body, authHeaders()), String.class);
+        
+        // First try PATCH (update), if document doesn't exist, use POST (create)
+        try {
+            rest.exchange(url, HttpMethod.PATCH,
+                    new HttpEntity<>(body, authHeaders()), String.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            // Document doesn't exist, create it with POST
+            String createUrl = base() + "/" + collection + "?documentId=" + documentId;
+            rest.exchange(createUrl, HttpMethod.POST,
+                    new HttpEntity<>(body, authHeaders()), String.class);
+        }
     }
 
     /**
