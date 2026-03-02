@@ -51,6 +51,16 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
                 }
             }
             
+            if (isLoading) {
+                Spacer(Modifier.padding(4.dp))
+                Text(
+                    text = "KI-Suche läuft… (erster Start kann ~1–2 Min. dauern)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            
             error?.let { err ->
                 Spacer(Modifier.padding(8.dp))
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {

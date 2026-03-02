@@ -14,7 +14,7 @@ object ApiClient {
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(180, TimeUnit.SECONDS)   // CLIP braucht Zeit beim HF Space Cold Start
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
