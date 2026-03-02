@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.TimeUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -102,10 +103,11 @@ public class UserController {
 
             Firestore db = getFirestore();
 
+            // Email already taken? (20s timeout)
             ApiFuture<QuerySnapshot> emailCheck = db.collection(COLLECTION_NAME)
                     .whereEqualTo("email", user.getEmail())
                     .get();
-            if (!emailCheck.get().isEmpty()) {
+            if (!emailCheck.get(20, TimeUnit.SECONDS).isEmpty()) {
                 errors.put("email", List.of("Diese E-Mail-Adresse ist bereits registriert"));
                 return ResponseEntity.badRequest()
                         .body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
@@ -119,10 +121,11 @@ public class UserController {
             user.setVerificationToken(verificationToken);
             user.setEmailVerified(false);
 
+            // Write user to Firestore (20s timeout)
             ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
                     .document(user.getId())
                     .set(user);
-            result.get();
+            result.get(20, TimeUnit.SECONDS);
 
             // E-Mail asynchron senden – damit der User sofort eine Antwort bekommt
             final String emailToSend = user.getEmail();
@@ -138,6 +141,10 @@ public class UserController {
 
             return new ResponseEntity<>(user, HttpStatus.CREATED);
 
+        } catch (java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
+                    .body(Map.of("error", "Firestore-Timeout – bitte nochmal versuchen"));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
