@@ -5,17 +5,18 @@ WORKDIR /app
 # Copy gradle wrapper first for better caching
 COPY gradle/wrapper gradle/wrapper
 COPY gradlew .
-
-# Make gradlew executable
-RUN chmod +x gradlew
-
-# Copy rest of the files
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
+
+# Make gradlew executable and test gradle
+RUN chmod +x gradlew
+RUN ./gradlew --version
+
+# Copy source code
 COPY src src
 
-# Build the application
-RUN ./gradlew clean bootJar --no-daemon
+# Build the application with more memory
+RUN ./gradlew clean bootJar --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre-jammy
