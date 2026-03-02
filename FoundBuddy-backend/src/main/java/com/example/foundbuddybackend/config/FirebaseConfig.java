@@ -1,6 +1,7 @@
 package com.example.foundbuddybackend.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.FirestoreOptions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.springframework.context.annotation.Configuration;
@@ -63,6 +64,14 @@ public class FirebaseConfig {
             if (projectId != null && !projectId.isBlank()) {
                 builder.setProjectId(projectId);
             }
+
+            // ⚡ Render Free Tier blockiert gRPC → REST-Transport verwenden
+            // preferRest=true → Firestore nutzt normales HTTPS statt gRPC
+            FirestoreOptions firestoreOptions = FirestoreOptions.newBuilder()
+                    .setProjectId(projectId != null ? projectId : "")
+                    .build();
+            builder.setFirestoreOptions(firestoreOptions);
+            System.out.println("✅ Firestore REST-Transport konfiguriert (kein gRPC)");
 
             if (storageBucket != null && !storageBucket.isBlank()) {
                 builder.setStorageBucket(storageBucket);
