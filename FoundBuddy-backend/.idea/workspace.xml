@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="bildanzeige funktioniert">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="a8dfa2e3-2d5e-402c-b75d-21879aaa4bc7" name="Changes" comment="bildanzeige funktioniert" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -265,6 +263,7 @@
       <workItem from="1769691633728" duration="57000" />
       <workItem from="1770122625774" duration="2964000" />
       <workItem from="1770623330798" duration="3820000" />
+      <workItem from="1770814459337" duration="131000" />
     </task>
     <task id="LOCAL-00001" summary="h2 auf firebase umstellen">
       <option name="closed" value="true" />
