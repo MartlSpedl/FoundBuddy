@@ -1,15 +1,16 @@
 package com.example.foundbuddybackend.controller;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.cloud.FirestoreClient;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -26,7 +27,8 @@ public class HealthController {
     }
 
     /**
-     * Debug endpoint: shows Firebase init state + Firestore reachability.
+     * Full Firebase + Firestore diagnostic endpoint.
+     * Tests both gRPC SDK path AND direct HTTP REST API path.
      */
     @GetMapping("/health/firebase")
     public ResponseEntity<Map<String, Object>> firebaseHealth() {
@@ -38,36 +40,55 @@ public class HealthController {
             if (!apps.isEmpty()) {
                 var opts = apps.get(0).getOptions();
                 info.put("projectId", opts.getProjectId());
-                info.put("databaseUrl", opts.getDatabaseUrl());
                 info.put("storageBucket", opts.getStorageBucket());
 
-                // Quick Firestore reachability check (5s timeout)
+                // 1. gRPC SDK test (5s timeout)
                 try {
                     Firestore db = FirestoreClient.getFirestore();
-                    info.put("firestoreInstance", db.getClass().getSimpleName());
-
                     var future = db.collection("_health").limit(1).get();
                     future.get(5, TimeUnit.SECONDS);
-                    info.put("firestoreStatus", "OK");
+                    info.put("firestoreGrpc", "OK");
                 } catch (java.util.concurrent.TimeoutException e) {
-                    info.put("firestoreStatus", "TIMEOUT (>5s)");
-                    info.put("firestoreError", "Connection timed out - possible gRPC/network issue on Render");
+                    info.put("firestoreGrpc", "TIMEOUT – gRPC blocked");
                 } catch (Exception e) {
-                    info.put("firestoreStatus", "ERROR");
-                    info.put("firestoreErrorClass", e.getClass().getName());
-                    info.put("firestoreErrorMessage", e.getMessage());
-                    if (e.getCause() != null) {
-                        info.put("firestoreCause", e.getCause().getClass().getName() + ": " + e.getCause().getMessage());
-                    }
-                    // Full stack trace for diagnosis
-                    StringWriter sw = new StringWriter();
-                    e.printStackTrace(new PrintWriter(sw));
-                    info.put("stackTrace", sw.toString().substring(0, Math.min(sw.toString().length(), 1000)));
+                    info.put("firestoreGrpc", "ERROR: " + e.getMessage());
                 }
+
+                // 2. Direct REST API test via HTTPS (bypasses gRPC entirely)
+                try {
+                    String projectId = opts.getProjectId();
+                    // Get a fresh access token via ADC
+                    GoogleCredentials creds = GoogleCredentials.getApplicationDefault()
+                            .createScoped("https://www.googleapis.com/auth/datastore");
+                    creds.refreshIfExpired();
+                    String token = creds.getAccessToken().getTokenValue();
+
+                    RestTemplate rt = new RestTemplate();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setBearerAuth(token);
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+
+                    String url = "https://firestore.googleapis.com/v1/projects/" + projectId +
+                            "/databases/(default)/documents/_health?pageSize=1";
+
+                    ResponseEntity<String> resp = rt.exchange(url, HttpMethod.GET,
+                            new HttpEntity<>(headers), String.class);
+
+                    info.put("firestoreRest", "OK (HTTP " + resp.getStatusCodeValue() + ")");
+                } catch (Exception e) {
+                    info.put("firestoreRest", "ERROR: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    if (e.getCause() != null) {
+                        info.put("firestoreRestCause", e.getCause().getMessage());
+                    }
+                }
+
             } else {
-                info.put("firestoreStatus", "NO_FIREBASE_APP");
+                info.put("firestoreGrpc", "NO_FIREBASE_APP");
+                info.put("firestoreRest", "NO_FIREBASE_APP");
             }
         } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
             info.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
         }
         return ResponseEntity.ok(info);
