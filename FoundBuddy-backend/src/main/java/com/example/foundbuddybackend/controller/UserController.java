@@ -148,20 +148,29 @@ public class UserController {
     @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
         try {
+            System.out.println("🔍 Verification attempt with token: " + token);
+            
             // Must scan collection for verificationToken (no index needed – small collection)
             List<Map<String, Object>> docs = db.getCollection(COLLECTION);
+            System.out.println("📄 Found " + docs.size() + " users in collection");
+            
             Map<String, Object> found = docs.stream()
                     .filter(d -> token.equals(d.get("verificationToken")))
                     .findFirst().orElse(null);
 
             if (found == null) {
+                System.out.println("❌ No user found with token: " + token);
                 return ResponseEntity.badRequest().body("Ungültiger oder abgelaufener Bestätigungslink.");
             }
 
+            System.out.println("✅ Found user: " + found.get("email"));
             User u = mapToUser(found);
             u.setEmailVerified(true);
             u.setVerificationToken(null);
+            
+            System.out.println("🔄 Updating user verification status...");
             db.setDocument(COLLECTION, u.getId(), userToMap(u));
+            System.out.println("✅ User verified successfully");
 
             return ResponseEntity.ok(
                     "<html><body style='font-family:Arial;text-align:center;padding:50px'>" +
@@ -170,8 +179,9 @@ public class UserController {
                     "</body></html>"
             );
         } catch (Exception e) {
+            System.err.println("❌ Verification error: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Fehler bei der Verifizierung.");
+            return ResponseEntity.internalServerError().body("Fehler bei der Verifizierung: " + e.getMessage());
         }
     }
 
