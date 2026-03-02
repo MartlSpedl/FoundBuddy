@@ -65,13 +65,10 @@ public class FirebaseConfig {
                 builder.setProjectId(projectId);
             }
 
-            // ⚡ Render Free Tier blockiert gRPC → REST-Transport verwenden
-            // preferRest=true → Firestore nutzt normales HTTPS statt gRPC
-            FirestoreOptions firestoreOptions = FirestoreOptions.newBuilder()
-                    .setProjectId(projectId != null ? projectId : "")
-                    .build();
-            builder.setFirestoreOptions(firestoreOptions);
-            System.out.println("✅ Firestore REST-Transport konfiguriert (kein gRPC)");
+            // ⚡ Force gRPC to use Java DNS resolver instead of native (fixes Render networking)
+            System.setProperty("io.grpc.netty.shaded.io.netty.resolver.dns.defaultSearchDomains", "");
+            System.setProperty("io.grpc.netty.useCustomNameResolver", "false");
+            System.out.println("✅ gRPC DNS resolver override set");
 
             if (storageBucket != null && !storageBucket.isBlank()) {
                 builder.setStorageBucket(storageBucket);
