@@ -1,5 +1,6 @@
 package com.example.foundbuddy.model
 
+import com.google.gson.annotations.SerializedName
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
@@ -7,7 +8,7 @@ data class FoundItem(
     val id: String,
     val title: String,
     val description: String?,
-    val imagePath: String?,
+    @SerializedName("imageUri") val imagePath: String?,
     val status: String,          // "Gefunden" oder "Verloren"
     val isResolved: Boolean,
     val uploaderName: String = "Unbekannt",

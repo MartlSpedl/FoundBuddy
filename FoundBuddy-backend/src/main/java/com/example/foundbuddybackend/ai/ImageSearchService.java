@@ -43,14 +43,17 @@ public class ImageSearchService {
         
         for (QueryDocumentSnapshot doc : documents) {
             FoundItem item = doc.toObject(FoundItem.class);
-            if (item != null && item.getImageUri() != null) {
-                // Einfache Text-Suche
+            if (item != null) {
+                // Einfache Text-Suche (auch für Items ohne Bild)
                 double textScore = calculateTextScore(description.toLowerCase(), item);
                 double recencyScore = calculateRecencyScore(item);
                 double overallScore = 0.7 * textScore + 0.3 * recencyScore;
                 
-                AiSearchResult result = new AiSearchResult(item, overallScore, 0.0, textScore, recencyScore);
-                results.add(result);
+                // Nur relevante Treffer aufnehmen
+                if (overallScore > 0.0) {
+                    AiSearchResult result = new AiSearchResult(item, overallScore, 0.0, textScore, recencyScore);
+                    results.add(result);
+                }
             }
         }
         

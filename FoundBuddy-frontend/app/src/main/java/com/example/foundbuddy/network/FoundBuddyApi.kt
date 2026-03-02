@@ -6,8 +6,8 @@ import retrofit2.http.*
 
 interface FoundBuddyApi {
 
-    @GET("health")
-    suspend fun health(): Response<String>
+    @GET("api/health")
+    suspend fun health(): Response<Map<String, Any>>
 
     // Sprint 5: Neue Endpoints
     @PUT("api/items/{itemId}/favorite")

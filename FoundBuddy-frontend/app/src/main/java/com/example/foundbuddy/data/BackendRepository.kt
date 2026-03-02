@@ -8,7 +8,8 @@ class BackendRepository(private val api: FoundBuddyApi) {
         return try {
             val res = api.health()
             if (res.isSuccessful) {
-                Result.success(res.body() ?: "OK (empty body)")
+                val status = res.body()?.get("status")?.toString() ?: "ok"
+                Result.success("Backend OK: $status")
             } else {
                 Result.failure(IllegalStateException("HTTP ${res.code()}: ${res.errorBody()?.string()}"))
             }
