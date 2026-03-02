@@ -14,8 +14,8 @@ COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
 COPY src src
 
-# Build the application with more memory
-RUN ./gradlew bootJar --no-daemon --info --stacktrace -Dorg.gradle.jvmargs=-Xmx2g
+# Build the application
+RUN ./gradlew clean bootJar --no-daemon
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre-jammy
