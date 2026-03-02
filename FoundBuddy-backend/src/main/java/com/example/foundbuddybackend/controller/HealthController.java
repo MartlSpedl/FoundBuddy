@@ -59,14 +59,22 @@ public class HealthController {
                 // 2. Direct REST API test via HTTPS (bypasses gRPC entirely)
                 try {
                     String projectId = opts.getProjectId();
-                    // Get a fresh access token via environment variable like FirestoreRestService does
-                    String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+                    // Get a fresh access token via file or environment variable
                     GoogleCredentials creds;
-                    if (firebaseJson != null && !firebaseJson.isBlank()) {
-                        creds = GoogleCredentials.fromStream(new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8)))
-                                .createScoped("https://www.googleapis.com/auth/datastore");
-                    } else {
-                        throw new Exception("No Firebase credentials available");
+                    try {
+                        // First try to load from file
+                        creds = GoogleCredentials.fromStream(
+                            new ClassPathResource("firebase-key.json").getInputStream()
+                        ).createScoped("https://www.googleapis.com/auth/datastore");
+                    } catch (Exception e) {
+                        // Fallback to environment variable
+                        String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+                        if (firebaseJson != null && !firebaseJson.isBlank()) {
+                            creds = GoogleCredentials.fromStream(new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8)))
+                                    .createScoped("https://www.googleapis.com/auth/datastore");
+                        } else {
+                            throw new Exception("No Firebase credentials available");
+                        }
                     }
                     creds.refreshIfExpired();
                     String token = creds.getAccessToken().getTokenValue();
