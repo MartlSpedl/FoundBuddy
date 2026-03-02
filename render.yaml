@@ -12,4 +12,10 @@ services:
     envVars:
       - key: CLIP_URL
         value: https://martlspedl-foundbuddy-clip.hf.space
+      - key: FIREBASE_PROJECT_ID
+        value: foundbuddy
+      - key: FIREBASE_STORAGE_BUCKET
+        value: foundbuddy.firebasestorage.app
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false # Wird im Render Dashboard gesetzt
 

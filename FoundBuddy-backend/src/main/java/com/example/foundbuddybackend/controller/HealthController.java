@@ -8,8 +8,10 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -57,9 +59,18 @@ public class HealthController {
                 // 2. Direct REST API test via HTTPS (bypasses gRPC entirely)
                 try {
                     String projectId = opts.getProjectId();
-                    // Get a fresh access token via ADC
-                    GoogleCredentials creds = GoogleCredentials.getApplicationDefault()
-                            .createScoped("https://www.googleapis.com/auth/datastore");
+                    // Get a fresh access token via the same credentials used for Firebase initialization
+                    GoogleCredentials creds = opts.getCredentials();
+                    if (creds == null) {
+                        // Fallback: Try to load from environment like FirestoreRestService does
+                        String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+                        if (firebaseJson != null && !firebaseJson.isBlank()) {
+                            creds = GoogleCredentials.fromStream(new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8)))
+                                    .createScoped("https://www.googleapis.com/auth/datastore");
+                        } else {
+                            throw new Exception("No Firebase credentials available");
+                        }
+                    }
                     creds.refreshIfExpired();
                     String token = creds.getAccessToken().getTokenValue();
 
