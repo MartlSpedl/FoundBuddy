@@ -25,13 +25,16 @@ public class EmailService {
 
     public void sendVerificationEmail(String toEmail, String username, String verificationToken) {
         if (brevoApiKey == null || brevoApiKey.isBlank()) {
-            throw new IllegalStateException("BREVO_API_KEY ist nicht gesetzt.");
+            System.err.println("⚠️ BREVO_API_KEY nicht gesetzt – Verifizierungsmail wird nicht gesendet.");
+            return; // Registrierung trotzdem fortsetzen!
         }
         if (senderEmail == null || senderEmail.isBlank()) {
-            throw new IllegalStateException("BREVO_SENDER_EMAIL ist nicht gesetzt.");
+            System.err.println("⚠️ BREVO_SENDER_EMAIL nicht gesetzt – Verifizierungsmail wird nicht gesendet.");
+            return;
         }
         if (appBaseUrl == null || appBaseUrl.isBlank()) {
-            throw new IllegalStateException("APP_BASE_URL ist nicht gesetzt.");
+            System.err.println("⚠️ APP_BASE_URL nicht gesetzt – Verifizierungsmail wird nicht gesendet.");
+            return;
         }
 
         String verifyUrl = appBaseUrl + "/api/users/verify?token=" + verificationToken;
@@ -61,13 +64,16 @@ public class EmailService {
 
     public void sendPasswordResetEmail(String toEmail, String username, String resetToken) {
         if (brevoApiKey == null || brevoApiKey.isBlank()) {
-            throw new IllegalStateException("BREVO_API_KEY ist nicht gesetzt.");
+            System.err.println("⚠️ BREVO_API_KEY nicht gesetzt – Passwort-Reset-Mail wird nicht gesendet.");
+            return;
         }
         if (senderEmail == null || senderEmail.isBlank()) {
-            throw new IllegalStateException("BREVO_SENDER_EMAIL ist nicht gesetzt.");
+            System.err.println("⚠️ BREVO_SENDER_EMAIL nicht gesetzt – Passwort-Reset-Mail wird nicht gesendet.");
+            return;
         }
         if (appBaseUrl == null || appBaseUrl.isBlank()) {
-            throw new IllegalStateException("APP_BASE_URL ist nicht gesetzt.");
+            System.err.println("⚠️ APP_BASE_URL nicht gesetzt – Passwort-Reset-Mail wird nicht gesendet.");
+            return;
         }
 
         // Wenn du noch keinen Reset-Screen hast, ist das trotzdem okay – Mail kommt an.
