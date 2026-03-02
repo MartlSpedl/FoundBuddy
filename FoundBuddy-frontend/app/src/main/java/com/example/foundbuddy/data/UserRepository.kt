@@ -66,8 +66,8 @@ class UserRepository {
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
-            conn.connectTimeout = 12_000
-            conn.readTimeout = 12_000
+            conn.connectTimeout = 20_000
+            conn.readTimeout = 30_000  // Render braucht Zeit für Firestore + E-Mail
 
             val json = adapter.toJson(user)
             conn.outputStream.use { it.write(json.toByteArray()) }
@@ -100,9 +100,12 @@ class UserRepository {
                 RegistrationResult.Error("Server-Fehler: $responseCode")
             }
 
-        } catch (e: Exception) {
+        } catch (e: java.net.SocketTimeoutException) {
             e.printStackTrace()
             RegistrationResult.Error(friendlyServerStartingMessage())
+        } catch (e: Exception) {
+            e.printStackTrace()
+            RegistrationResult.Error("Registrierung fehlgeschlagen: ${e.message}")
         }
     }
 
@@ -193,8 +196,8 @@ class UserRepository {
         var lastCode: Int? = null
         var lastException: Exception? = null
 
-        // 3 Versuche: 0s, 2s, 5s (Render Cold Start)
-        val delays = listOf(0L, 2000L, 5000L)
+        // 4 Versuche: 0s, 3s, 7s, 15s (Render Cold Start kann bis zu 30s dauern)
+        val delays = listOf(0L, 3000L, 7000L, 15000L)
 
         for (d in delays) {
             if (d > 0) delay(d)
@@ -237,7 +240,7 @@ class UserRepository {
     }
 
     private fun friendlyServerStartingMessage(): String {
-        return "Server startet gerade. Bitte warte 10–30 Sekunden und versuche es nochmal."
+        return "Server startet gerade. Bitte warte 30\u201360 Sekunden und versuche es nochmal."
     }
 
 }
