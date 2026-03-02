@@ -34,11 +34,11 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAll() {
+    public ResponseEntity<?> getAll() {
         try {
             Firestore db = getFirestore();
             ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+            List<QueryDocumentSnapshot> docs = future.get(20, TimeUnit.SECONDS).getDocuments();
 
             List<User> users = new ArrayList<>();
             for (QueryDocumentSnapshot doc : docs) {
@@ -49,18 +49,22 @@ public class UserController {
 
             return ResponseEntity.ok(users);
 
+        } catch (java.util.concurrent.TimeoutException e) {
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
+                    .body(Map.of("error", "Firestore-Timeout"));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable String id) {
+    public ResponseEntity<?> getById(@PathVariable String id) {
         try {
             Firestore db = getFirestore();
             DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = docRef.get().get();
+            DocumentSnapshot snapshot = docRef.get().get(20, TimeUnit.SECONDS);
 
             if (snapshot.exists()) {
                 User user = snapshot.toObject(User.class);
@@ -70,9 +74,13 @@ public class UserController {
                 return ResponseEntity.notFound().build();
             }
 
+        } catch (java.util.concurrent.TimeoutException e) {
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
+                    .body(Map.of("error", "Firestore-Timeout"));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
