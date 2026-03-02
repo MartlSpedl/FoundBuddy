@@ -59,17 +59,14 @@ public class HealthController {
                 // 2. Direct REST API test via HTTPS (bypasses gRPC entirely)
                 try {
                     String projectId = opts.getProjectId();
-                    // Get a fresh access token via the same credentials used for Firebase initialization
-                    GoogleCredentials creds = opts.getCredentials();
-                    if (creds == null) {
-                        // Fallback: Try to load from environment like FirestoreRestService does
-                        String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
-                        if (firebaseJson != null && !firebaseJson.isBlank()) {
-                            creds = GoogleCredentials.fromStream(new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8)))
-                                    .createScoped("https://www.googleapis.com/auth/datastore");
-                        } else {
-                            throw new Exception("No Firebase credentials available");
-                        }
+                    // Get a fresh access token via environment variable like FirestoreRestService does
+                    String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+                    GoogleCredentials creds;
+                    if (firebaseJson != null && !firebaseJson.isBlank()) {
+                        creds = GoogleCredentials.fromStream(new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8)))
+                                .createScoped("https://www.googleapis.com/auth/datastore");
+                    } else {
+                        throw new Exception("No Firebase credentials available");
                     }
                     creds.refreshIfExpired();
                     String token = creds.getAccessToken().getTokenValue();
