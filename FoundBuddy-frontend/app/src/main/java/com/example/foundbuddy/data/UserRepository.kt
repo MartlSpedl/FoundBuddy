@@ -10,15 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 
-/**
- * Ergebnis einer Registrierung
- */
-sealed class RegistrationResult {
-    data class Success(val user: User) : RegistrationResult()
-    data class ValidationError(val errors: Map<String, List<String>>) : RegistrationResult()
-    data class Error(val message: String) : RegistrationResult()
-}
-
 // Result type for user operations
 sealed class UserOperationResult {
     data object Success : UserOperationResult()
@@ -42,6 +33,8 @@ class UserRepository {
             val url = java.net.URL("$baseUrl/api/users")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
+            conn.connectTimeout = 90_000  // Render Cold Start kann bis zu 60s dauern
+            conn.readTimeout = 90_000
             conn.inputStream.use {
                 val json = it.bufferedReader().readText()
                 listAdapter.fromJson(json) ?: emptyList()
@@ -52,11 +45,11 @@ class UserRepository {
         }
     }
 
-    suspend fun create(user: User): RegistrationResult = withContext(Dispatchers.IO) {
+    suspend fun create(user: User): UserOperationResult = withContext(Dispatchers.IO) {
         try {
             when (val warm = warmUpServer()) {
                 is WarmUpResult.Failed -> {
-                    return@withContext RegistrationResult.Error(friendlyServerStartingMessage())
+                    return@withContext UserOperationResult.Error(friendlyServerStartingMessage())
                 }
                 WarmUpResult.Ready -> { /* weiter */ }
             }
@@ -79,9 +72,9 @@ class UserRepository {
                     val res = it.bufferedReader().readText()
                     val createdUser = adapter.fromJson(res)
                     if (createdUser != null) {
-                        RegistrationResult.Success(createdUser)
+                        UserOperationResult.Success
                     } else {
-                        RegistrationResult.Error("Fehler beim Parsen der Antwort")
+                        UserOperationResult.Error("Fehler beim Parsen der Antwort")
                     }
                 }
             } else if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
@@ -89,23 +82,23 @@ class UserRepository {
                     val errorJson = it.bufferedReader().readText()
                     val errorResponse = errorAdapter.fromJson(errorJson)
                     if (errorResponse != null) {
-                        RegistrationResult.ValidationError(errorResponse.errors)
+                        UserOperationResult.Error("Validierungsfehler: ${errorResponse.errors}")
                     } else {
-                        RegistrationResult.Error("Validierungsfehler")
+                        UserOperationResult.Error("Validierungsfehler")
                     }
                 }
             } else if (responseCode == 502 || responseCode == 503 || responseCode == 504) {
-                RegistrationResult.Error(friendlyServerStartingMessage())
+                UserOperationResult.Error(friendlyServerStartingMessage())
             } else {
-                RegistrationResult.Error("Server-Fehler: $responseCode")
+                UserOperationResult.Error("Server-Fehler: $responseCode")
             }
 
         } catch (e: java.net.SocketTimeoutException) {
             e.printStackTrace()
-            RegistrationResult.Error(friendlyServerStartingMessage())
+            UserOperationResult.Error(friendlyServerStartingMessage())
         } catch (e: Exception) {
             e.printStackTrace()
-            RegistrationResult.Error("Registrierung fehlgeschlagen: ${e.message}")
+            UserOperationResult.Error("Registrierung fehlgeschlagen: ${e.message}")
         }
     }
 
@@ -190,7 +183,14 @@ class UserRepository {
     }
 
 
-    private suspend fun warmUpServer(): WarmUpResult {
+    suspend fun isServerReady(): Boolean {
+        return when (warmUpServer()) {
+            is WarmUpResult.Ready -> true
+            is WarmUpResult.Failed -> false
+        }
+    }
+
+    suspend fun warmUpServer(): WarmUpResult {
         val url = java.net.URL("$baseUrl/api/health")
 
         var lastCode: Int? = null
@@ -234,12 +234,12 @@ class UserRepository {
         return WarmUpResult.Failed(lastCode, lastException)
     }
 
-    private sealed class WarmUpResult {
+    sealed class WarmUpResult {
         data object Ready : WarmUpResult()
         data class Failed(val code: Int?, val exception: Exception?) : WarmUpResult()
     }
 
-    private fun friendlyServerStartingMessage(): String {
+    fun friendlyServerStartingMessage(): String {
         return "Server startet gerade (Render Cold Start). Dies dauert 30-60 Sekunden. Bitte versuche es in 1 Minute erneut."
     }
 

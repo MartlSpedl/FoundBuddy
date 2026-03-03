@@ -3,8 +3,8 @@ package com.example.foundbuddy.controller
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.foundbuddy.data.RegistrationResult
 import com.example.foundbuddy.data.SessionStore
+import com.example.foundbuddy.data.UserOperationResult
 import com.example.foundbuddy.data.UserRepository
 import com.example.foundbuddy.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +19,7 @@ sealed class RegisterResult {
     data class Success(val user: User, val emailSent: Boolean = true) : RegisterResult()
     data class ValidationErrors(val errors: Map<String, List<String>>) : RegisterResult()
     data class Error(val message: String) : RegisterResult()
+    data class ServerError(val message: String) : RegisterResult()
 }
 
 /**
@@ -28,6 +29,7 @@ sealed class LoginResult {
     data object Success : LoginResult()
     data object InvalidCredentials : LoginResult()
     data class EmailNotVerified(val email: String) : LoginResult()
+    data class ServerError(val message: String) : LoginResult()
 }
 
 class UserViewModel(application: Application) : AndroidViewModel(application) {
@@ -91,6 +93,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             return RegisterResult.ValidationErrors(errors)
         }
 
+        // Server WarmUp vor Registrierung
+        if (!api.isServerReady()) {
+            return RegisterResult.ServerError(api.friendlyServerStartingMessage())
+        }
+
         val newUser = User(
             id = System.currentTimeMillis().toString(),
             username = username,
@@ -100,68 +107,73 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         return when (val result = api.create(newUser)) {
-            is RegistrationResult.Success -> RegisterResult.Success(result.user)
-            is RegistrationResult.ValidationError -> RegisterResult.ValidationErrors(result.errors)
-            is RegistrationResult.Error -> RegisterResult.Error(result.message)
+            is UserOperationResult.Success -> RegisterResult.Success(newUser)
+            is UserOperationResult.Error -> RegisterResult.Error(result.message)
         }
     }
 
     /**
-     * Login - prüft auch ob Email verifiziert ist
+     * Login - prüft auch ob Email verifiziert ist.
+     *
+     * Kein isServerReady()-Check mehr vor dem Login – stattdessen wird getAll()
+     * direkt aufgerufen (hat jetzt 90s Timeout für Render Cold Start).
+     * Wenn die User-Liste leer ist, zeigen wir eine klare Fehlermeldung.
      */
     suspend fun login(email: String, password: String): LoginResult {
         try {
             // Eingabe bereinigen (Leerzeichen am Anfang/Ende entfernen)
             val cleanEmail = email.trim()
             val cleanPassword = password.trim()
-            
-            // Hole alle Benutzer vom Backend
+
+            // Hole alle Benutzer vom Backend (wartet bis zu 90s auf Cold Start)
             val users = api.getAll()
-            
-            // Debug: Logge die Anzahl der gefundenen Benutzer
-            println("DEBUG: Gefundene Benutzer: ${users.size}")
-            println("DEBUG: Eingabe bereinigt - E-Mail: '$cleanEmail', Passwort: '$cleanPassword'")
-            
-            // Suche nach Benutzer mit passender E-Mail (case-insensitive)
-            val userByEmail = users.find { 
-                it.email.equals(cleanEmail, ignoreCase = true) 
+
+            // Wenn die Liste leer ist → Server schläft gerade oder Netzwerkfehler
+            if (users.isEmpty()) {
+                return LoginResult.ServerError(
+                    "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
+                )
             }
-            
+
+            println("DEBUG: Gefundene Benutzer: ${users.size}")
+
+            // Suche nach Benutzer mit passender E-Mail (case-insensitive)
+            val userByEmail = users.find {
+                it.email.equals(cleanEmail, ignoreCase = true)
+            }
+
             if (userByEmail == null) {
                 println("DEBUG: Kein Benutzer mit E-Mail '$cleanEmail' gefunden")
                 return LoginResult.InvalidCredentials
             }
-            
-            // Debug: Logge Passwortvergleich
-            println("DEBUG: Passwortvergleich - Eingabe: '$cleanPassword' vs Gespeichert: '${userByEmail.password}'")
-            println("DEBUG: Passwörter gleich: ${userByEmail.password == cleanPassword}")
-            
+
             // Prüfe Passwort
             if (userByEmail.password != cleanPassword) {
+                println("DEBUG: Falsches Passwort für Benutzer: $cleanEmail")
                 return LoginResult.InvalidCredentials
             }
-            
+
             // Prüfe Email-Verifizierung
             if (!userByEmail.emailVerified) {
                 println("DEBUG: E-Mail nicht verifiziert für Benutzer: ${userByEmail.email}")
                 return LoginResult.EmailNotVerified(userByEmail.email)
             }
-            
+
             // Login erfolgreich - User im ViewModel speichern
             _currentUserFlow.value = userByEmail
             _username.value = userByEmail.username
             _email.value = userByEmail.email
-            
+
             // Session speichern
             sessionStore.saveUserId(userByEmail.id)
-            
+
             println("DEBUG: Login erfolgreich für Benutzer: ${userByEmail.username}")
             return LoginResult.Success
-            
+
         } catch (e: Exception) {
             println("DEBUG: Login-Fehler: ${e.message}")
             e.printStackTrace()
-            return LoginResult.InvalidCredentials
+            return LoginResult.ServerError("Verbindungsfehler: ${e.message}")
         }
     }
 
