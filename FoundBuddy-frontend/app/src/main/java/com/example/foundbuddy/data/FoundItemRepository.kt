@@ -363,8 +363,29 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
                 val json = org.json.JSONObject(response)
                 val imageUrl = json.getString("imageUrl")
                 
+                // Validiere die URL
+                if (!imageUrl.startsWith("http")) {
+                    throw Exception("Ungültige Bild-URL erhalten: $imageUrl")
+                }
+                
                 println("LOGCAT: ===== UPLOAD SUCCESS =====")
                 println("LOGCAT: Firebase URL: $imageUrl")
+                
+                // Teste die URL (optional)
+                try {
+                    val testConn = java.net.URL(imageUrl).openConnection() as HttpURLConnection
+                    testConn.requestMethod = "HEAD"
+                    testConn.connectTimeout = 5_000
+                    testConn.readTimeout = 5_000
+                    val testResponseCode = testConn.responseCode
+                    println("LOGCAT: URL-Test Response Code: $testResponseCode")
+                    if (testResponseCode != HttpURLConnection.HTTP_OK) {
+                        println("LOGCAT: WARNUNG: URL nicht erreichbar, aber trotzdem verwenden")
+                    }
+                } catch (e: Exception) {
+                    println("LOGCAT: URL-Test fehlgeschlagen: ${e.message}")
+                }
+                
                 return@withContext imageUrl
             } else {
                 val errorResponse = conn.errorStream?.use { it.bufferedReader().readText() } ?: "Unknown error"
@@ -377,7 +398,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             println("LOGCAT: Fehler: ${e.message}")
             e.printStackTrace()
             // Fallback auf Platzhalter
-            val fallbackUrl = "https://placeholder.com/image.jpg"
+            val fallbackUrl = "https://via.placeholder.com/400x300/cccccc/666666?text=Bild+fehlgeschlagen"
             println("LOGCAT: Fallback URL: $fallbackUrl")
             println("LOGCAT: ===== END ERROR =====")
             return@withContext fallbackUrl

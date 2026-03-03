@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.foundbuddy.R
 import kotlin.Unit
@@ -36,32 +37,36 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var imageLoadFailed by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
 
     // Bestimme den Bild-Modell basierend auf URL-Typ
     val imageModel = when {
         url.startsWith("content://") -> {
-            // Für content:// URLs verwenden wir die URI direkt
+            println("LOGCAT: Content URI erkannt: $url")
             ImageRequest.Builder(LocalContext.current)
                 .data(android.net.Uri.parse(url))
                 .crossfade(true)
                 .build()
         }
         url.startsWith("data:") -> {
-            // Für Base64 Data-URLs
+            println("LOGCAT: Base64 Data URL erkannt: ${url.take(50)}...")
             ImageRequest.Builder(LocalContext.current)
                 .data(url)
                 .crossfade(true)
                 .build()
         }
         url.startsWith("http") -> {
-            // Für normale HTTP/HTTPS URLs
+            println("LOGCAT: HTTP/HTTPS URL erkannt: $url")
             ImageRequest.Builder(LocalContext.current)
                 .data(url)
                 .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .networkCachePolicy(CachePolicy.ENABLED)
                 .build()
         }
         else -> {
-            // Fallback
+            println("LOGCAT: Unbekannter URL-Typ, verwende Fallback: $url")
             ImageRequest.Builder(LocalContext.current)
                 .data(R.drawable.ic_launcher_foreground)
                 .crossfade(true)
@@ -70,7 +75,20 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (imageLoadFailed) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Lade Bild...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("URL-Typ: ${when {
+                        url.startsWith("content://") -> "Content URI"
+                        url.startsWith("data:") -> "Base64 Data"
+                        url.startsWith("http") -> "Web URL"
+                        else -> "Unbekannt"
+                    }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                    Text("URL: ${url.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
+                }
+            }
+        } else if (imageLoadFailed) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
@@ -89,14 +107,20 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 contentDescription = "Zoombares Bild",
                 contentScale = ContentScale.Fit,
                 onError = { error ->
-                    imageLoadFailed = true
+                    println("LOGCAT: Bild-Lade-Fehler: ${error.result.throwable?.message}")
                     error.result.throwable?.printStackTrace()
+                    imageLoadFailed = true
+                    isLoading = false
                 },
                 onLoading = {
+                    println("LOGCAT: Bild wird geladen...")
                     imageLoadFailed = false
+                    isLoading = true
                 },
-                onSuccess = {
+                onSuccess = { 
+                    println("LOGCAT: Bild erfolgreich geladen!")
                     imageLoadFailed = false
+                    isLoading = false
                 },
                 modifier = Modifier
                     .fillMaxSize()
