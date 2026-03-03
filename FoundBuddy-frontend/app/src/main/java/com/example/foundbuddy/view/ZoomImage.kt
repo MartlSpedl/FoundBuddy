@@ -39,26 +39,40 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
     var imageLoadFailed by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // Dekodiere URL falls nötig (Firebase URLs sind oft URL-encodiert)
+    val decodedUrl = try {
+        if (url.contains("%2F") || url.contains("%3A")) {
+            java.net.URLDecoder.decode(url, "UTF-8")
+        } else {
+            url
+        }
+    } catch (e: Exception) {
+        println("LOGCAT: URL Dekodierung fehlgeschlagen: ${e.message}")
+        url
+    }
+    
+    println("LOGCAT: Dekodierte URL: $decodedUrl")
+
     // Bestimme den Bild-Modell basierend auf URL-Typ
     val imageModel = when {
-        url.startsWith("content://") -> {
-            println("LOGCAT: Content URI erkannt: $url")
+        decodedUrl.startsWith("content://") -> {
+            println("LOGCAT: Content URI erkannt: $decodedUrl")
             ImageRequest.Builder(LocalContext.current)
-                .data(android.net.Uri.parse(url))
+                .data(android.net.Uri.parse(decodedUrl))
                 .crossfade(true)
                 .build()
         }
-        url.startsWith("data:") -> {
-            println("LOGCAT: Base64 Data URL erkannt: ${url.take(50)}...")
+        decodedUrl.startsWith("data:") -> {
+            println("LOGCAT: Base64 Data URL erkannt: ${decodedUrl.take(50)}...")
             ImageRequest.Builder(LocalContext.current)
-                .data(url)
+                .data(decodedUrl)
                 .crossfade(true)
                 .build()
         }
-        url.startsWith("http") -> {
-            println("LOGCAT: HTTP/HTTPS URL erkannt: $url")
+        decodedUrl.startsWith("http") -> {
+            println("LOGCAT: HTTP/HTTPS URL erkannt: $decodedUrl")
             ImageRequest.Builder(LocalContext.current)
-                .data(url)
+                .data(decodedUrl)
                 .crossfade(true)
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
@@ -66,7 +80,7 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 .build()
         }
         else -> {
-            println("LOGCAT: Unbekannter URL-Typ, verwende Fallback: $url")
+            println("LOGCAT: Unbekannter URL-Typ, verwende Fallback: $decodedUrl")
             ImageRequest.Builder(LocalContext.current)
                 .data(R.drawable.ic_launcher_foreground)
                 .crossfade(true)
@@ -80,12 +94,12 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Lade Bild...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("URL-Typ: ${when {
-                        url.startsWith("content://") -> "Content URI"
-                        url.startsWith("data:") -> "Base64 Data"
-                        url.startsWith("http") -> "Web URL"
+                        decodedUrl.startsWith("content://") -> "Content URI"
+                        decodedUrl.startsWith("data:") -> "Base64 Data"
+                        decodedUrl.startsWith("http") -> "Web URL"
                         else -> "Unbekannt"
                     }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                    Text("URL: ${url.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
+                    Text("URL: ${decodedUrl.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
                 }
             }
         } else if (imageLoadFailed) {
@@ -93,12 +107,12 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
                     Text("URL-Typ: ${when {
-                        url.startsWith("content://") -> "Content URI"
-                        url.startsWith("data:") -> "Base64 Data"
-                        url.startsWith("http") -> "Web URL"
+                        decodedUrl.startsWith("content://") -> "Content URI"
+                        decodedUrl.startsWith("data:") -> "Base64 Data"
+                        decodedUrl.startsWith("http") -> "Web URL"
                         else -> "Unbekannt"
                     }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                    Text("URL: ${url.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
+                    Text("URL: ${decodedUrl.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
                 }
             }
         } else {
