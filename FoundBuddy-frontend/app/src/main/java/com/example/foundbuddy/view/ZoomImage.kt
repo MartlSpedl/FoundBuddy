@@ -24,6 +24,7 @@ import kotlin.Unit
 
 @Composable
 fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
+    println("=== ZOOM IMAGE DEBUG ===")
     println("LOGCAT: ZoomImage aufgerufen mit URL: $url")
     
     if (url.isNullOrBlank()) {
@@ -51,9 +52,12 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
         .diskCachePolicy(CachePolicy.ENABLED)
         .networkCachePolicy(CachePolicy.ENABLED)
         .build()
+    
+    println("LOGCAT: ImageModel erstellt: $imageModel")
 
     Box(modifier = modifier.fillMaxSize()) {
         if (isLoading) {
+            println("LOGCAT: Zeige Lade-Status")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Lade Bild...", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -62,6 +66,7 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 }
             }
         } else if (imageLoadFailed) {
+            println("LOGCAT: Zeige Fehler-Status")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
@@ -70,22 +75,26 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                 }
             }
         } else {
+            println("LOGCAT: Zeige AsyncImage")
             AsyncImage(
                 model = imageModel,
                 contentDescription = "Zoombares Bild",
                 contentScale = ContentScale.Fit,
                 onError = { error ->
+                    println("=== BILD LADFEHLER ===")
                     println("LOGCAT: Bild-Lade-Fehler: ${error.result.throwable?.message}")
                     error.result.throwable?.printStackTrace()
                     imageLoadFailed = true
                     isLoading = false
                 },
                 onLoading = {
+                    println("=== BILD WIRD GELADEN ===")
                     println("LOGCAT: Bild wird geladen...")
                     imageLoadFailed = false
                     isLoading = true
                 },
                 onSuccess = { 
+                    println("=== BILD ERFOLGREICH GELADEN ===")
                     println("LOGCAT: Bild erfolgreich geladen!")
                     imageLoadFailed = false
                     isLoading = false
@@ -112,5 +121,6 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                     }
             )
         }
+        println("=== ZOOM IMAGE ENDE ===")
     }
 }
