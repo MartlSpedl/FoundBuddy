@@ -10,6 +10,8 @@ services:
       - "8080:8080"
     environment:
       - CLIP_URL=http://clip:8001
+      - FIREBASE_PROJECT_ID=foundbuddy
+      - FIREBASE_STORAGE_BUCKET=foundbuddy.firebasestorage.app
       # optional:
       # - TRANSLATE_URL=http://translate:5000/translate
     depends_on:
