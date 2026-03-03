@@ -103,18 +103,13 @@ public class FirestoreRestService {
         String url = base() + "/" + collection + "/" + documentId;
         String body = toFirestoreJson(data);
         
-        // Check if document exists first
-        Map<String, Object> existing = getDocument(collection, documentId);
-        if (existing != null) {
-            // Document exists, use PATCH to update
-            rest.exchange(url, HttpMethod.PATCH,
-                    new HttpEntity<>(body, authHeaders()), String.class);
-        } else {
-            // Document doesn't exist, use POST to create
-            String createUrl = base() + "/" + collection + "?documentId=" + documentId;
-            rest.exchange(createUrl, HttpMethod.POST,
-                    new HttpEntity<>(body, authHeaders()), String.class);
-        }
+        // Always use PATCH with updateMask for both create and update
+        // updateMask tells Firestore which fields to update
+        HttpHeaders headers = authHeaders();
+        headers.set("X-HTTP-Method-Override", "PATCH");
+        
+        rest.exchange(url, HttpMethod.POST,
+                new HttpEntity<>(body, headers), String.class);
     }
 
     /**
