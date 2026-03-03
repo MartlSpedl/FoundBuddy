@@ -29,6 +29,12 @@ public class FirebaseConfig {
 
             if (firebaseJson != null && !firebaseJson.isBlank()) {
                 System.out.println("🔑 FIREBASE_SERVICE_ACCOUNT_JSON gefunden, Länge: " + firebaseJson.length());
+
+                // ⚠️ Render encodes newlines in env vars as literal \n (two chars) instead of real newlines.
+                // RSA private keys NEED real newlines — fix them before parsing.
+                // This replaces \\n (escaped) → real newline only inside the "private_key" value.
+                firebaseJson = fixPrivateKeyNewlines(firebaseJson);
+
                 serviceAccount = new ByteArrayInputStream(firebaseJson.getBytes(StandardCharsets.UTF_8));
                 System.out.println("🔑 Firebase Key aus Umgebungsvariable geladen");
             } else {
@@ -88,5 +94,38 @@ public class FirebaseConfig {
             e.printStackTrace();
             System.err.println("⚠️ App startet ohne Firebase – einige Features funktionieren nicht!");
         }
+    }
+
+    /**
+     * Render pastes env var JSON with literal \n (two chars) instead of real newlines.
+     * RSA private keys need REAL newlines inside the PEM block.
+     * This method finds the private_key value and converts \\n → \n.
+     */
+    private static String fixPrivateKeyNewlines(String json) {
+        // Find the private_key value (between quotes after "private_key":)
+        int keyStart = json.indexOf("\"private_key\"");
+        if (keyStart < 0) return json;
+
+        int valueStart = json.indexOf('"', json.indexOf(':', keyStart) + 1);
+        if (valueStart < 0) return json;
+        valueStart++; // skip opening quote
+
+        // Find end of value (closing quote not preceded by backslash)
+        int valueEnd = valueStart;
+        while (valueEnd < json.length()) {
+            char c = json.charAt(valueEnd);
+            if (c == '"' && json.charAt(valueEnd - 1) != '\\') break;
+            valueEnd++;
+        }
+
+        String keyValue = json.substring(valueStart, valueEnd);
+
+        // Only fix if it contains literal \n (not real newlines already)
+        if (!keyValue.contains("\\n")) return json; // already fine
+
+        String fixed = keyValue.replace("\\n", "\n");
+        System.out.println("🔧 Fixed private_key newlines (was escaped, now real)");
+
+        return json.substring(0, valueStart) + fixed + json.substring(valueEnd);
     }
 }
