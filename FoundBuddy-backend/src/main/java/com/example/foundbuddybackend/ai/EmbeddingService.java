@@ -1,6 +1,7 @@
 package com.example.foundbuddybackend.ai;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,7 +11,15 @@ import java.util.Map;
 @Service
 public class EmbeddingService {
 
-    private final RestTemplate rest = new RestTemplate();
+    // Longer timeouts: HF Space lazy-loads the CLIP model on first request (~60-90s)
+    private final RestTemplate rest;
+
+    public EmbeddingService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(30_000);   // 30s connect
+        factory.setReadTimeout(120_000);     // 120s read (model loading)
+        this.rest = new RestTemplate(factory);
+    }
 
     @Value("${ai.clip.url}")
     private String clipUrl;

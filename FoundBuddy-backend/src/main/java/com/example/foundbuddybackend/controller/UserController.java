@@ -3,292 +3,279 @@ package com.example.foundbuddybackend.controller;
 import com.example.foundbuddybackend.dto.ValidationErrorResponse;
 import com.example.foundbuddybackend.model.User;
 import com.example.foundbuddybackend.service.EmailService;
+import com.example.foundbuddybackend.service.FirestoreRestService;
 import com.example.foundbuddybackend.service.ValidationService;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
+/**
+ * User management endpoints.
+ * Uses FirestoreRestService (HTTPS) instead of the gRPC Firebase Admin SDK,
+ * because Render Free Tier blocks outgoing gRPC connections to Google APIs.
+ */
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
 
-    private static final String COLLECTION_NAME = "users";
+    private static final String COLLECTION = "users";
 
-    @Autowired
-    private ValidationService validationService;
+    @Autowired private FirestoreRestService db;
+    @Autowired private ValidationService validationService;
+    @Autowired private EmailService emailService;
 
-    @Autowired
-    private EmailService emailService;
+    // ─── helpers ────────────────────────────────────────────────────────────
 
-    private Firestore getFirestore() {
-        return FirestoreClient.getFirestore();
+    /** Convert a Firestore flat map to a User object */
+    private User mapToUser(Map<String, Object> m) {
+        if (m == null) return null;
+        User u = new User();
+        u.setId(str(m, "id"));
+        u.setUsername(str(m, "username"));
+        u.setEmail(str(m, "email"));
+        u.setPassword(str(m, "password"));
+        u.setEmailVerified(Boolean.TRUE.equals(m.get("emailVerified")));
+        u.setVerificationToken(str(m, "verificationToken"));
+        u.setPasswordResetToken(str(m, "passwordResetToken"));
+        Object ts = m.get("passwordResetRequestedAt");
+        if (ts instanceof Number) u.setPasswordResetRequestedAt(((Number) ts).longValue());
+        return u;
     }
 
+    private String str(Map<String, Object> m, String key) {
+        Object v = m.get(key);
+        return v != null ? v.toString() : null;
+    }
+
+    /** Convert a User to a plain map for Firestore */
+    private Map<String, Object> userToMap(User u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (u.getId() != null)       m.put("id", u.getId());
+        if (u.getUsername() != null) m.put("username", u.getUsername());
+        if (u.getEmail() != null)    m.put("email", u.getEmail());
+        if (u.getPassword() != null) m.put("password", u.getPassword());
+        m.put("emailVerified", u.isEmailVerified());
+        if (u.getVerificationToken() != null) m.put("verificationToken", u.getVerificationToken());
+        if (u.getPasswordResetToken() != null) m.put("passwordResetToken", u.getPasswordResetToken());
+        if (u.getPasswordResetRequestedAt() != null) m.put("passwordResetRequestedAt", u.getPasswordResetRequestedAt());
+        return m;
+    }
+
+    /** email-safe document ID: test@example.com → test_at_example_com */
+    private String docId(String email) {
+        return email.replace("@", "_at_").replace(".", "_");
+    }
+
+    // ─── endpoints ──────────────────────────────────────────────────────────
+
     @GetMapping
-    public ResponseEntity<List<User>> getAll() {
+    public ResponseEntity<?> getAll() {
         try {
-            Firestore db = getFirestore();
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
             List<User> users = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : docs) {
-                User user = doc.toObject(User.class);
-                user.setId(doc.getId());
-                users.add(user);
+            for (Map<String, Object> doc : docs) {
+                User u = mapToUser(doc);
+                users.add(u);
             }
-
             return ResponseEntity.ok(users);
-
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable String id) {
+    public ResponseEntity<?> getById(@PathVariable String id) {
         try {
-            Firestore db = getFirestore();
-            DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = docRef.get().get();
-
-            if (snapshot.exists()) {
-                User user = snapshot.toObject(User.class);
-                user.setId(snapshot.getId());
-                return ResponseEntity.ok(user);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-
-        } catch (InterruptedException | ExecutionException e) {
+            Map<String, Object> doc = db.getDocument(COLLECTION, id);
+            if (doc == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(mapToUser(doc));
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody User user) {
         try {
+            // Validate input
             Map<String, List<String>> errors = new HashMap<>();
-
-            String usernameError = validationService.validateUsername(user.getUsername());
-            if (usernameError != null) {
-                errors.put("username", List.of(usernameError));
-            }
-
-            String emailError = validationService.validateEmail(user.getEmail());
-            if (emailError != null) {
-                errors.put("email", List.of(emailError));
-            }
-
-            List<String> passwordErrors = validationService.validatePassword(user.getPassword());
-            if (!passwordErrors.isEmpty()) {
-                errors.put("password", passwordErrors);
-            }
-
+            Optional.ofNullable(validationService.validateUsername(user.getUsername()))
+                    .ifPresent(e -> errors.put("username", List.of(e)));
+            Optional.ofNullable(validationService.validateEmail(user.getEmail()))
+                    .ifPresent(e -> errors.put("email", List.of(e)));
+            List<String> pwErrors = validationService.validatePassword(user.getPassword());
+            if (!pwErrors.isEmpty()) errors.put("password", pwErrors);
             if (!errors.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new ValidationErrorResponse("Validierungsfehler", errors));
+                return ResponseEntity.badRequest().body(new ValidationErrorResponse("Validierungsfehler", errors));
             }
 
-            Firestore db = getFirestore();
-
-            ApiFuture<QuerySnapshot> emailCheck = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", user.getEmail())
-                    .get();
-            if (!emailCheck.get().isEmpty()) {
+            // Check email uniqueness via direct doc lookup (no index needed)
+            String dId = docId(user.getEmail());
+            Map<String, Object> existing = db.getDocument(COLLECTION, dId);
+            if (existing != null) {
                 errors.put("email", List.of("Diese E-Mail-Adresse ist bereits registriert"));
-                return ResponseEntity.badRequest()
-                        .body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
+                return ResponseEntity.badRequest().body(new ValidationErrorResponse("E-Mail bereits vergeben", errors));
             }
 
-            if (user.getId() == null || user.getId().isBlank()) {
-                user.setId(UUID.randomUUID().toString());
-            }
-
-            String verificationToken = UUID.randomUUID().toString();
-            user.setVerificationToken(verificationToken);
+            // Set up new user
+            user.setId(dId);
             user.setEmailVerified(false);
+            user.setVerificationToken(UUID.randomUUID().toString());
 
-            ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
-                    .document(user.getId())
-                    .set(user);
-            result.get();
+            db.setDocument(COLLECTION, dId, userToMap(user));
 
-            try {
-                emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), verificationToken);
-            } catch (Exception e) {
-                System.err.println("Email konnte nicht gesendet werden: " + e.getMessage());
-            }
+            // Send email async
+            String email = user.getEmail(), name = user.getUsername(), token = user.getVerificationToken();
+            new Thread(() -> {
+                try { emailService.sendVerificationEmail(email, name, token); }
+                catch (Exception ex) { System.err.println("Email error: " + ex.getMessage()); }
+            }).start();
 
             return new ResponseEntity<>(user, HttpStatus.CREATED);
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
         try {
-            Firestore db = getFirestore();
+            System.out.println("🔍 Verification attempt with token: " + token);
+            
+            // Must scan collection for verificationToken (no index needed – small collection)
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
+            System.out.println("📄 Found " + docs.size() + " users in collection");
+            
+            Map<String, Object> found = docs.stream()
+                    .filter(d -> token.equals(d.get("verificationToken")))
+                    .findFirst().orElse(null);
 
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("verificationToken", token)
-                    .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
-            if (docs.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body("Ungültiger oder abgelaufener Bestätigungslink.");
+            if (found == null) {
+                System.out.println("❌ No user found with token: " + token);
+                return ResponseEntity.badRequest().body("Ungültiger oder abgelaufener Bestätigungslink.");
             }
 
-            DocumentSnapshot doc = docs.get(0);
-            User user = doc.toObject(User.class);
-            user.setId(doc.getId());
-            user.setEmailVerified(true);
-            user.setVerificationToken(null);
-
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+            System.out.println("✅ Found user: " + found.get("email"));
+            User u = mapToUser(found);
+            u.setEmailVerified(true);
+            u.setVerificationToken(null);
+            
+            System.out.println("🔄 Updating user verification status...");
+            db.setDocument(COLLECTION, u.getId(), userToMap(u));
+            System.out.println("✅ User verified successfully");
 
             return ResponseEntity.ok(
-                    "<html><body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                            "<h1 style='color: #4CAF50;'>E-Mail bestätigt!</h1>" +
-                            "<p>Deine E-Mail-Adresse wurde erfolgreich bestätigt.</p>" +
-                            "<p>Du kannst dich jetzt in der FoundBuddy App anmelden.</p>" +
-                            "</body></html>"
+                    "<html><body style='font-family:Arial;text-align:center;padding:50px'>" +
+                    "<h1 style='color:#4CAF50'>E-Mail bestätigt!</h1>" +
+                    "<p>Du kannst dich jetzt in der FoundBuddy App anmelden.</p>" +
+                    "</body></html>"
             );
-
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
+            System.err.println("❌ Verification error: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Fehler bei der Verifizierung.");
+            return ResponseEntity.internalServerError().body("Fehler bei der Verifizierung: " + e.getMessage());
         }
     }
 
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestParam String email) {
         try {
-            Firestore db = getFirestore();
+            Map<String, Object> doc = db.getDocument(COLLECTION, docId(email));
+            if (doc == null) return ResponseEntity.notFound().build();
 
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
-            if (docs.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            DocumentSnapshot doc = docs.get(0);
-            User user = doc.toObject(User.class);
-            user.setId(doc.getId());
-
-            if (user.isEmailVerified()) {
-                return ResponseEntity.badRequest().body("E-Mail ist bereits verifiziert.");
-            }
+            User u = mapToUser(doc);
+            if (u.isEmailVerified()) return ResponseEntity.badRequest().body("E-Mail ist bereits verifiziert.");
 
             String newToken = UUID.randomUUID().toString();
-            user.setVerificationToken(newToken);
+            u.setVerificationToken(newToken);
+            db.setDocument(COLLECTION, u.getId(), userToMap(u));
 
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
+            String n = u.getUsername(), t = newToken, e2 = u.getEmail();
+            new Thread(() -> {
+                try { emailService.sendVerificationEmail(e2, n, t); }
+                catch (Exception ex) { System.err.println(ex.getMessage()); }
+            }).start();
 
-            emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), newToken);
-
-            return ResponseEntity.ok().body("Bestätigungs-E-Mail wurde erneut gesendet.");
-
+            return ResponseEntity.ok("Bestätigungs-E-Mail wurde erneut gesendet.");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(503)
-                    .body("Mailservice derzeit nicht erreichbar. Bitte später erneut versuchen.");
+            return ResponseEntity.status(503).body("Fehler beim Senden.");
         }
     }
 
-    // >>> NEU: Passwort-Reset anfordern
     @PostMapping("/request-password-reset")
     public ResponseEntity<?> requestPasswordReset(@RequestParam String email) {
         try {
-            Firestore db = getFirestore();
+            Map<String, Object> doc = db.getDocument(COLLECTION, docId(email));
+            // Security: always return OK
+            if (doc == null) return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
 
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
-            // Security: immer OK zurückgeben
-            if (docs.isEmpty()) {
-                return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
-            }
-
-            DocumentSnapshot doc = docs.get(0);
-            User user = doc.toObject(User.class);
-            user.setId(doc.getId());
-
+            User u = mapToUser(doc);
             String resetToken = UUID.randomUUID().toString();
-            user.setPasswordResetToken(resetToken);
-            user.setPasswordResetRequestedAt(System.currentTimeMillis());
+            u.setPasswordResetToken(resetToken);
+            u.setPasswordResetRequestedAt(System.currentTimeMillis());
+            db.setDocument(COLLECTION, u.getId(), userToMap(u));
 
-            db.collection(COLLECTION_NAME).document(user.getId()).set(user).get();
-
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetToken);
+            String n = u.getUsername(), t = resetToken, e2 = u.getEmail();
+            new Thread(() -> {
+                try { emailService.sendPasswordResetEmail(e2, n, t); }
+                catch (Exception ex) { System.err.println(ex.getMessage()); }
+            }).start();
 
             return ResponseEntity.ok("Wenn ein Account existiert, wurde eine E-Mail gesendet.");
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(503)
-                    .body("Mailservice derzeit nicht erreichbar. Bitte später erneut versuchen.");
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable String id, @RequestBody User updated) {
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @RequestParam String token,
+            @RequestParam String newPassword) {
         try {
-            Firestore db = getFirestore();
-            DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = docRef.get().get();
-
-            if (!snapshot.exists()) {
-                return ResponseEntity.notFound().build();
+            List<String> pwErrors = validationService.validatePassword(newPassword);
+            if (!pwErrors.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("errors", pwErrors));
             }
 
-            updated.setId(id);
-            docRef.set(updated).get();
+            // Scan for reset token
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
+            Map<String, Object> found = docs.stream()
+                    .filter(d -> token.equals(d.get("passwordResetToken")))
+                    .findFirst().orElse(null);
 
-            return ResponseEntity.ok(updated);
+            if (found == null) {
+                return ResponseEntity.badRequest().body("Ungültiger oder abgelaufener Reset-Link.");
+            }
 
+            // Check expiry (15 min)
+            Object tsObj = found.get("passwordResetRequestedAt");
+            if (tsObj instanceof Number) {
+                long requested = ((Number) tsObj).longValue();
+                if (System.currentTimeMillis() - requested > 15 * 60 * 1000) {
+                    return ResponseEntity.badRequest().body("Reset-Link abgelaufen (15 Min.).");
+                }
+            }
+
+            User u = mapToUser(found);
+            u.setPassword(newPassword);
+            u.setPasswordResetToken(null);
+            u.setPasswordResetRequestedAt(null);
+            db.setDocument(COLLECTION, u.getId(), userToMap(u));
+
+            return ResponseEntity.ok("Passwort erfolgreich geändert.");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        try {
-            Firestore db = getFirestore();
-            DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = docRef.get().get();
-
-            if (!snapshot.exists()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            docRef.delete();
-            return ResponseEntity.noContent().build();
-
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 }

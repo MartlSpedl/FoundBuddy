@@ -16,12 +16,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.foundbuddy.R
+import com.example.foundbuddy.util.ImageUtils
 import kotlin.Unit
 
 @Composable
 fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
+    println("=== ZOOM IMAGE DEBUG ===")
     println("LOGCAT: ZoomImage aufgerufen mit URL: $url")
     
     if (url.isNullOrBlank()) {
@@ -36,67 +39,65 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var imageLoadFailed by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Bestimme den Bild-Modell basierend auf URL-Typ
-    val imageModel = when {
-        url.startsWith("content://") -> {
-            // Für content:// URLs verwenden wir die URI direkt
-            ImageRequest.Builder(LocalContext.current)
-                .data(android.net.Uri.parse(url))
-                .crossfade(true)
-                .build()
-        }
-        url.startsWith("data:") -> {
-            // Für Base64 Data-URLs
-            ImageRequest.Builder(LocalContext.current)
-                .data(url)
-                .crossfade(true)
-                .build()
-        }
-        url.startsWith("http") -> {
-            // Für normale HTTP/HTTPS URLs
-            ImageRequest.Builder(LocalContext.current)
-                .data(url)
-                .crossfade(true)
-                .build()
-        }
-        else -> {
-            // Fallback
-            ImageRequest.Builder(LocalContext.current)
-                .data(R.drawable.ic_launcher_foreground)
-                .crossfade(true)
-                .build()
-        }
-    }
+    // Dekodierte URL mit Hilfsfunktion
+    val decodedUrl = ImageUtils.decodeImageUrl(url)
+    println("LOGCAT: ZoomImage - Dekodierte URL: $decodedUrl")
+
+    // ImageRequest mit Hilfsfunktion
+    val imageModel = ImageUtils.createImageRequest(LocalContext.current, decodedUrl)
+        .newBuilder()
+        .memoryCachePolicy(CachePolicy.ENABLED)
+        .diskCachePolicy(CachePolicy.ENABLED)
+        .networkCachePolicy(CachePolicy.ENABLED)
+        .build()
+    
+    println("LOGCAT: ImageModel erstellt: $imageModel")
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (imageLoadFailed) {
+        if (isLoading) {
+            println("LOGCAT: Zeige Lade-Status")
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Lade Bild...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("URL-Typ: Web URL", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                    Text("URL: ${decodedUrl?.take(50) ?: "null"}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
+                }
+            }
+        } else if (imageLoadFailed) {
+            println("LOGCAT: Zeige Fehler-Status")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
-                    Text("URL-Typ: ${when {
-                        url.startsWith("content://") -> "Content URI"
-                        url.startsWith("data:") -> "Base64 Data"
-                        url.startsWith("http") -> "Web URL"
-                        else -> "Unbekannt"
-                    }}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                    Text("URL: ${url.take(50)}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
+                    Text("URL-Typ: Web URL", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                    Text("URL: ${decodedUrl?.take(50) ?: "null"}...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 8.sp)
                 }
             }
         } else {
+            println("LOGCAT: Zeige AsyncImage")
             AsyncImage(
                 model = imageModel,
                 contentDescription = "Zoombares Bild",
                 contentScale = ContentScale.Fit,
                 onError = { error ->
-                    imageLoadFailed = true
+                    println("=== BILD LADFEHLER ===")
+                    println("LOGCAT: Bild-Lade-Fehler: ${error.result.throwable?.message}")
                     error.result.throwable?.printStackTrace()
+                    imageLoadFailed = true
+                    isLoading = false
                 },
                 onLoading = {
+                    println("=== BILD WIRD GELADEN ===")
+                    println("LOGCAT: Bild wird geladen...")
                     imageLoadFailed = false
+                    isLoading = true
                 },
-                onSuccess = {
+                onSuccess = { 
+                    println("=== BILD ERFOLGREICH GELADEN ===")
+                    println("LOGCAT: Bild erfolgreich geladen!")
                     imageLoadFailed = false
+                    isLoading = false
                 },
                 modifier = Modifier
                     .fillMaxSize()
@@ -120,5 +121,6 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                     }
             )
         }
+        println("=== ZOOM IMAGE ENDE ===")
     }
 }

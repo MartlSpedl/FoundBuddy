@@ -6,33 +6,47 @@ import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.model.AiSearchResult
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
+import com.squareup.moshi.JsonClass
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import com.example.foundbuddy.network.ItemDto
-import com.example.foundbuddy.network.StatusChangeDto
-import com.example.foundbuddy.network.UpdateStatusRequest
+import java.net.HttpURLConnection
 
 class FoundItemRepository(private val context: Context, private val api: FoundBuddyApi) {
+
+    private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
+    private val moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
+
+    // JSON-Adapter für die Backend-DTOs
+    private val itemDtoType = Types.newParameterizedType(List::class.java, ItemDto::class.java)
+    private val listAdapter = moshi.adapter<List<ItemDto>>(itemDtoType)
+    private val itemAdapter = moshi.adapter(ItemDto::class.java)
+    private val statusChangeListType = Types.newParameterizedType(List::class.java, StatusChangeDto::class.java)
+    private val statusChangeListAdapter = moshi.adapter<List<StatusChangeDto>>(statusChangeListType)
 
     /**
      * Holt alle Items vom Backend und mappt sie auf das FoundItem-Modell fürs UI.
      */
     suspend fun getAll(): List<FoundItem> = withContext(Dispatchers.IO) {
         try {
-            val resp = api.getItems()
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "GET /api/items failed HTTP ${resp.code()} body=$err")
-                return@withContext emptyList()
+            val url = java.net.URL("$baseUrl/api/found-items")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                val dtoList = listAdapter.fromJson(body) ?: emptyList()
+                dtoList.map { it.toFoundItem() }
             }
-            val items = resp.body().orEmpty()
-            items.map { it.toFoundItem() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "getAll error", e)
-            emptyList()
+            e.printStackTrace()
+            emptyList() // bei Fehler: leere Liste zurückgeben
         }
     }
 
@@ -42,37 +56,50 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     suspend fun addItem(item: FoundItem) = withContext(Dispatchers.IO) {
         try {
             val dto = item.toItemDto()
-            val resp = api.createItem(dto)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "POST /api/items failed HTTP ${resp.code()} body=$err")
+            val json = itemAdapter.toJson(dto)
+
+            val url = java.net.URL("$baseUrl/api/found-items")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.doOutput = true
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 30_000
+
+            connection.outputStream.use { os ->
+                os.write(json.toByteArray(Charsets.UTF_8))
             }
+
+            // Antwort lesen, damit die Anfrage sauber abgeschlossen wird
+            connection.inputStream.use { it.readBytes() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "addItem error", e)
+            e.printStackTrace()
         }
     }
 
     suspend fun clearAll() = withContext(Dispatchers.IO) {
         try {
-            val resp = api.clearAll()
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "DELETE /api/items failed HTTP ${resp.code()} body=$err")
-            }
+            val url = java.net.URL("$baseUrl/api/found-items")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "DELETE"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.inputStream.use { it.readBytes() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "clearAll error", e)
+            e.printStackTrace()
         }
     }
 
     suspend fun markAsResolved(itemId: String) = withContext(Dispatchers.IO) {
         try {
-            val resp = api.resolveItem(itemId)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "PUT /api/items/$itemId/resolve failed HTTP ${resp.code()} body=$err")
-            }
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/resolve")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "PUT"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.inputStream.use { it.readBytes() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "markAsResolved error", e)
+            e.printStackTrace()
         }
     }
 
@@ -81,14 +108,18 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun toggleFavorite(itemId: String, userId: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val resp = api.toggleFavorite(itemId, userId)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "PUT /api/items/$itemId/favorite failed HTTP ${resp.code()} body=$err")
-            }
-            resp.isSuccessful
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/favorite?userId=$encodedUserId")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "PUT"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_OK
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "toggleFavorite error", e)
+            e.printStackTrace()
             false
         }
     }
@@ -104,22 +135,32 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
         comment: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val resp = api.updateWorkflowStatus(
-                itemId,
-                UpdateStatusRequest(
-                    newStatus = newStatus,
-                    userId = userId,
-                    username = username,
-                    comment = comment
-                )
-            )
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "PUT /api/items/$itemId/status failed HTTP ${resp.code()} body=$err")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/status")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.doOutput = true
+            connection.requestMethod = "PUT"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            val requestBody = """
+                {
+                    "newStatus": "$newStatus",
+                    "userId": "$userId",
+                    "username": "$username",
+                    "comment": ${if (comment != null) "\"$comment\"" else "null"}
+                }
+            """.trimIndent()
+
+            connection.outputStream.use { os ->
+                os.write(requestBody.toByteArray(Charsets.UTF_8))
             }
-            resp.isSuccessful
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_OK
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "updateWorkflowStatus error", e)
+            e.printStackTrace()
             false
         }
     }
@@ -129,15 +170,20 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getFavorites(userId: String): List<FoundItem> = withContext(Dispatchers.IO) {
         try {
-            val resp = api.getUserFavorites(userId)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "GET /api/users/$userId/favorites failed HTTP ${resp.code()} body=$err")
-                return@withContext emptyList()
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/users/$encodedUserId/favorites")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                val dtoList = listAdapter.fromJson(body) ?: emptyList()
+                dtoList.map { it.toFoundItem() }
             }
-            resp.body().orEmpty().map { it.toFoundItem() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "getFavorites error", e)
+            e.printStackTrace()
             emptyList()
         }
     }
@@ -147,15 +193,19 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getStatusHistory(itemId: String): List<StatusChange> = withContext(Dispatchers.IO) {
         try {
-            val resp = api.getStatusHistory(itemId)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "GET /api/items/$itemId/status-history failed HTTP ${resp.code()} body=$err")
-                return@withContext emptyList()
+            val url = java.net.URL("$baseUrl/api/items/$itemId/status-history")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                val dtoList = statusChangeListAdapter.fromJson(body) ?: emptyList()
+                dtoList.map { it.toStatusChange() }
             }
-            resp.body().orEmpty().map { it.toStatusChange() }
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "getStatusHistory error", e)
+            e.printStackTrace()
             emptyList()
         }
     }
@@ -164,13 +214,14 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      * Mapping Backend -> UI-Modell.
      */
     private fun ItemDto.toFoundItem(): FoundItem {
+        // Backend now stores status in German directly ("Gefunden"/"Verloren")
+        // Still handle English values for backward compatibility
         val mappedStatus = when (status?.uppercase()) {
             "FOUND" -> "Gefunden"
             "LOST"  -> "Verloren"
             else    -> status ?: "Gefunden"
         }
 
-        // Mapping für StatusHistory
         val history = statusHistory?.map { dto ->
             StatusChange(
                 userId = dto.userId ?: "",
@@ -186,14 +237,13 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             id = id ?: java.util.UUID.randomUUID().toString(),
             title = title ?: "",
             description = description,
-            imagePath = photoUri,
+            imagePath = imageUri,   // ← was photoUri, backend field is imageUri
             status = mappedStatus,
-            isResolved = false,
-            uploaderName = "Unbekannt",
-            likes = 0,
+            isResolved = isResolved ?: false,
+            uploaderName = uploaderName ?: "Unbekannt",
+            likes = likes ?: 0,
             likedByUser = false,
             timestamp = timestamp ?: System.currentTimeMillis(),
-            // Sprint 5: Neue Felder
             workflowStatus = workflowStatus ?: "Gemeldet",
             isFavorite = isFavorite ?: false,
             statusHistory = history,
@@ -205,13 +255,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      * Mapping UI-Modell -> Backend-DTO.
      */
     private fun FoundItem.toItemDto(): ItemDto {
-        val backendStatus = when (status.lowercase()) {
-            "gefunden" -> "FOUND"
-            "verloren" -> "LOST"
-            else       -> "FOUND"
-        }
-
-        // Mapping für StatusHistory
+        // Backend now stores status in German directly
         val historyDto = statusHistory.map { change ->
             StatusChangeDto(
                 userId = change.userId,
@@ -227,10 +271,11 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             id = id,
             title = title,
             description = description,
-            status = backendStatus,
+            status = status,         // already German: "Gefunden" or "Verloren"
             timestamp = timestamp,
-            photoUri = imagePath,
-            // Sprint 5: Neue Felder
+            imageUri = imagePath,    // ← was photoUri = imagePath
+            uploaderName = uploaderName,
+            isResolved = isResolved,
             workflowStatus = workflowStatus,
             isFavorite = isFavorite,
             statusHistory = historyDto,
@@ -254,26 +299,109 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun uploadImageAndGetUrl(imageUri: android.net.Uri): String = withContext(Dispatchers.IO) {
         try {
+            println("LOGCAT: ===== START IMAGE UPLOAD =====")
+            println("LOGCAT: URI: $imageUri")
+            
             val contentResolver = context.contentResolver
             val inputStream = contentResolver.openInputStream(imageUri)
                 ?: throw Exception("Konnte Bild nicht öffnen")
+            
+            // Lese die Bilddaten
             val bytes = inputStream.use { it.readBytes() }
+            println("LOGCAT: ${bytes.size} Bytes gelesen")
+            
+            // Bestimme MIME-Type und Dateinamen
             val mimeType = contentResolver.getType(imageUri) ?: "image/jpeg"
-            val fileName = "image_${System.currentTimeMillis()}.${mimeType.substringAfter('/', "jpg")}"
-
-            val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
-            val part = MultipartBody.Part.createFormData("file", fileName, requestBody)
-            val resp = api.uploadImage(part)
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "POST /api/images failed HTTP ${resp.code()} body=$err")
-                return@withContext "https://via.placeholder.com/600x400"
+            val fileName = "image_${System.currentTimeMillis()}.${mimeType.split("/")[1]}"
+            println("LOGCAT: MIME-Type: $mimeType, Filename: $fileName")
+            
+            // Erstelle Multipart-Request für Backend-Upload
+            val boundary = "----${System.currentTimeMillis()}"
+            val uploadUrl = "$baseUrl/api/images"
+            println("LOGCAT: Upload URL: $uploadUrl")
+            
+            val url = java.net.URL(uploadUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            conn.setRequestProperty("Accept", "application/json")
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 30_000
+            
+            println("LOGCAT: Sende Request...")
+            
+            // Baue Multipart-Body
+            val outputStream = conn.outputStream
+            val writer = outputStream.writer()
+            
+            // File part
+            writer.append("--$boundary\r\n")
+            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+            writer.append("Content-Type: $mimeType\r\n")
+            writer.append("\r\n")
+            writer.flush()
+            
+            println("LOGCAT: Schreibe ${bytes.size} Bytes...")
+            outputStream.write(bytes)
+            outputStream.flush()
+            
+            writer.append("\r\n")
+            writer.append("--$boundary--\r\n")
+            writer.flush()
+            writer.close()
+            
+            val responseCode = conn.responseCode
+            println("LOGCAT: Response Code: $responseCode")
+            
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val response = conn.inputStream.use { it.bufferedReader().readText() }
+                println("LOGCAT: Response Body: $response")
+                
+                // Parse JSON Response { "imageUrl": "..." }
+                val json = org.json.JSONObject(response)
+                val imageUrl = json.getString("imageUrl")
+                
+                // Validiere die URL
+                if (!imageUrl.startsWith("http")) {
+                    throw Exception("Ungültige Bild-URL erhalten: $imageUrl")
+                }
+                
+                println("LOGCAT: ===== UPLOAD SUCCESS =====")
+                println("LOGCAT: Firebase URL: $imageUrl")
+                
+                // Teste die URL (optional)
+                try {
+                    val testConn = java.net.URL(imageUrl).openConnection() as HttpURLConnection
+                    testConn.requestMethod = "HEAD"
+                    testConn.connectTimeout = 5_000
+                    testConn.readTimeout = 5_000
+                    val testResponseCode = testConn.responseCode
+                    println("LOGCAT: URL-Test Response Code: $testResponseCode")
+                    if (testResponseCode != HttpURLConnection.HTTP_OK) {
+                        println("LOGCAT: WARNUNG: URL nicht erreichbar, aber trotzdem verwenden")
+                    }
+                } catch (e: Exception) {
+                    println("LOGCAT: URL-Test fehlgeschlagen: ${e.message}")
+                }
+                
+                return@withContext imageUrl
+            } else {
+                val errorResponse = conn.errorStream?.use { it.bufferedReader().readText() } ?: "Unknown error"
+                println("LOGCAT: Error Response: $errorResponse")
+                throw Exception("Upload failed: $responseCode - $errorResponse")
             }
-            val body = resp.body()
-            body?.imageUrl ?: "https://via.placeholder.com/600x400"
+            
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "uploadImageAndGetUrl error", e)
-            "https://via.placeholder.com/600x400"
+            println("LOGCAT: ===== UPLOAD ERROR =====")
+            println("LOGCAT: Fehler: ${e.message}")
+            e.printStackTrace()
+            // Fallback auf Platzhalter
+            val fallbackUrl = "https://via.placeholder.com/400x300/cccccc/666666?text=Bild+fehlgeschlagen"
+            println("LOGCAT: Fallback URL: $fallbackUrl")
+            println("LOGCAT: ===== END ERROR =====")
+            return@withContext fallbackUrl
         }
     }
 
@@ -282,17 +410,30 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun createFoundItem(item: FoundItem): FoundItem = withContext(Dispatchers.IO) {
         try {
-            val resp = api.createItem(item.toItemDto())
-            if (!resp.isSuccessful) {
-                val err = resp.errorBody()?.string()
-                Log.e("FoundItemRepository", "POST /api/items failed HTTP ${resp.code()} body=$err")
-                throw IllegalStateException("Erstellen des Items fehlgeschlagen: HTTP ${resp.code()} ${err ?: ""}")
+            val url = java.net.URL("$baseUrl/api/found-items")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 30_000
+
+            val json = itemAdapter.toJson(item.toItemDto())
+            connection.outputStream.use { it.write(json.toByteArray()) }
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_CREATED || responseCode == HttpURLConnection.HTTP_OK) {
+                connection.inputStream.use {
+                    val response = it.bufferedReader().readText()
+                    val createdDto = itemAdapter.fromJson(response)
+                    createdDto?.toFoundItem() ?: throw Exception("Fehler beim Parsen der Antwort")
+                }
+            } else {
+                throw Exception("Server-Fehler: $responseCode")
             }
-            val body = resp.body() ?: throw IllegalStateException("Antwort leer")
-            body.toFoundItem()
         } catch (e: Exception) {
-            Log.e("FoundItemRepository", "createFoundItem error", e)
-            throw e
+            e.printStackTrace()
+            throw Exception("Erstellen des Items fehlgeschlagen: ${e.message}")
         }
     }
 
@@ -310,3 +451,35 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     }
 
 }
+
+/**
+ * DTO entsprechend dem Item-Model im Backend.
+ */
+@JsonClass(generateAdapter = true)
+data class ItemDto(
+    val id: String? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val status: String? = null,   // "Gefunden" oder "Verloren"
+    val timestamp: Long? = null,
+    val imageUri: String? = null, // matches backend FoundItem.imageUri
+    val uploaderName: String? = null,
+    val likes: Int? = 0,
+    val isResolved: Boolean? = false,
+    // Sprint 5: Neue Felder
+    val workflowStatus: String? = "Gemeldet",
+    val isFavorite: Boolean? = false,
+    val statusHistory: List<StatusChangeDto>? = emptyList(),
+    val allowedEditors: List<String>? = emptyList()
+)
+
+// DTO für Statusänderungen
+@JsonClass(generateAdapter = true)
+data class StatusChangeDto(
+    val userId: String? = null,
+    val username: String? = null,
+    val oldStatus: String? = null,
+    val newStatus: String? = null,
+    val timestamp: Long? = null,
+    val comment: String? = null
+)

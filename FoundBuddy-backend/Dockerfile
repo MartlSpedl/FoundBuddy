@@ -1,24 +1,25 @@
 # ---- Build Stage ----
-FROM eclipse-temurin:17-jdk-jammy AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 
 # Copy gradle wrapper first for better caching
 COPY gradle/wrapper gradle/wrapper
 COPY gradlew .
-
-# Make gradlew executable
-RUN chmod +x gradlew
-
-# Copy rest of the files
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts ./
+
+# Make gradlew executable and test gradle
+RUN chmod +x gradlew
+RUN ./gradlew --version
+
+# Copy source code
 COPY src src
 
 # Build the application with more memory
-RUN ./gradlew bootJar --no-daemon --info --stacktrace -Dorg.gradle.jvmargs=-Xmx2g
+RUN ./gradlew clean bootJar --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
 
 # ---- Runtime Stage ----
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Netty tcnative deaktivieren (wichtig bei grpc-netty-shaded)
