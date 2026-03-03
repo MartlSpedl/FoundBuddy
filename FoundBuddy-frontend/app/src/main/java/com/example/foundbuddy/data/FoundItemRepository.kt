@@ -33,7 +33,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getAll(): List<FoundItem> = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items")
+            val url = java.net.URL("$baseUrl/api/found-items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5_000
@@ -58,13 +58,13 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             val dto = item.toItemDto()
             val json = itemAdapter.toJson(dto)
 
-            val url = java.net.URL("$baseUrl/api/items")
+            val url = java.net.URL("$baseUrl/api/found-items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.doOutput = true
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            connection.connectTimeout = 5_000
-            connection.readTimeout = 5_000
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 30_000
 
             connection.outputStream.use { os ->
                 os.write(json.toByteArray(Charsets.UTF_8))
@@ -79,7 +79,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
 
     suspend fun clearAll() = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items")
+            val url = java.net.URL("$baseUrl/api/found-items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "DELETE"
             connection.connectTimeout = 5000
@@ -92,7 +92,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
 
     suspend fun markAsResolved(itemId: String) = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items/$itemId/resolve")
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/resolve")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "PUT"
             connection.connectTimeout = 5000
@@ -214,13 +214,14 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      * Mapping Backend -> UI-Modell.
      */
     private fun ItemDto.toFoundItem(): FoundItem {
+        // Backend now stores status in German directly ("Gefunden"/"Verloren")
+        // Still handle English values for backward compatibility
         val mappedStatus = when (status?.uppercase()) {
             "FOUND" -> "Gefunden"
             "LOST"  -> "Verloren"
             else    -> status ?: "Gefunden"
         }
 
-        // Mapping für StatusHistory
         val history = statusHistory?.map { dto ->
             StatusChange(
                 userId = dto.userId ?: "",
@@ -236,14 +237,13 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             id = id ?: java.util.UUID.randomUUID().toString(),
             title = title ?: "",
             description = description,
-            imagePath = photoUri,
+            imagePath = imageUri,   // ← was photoUri, backend field is imageUri
             status = mappedStatus,
-            isResolved = false,
-            uploaderName = "Unbekannt",
-            likes = 0,
+            isResolved = isResolved ?: false,
+            uploaderName = uploaderName ?: "Unbekannt",
+            likes = likes ?: 0,
             likedByUser = false,
             timestamp = timestamp ?: System.currentTimeMillis(),
-            // Sprint 5: Neue Felder
             workflowStatus = workflowStatus ?: "Gemeldet",
             isFavorite = isFavorite ?: false,
             statusHistory = history,
@@ -255,13 +255,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      * Mapping UI-Modell -> Backend-DTO.
      */
     private fun FoundItem.toItemDto(): ItemDto {
-        val backendStatus = when (status.lowercase()) {
-            "gefunden" -> "FOUND"
-            "verloren" -> "LOST"
-            else       -> "FOUND"
-        }
-
-        // Mapping für StatusHistory
+        // Backend now stores status in German directly
         val historyDto = statusHistory.map { change ->
             StatusChangeDto(
                 userId = change.userId,
@@ -277,10 +271,11 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             id = id,
             title = title,
             description = description,
-            status = backendStatus,
+            status = status,         // already German: "Gefunden" or "Verloren"
             timestamp = timestamp,
-            photoUri = imagePath,
-            // Sprint 5: Neue Felder
+            imageUri = imagePath,    // ← was photoUri = imagePath
+            uploaderName = uploaderName,
+            isResolved = isResolved,
             workflowStatus = workflowStatus,
             isFavorite = isFavorite,
             statusHistory = historyDto,
@@ -394,13 +389,13 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun createFoundItem(item: FoundItem): FoundItem = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items")
+            val url = java.net.URL("$baseUrl/api/found-items")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json")
-            connection.connectTimeout = 5_000
-            connection.readTimeout = 5_000
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 30_000
 
             val json = itemAdapter.toJson(item.toItemDto())
             connection.outputStream.use { it.write(json.toByteArray()) }
@@ -444,9 +439,12 @@ data class ItemDto(
     val id: String? = null,
     val title: String? = null,
     val description: String? = null,
-    val status: String? = null,   // "FOUND" oder "LOST"
+    val status: String? = null,   // "Gefunden" oder "Verloren"
     val timestamp: Long? = null,
-    val photoUri: String? = null,
+    val imageUri: String? = null, // matches backend FoundItem.imageUri
+    val uploaderName: String? = null,
+    val likes: Int? = 0,
+    val isResolved: Boolean? = false,
     // Sprint 5: Neue Felder
     val workflowStatus: String? = "Gemeldet",
     val isFavorite: Boolean? = false,
