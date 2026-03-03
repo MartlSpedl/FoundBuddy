@@ -196,8 +196,8 @@ class UserRepository {
         var lastCode: Int? = null
         var lastException: Exception? = null
 
-        // 4 Versuche: 0s, 3s, 7s, 15s (Render Cold Start kann bis zu 30s dauern)
-        val delays = listOf(0L, 3000L, 7000L, 15000L)
+        // 6 Versuche: 0s, 2s, 5s, 10s, 20s, 30s (Render Cold Start kann bis zu 60s dauern)
+        val delays = listOf(0L, 2000L, 5000L, 10000L, 20000L, 30000L)
 
         for (d in delays) {
             if (d > 0) delay(d)
@@ -217,7 +217,7 @@ class UserRepository {
                 }
 
                 // typische Render-Codes beim Aufwachen
-                if (code == 502 || code == 503 || code == 504) {
+                if (code == 502 || code == 503 || code == 504 || code == 500) {
                     continue
                 }
 
@@ -240,7 +240,7 @@ class UserRepository {
     }
 
     private fun friendlyServerStartingMessage(): String {
-        return "Server startet gerade. Bitte warte 30\u201360 Sekunden und versuche es nochmal."
+        return "Server startet gerade (Render Cold Start). Dies dauert 30-60 Sekunden. Bitte versuche es in 1 Minute erneut."
     }
 
 }

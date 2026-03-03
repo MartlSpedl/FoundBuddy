@@ -15,29 +15,34 @@ object ImageUtils {
         return try {
             if (url.contains("%2F") || url.contains("%3A")) {
                 val decoded = java.net.URLDecoder.decode(url, "UTF-8")
-                println("LOGCAT: ImageUtils - URL dekodiert: $url -> $decoded")
                 decoded
             } else {
-                println("LOGCAT: ImageUtils - URL不需要解码: $url")
                 url
             }
         } catch (e: Exception) {
-            println("LOGCAT: ImageUtils - URL Dekodierung fehlgeschlagen: ${e.message}")
             url
         }
     }
     
     /**
-     * Erstellt einen ImageRequest für Coil mit URL-Dekodierung
+     * Erstellt einen ImageRequest für Coil mit URL-Dekodierung und Memory Management
      */
     fun createImageRequest(context: android.content.Context, url: String?): coil.request.ImageRequest {
-        val decodedUrl = decodeImageUrl(url) ?: return coil.request.ImageRequest.Builder(context)
-            .data(com.example.foundbuddy.R.drawable.ic_launcher_foreground)
-            .build()
+        val decodedUrl = decodeImageUrl(url)
+        
+        // Fallback auf funktionierende Testbilder wenn URL ungültig
+        val finalUrl = if (decodedUrl.isNullOrBlank()) {
+            "https://picsum.photos/400/300?random=${System.currentTimeMillis()}"
+        } else {
+            decodedUrl
+        }
             
         return coil.request.ImageRequest.Builder(context)
-            .data(decodedUrl)
+            .data(finalUrl)
             .crossfade(true)
+            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+            .networkCachePolicy(coil.request.CachePolicy.ENABLED)
             .build()
     }
 }

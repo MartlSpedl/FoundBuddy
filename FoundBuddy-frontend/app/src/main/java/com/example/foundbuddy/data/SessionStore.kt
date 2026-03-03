@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "session_store")
 
@@ -19,8 +20,9 @@ class SessionStore(private val context: Context) {
     }
 
     suspend fun loadUserId(): String? {
-        val prefs = context.dataStore.data.first()
-        return prefs[KEY_USER_ID]
+        return context.dataStore.data.map { prefs ->
+            prefs[KEY_USER_ID]
+        }.first()
     }
 
     suspend fun clear() {
