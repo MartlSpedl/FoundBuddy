@@ -140,17 +140,33 @@ public class FoundItemController {
                 if (uri.startsWith("content://") || uri.startsWith("file://")) {
                     return ResponseEntity.badRequest().body(Map.of("error", "Local URIs not allowed"));
                 }
-                // Compute embedding if missing (optional — never blocks)
-                if (item.getImageEmbedding() == null) {
-                    try {
-                        item.setImageEmbedding(embeddingService.embedImage(uri));
-                    } catch (Exception e) {
-                        System.err.println("⚠️ Embedding fehlgeschlagen – Item wird ohne Embedding gespeichert: " + e.getMessage());
-                    }
-                }
             }
 
+            // ✅ Save item IMMEDIATELY (without embedding) so response is instant
             db.setDocument(COLLECTION, item.getId(), itemToMap(item));
+
+            // ⚡ Compute embedding ASYNCHRONOUSLY in background — never blocks the client
+            if (item.getImageUri() != null) {
+                final String itemId = item.getId();
+                final String imageUri = item.getImageUri();
+                new Thread(() -> {
+                    try {
+                        System.out.println("🔄 Computing embedding for item " + itemId + " in background...");
+                        List<Double> embedding = embeddingService.embedImage(imageUri);
+                        // Patch the embedding into the existing Firestore document
+                        Map<String, Object> existing = db.getDocument(COLLECTION, itemId);
+                        if (existing != null) {
+                            existing.put("imageEmbedding", embedding);
+                            db.setDocument(COLLECTION, itemId, existing);
+                            System.out.println("✅ Embedding saved for item " + itemId);
+                        }
+                    } catch (Exception e) {
+                        // Just log — embedding is optional, item is already saved
+                        System.err.println("⚠️ Embedding failed for item " + itemId + ": " + e.getMessage());
+                    }
+                }, "embedding-" + item.getId()).start();
+            }
+
             return ResponseEntity.ok(item);
         } catch (Exception e) {
             e.printStackTrace();
