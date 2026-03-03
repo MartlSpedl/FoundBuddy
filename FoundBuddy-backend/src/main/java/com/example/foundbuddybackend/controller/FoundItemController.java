@@ -2,205 +2,204 @@ package com.example.foundbuddybackend.controller;
 
 import com.example.foundbuddybackend.ai.EmbeddingService;
 import com.example.foundbuddybackend.model.FoundItem;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
+import com.example.foundbuddybackend.service.FirestoreRestService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
- * REST controller exposing CRUD endpoints for {@link FoundItem} entities.
+ * REST controller for {@link FoundItem} entities.
  *
- * <p>
- * Now uses Firebase Firestore instead of a JPA repository.
- * All endpoints are prefixed with {@code /api/found-items} and are CORS-enabled.
+ * Uses FirestoreRestService (HTTPS) instead of gRPC FirestoreClient —
+ * Render Free Tier blocks outgoing gRPC connections to Google APIs.
  */
 @RestController
 @RequestMapping("/api/found-items")
 @CrossOrigin(origins = "*")
 public class FoundItemController {
 
-    private static final String COLLECTION_NAME = "found_items";
+    private static final String COLLECTION = "found_items";
 
-    private Firestore getFirestore() {
-        return FirestoreClient.getFirestore();
+    @Autowired private FirestoreRestService db;
+    @Autowired private EmbeddingService embeddingService;
+
+    // ─── helpers ────────────────────────────────────────────────────────────
+
+    private FoundItem mapToItem(Map<String, Object> m) {
+        if (m == null) return null;
+        FoundItem item = new FoundItem();
+        item.setId(str(m, "id"));
+        item.setTitle(str(m, "title"));
+        item.setDescription(str(m, "description"));
+        item.setImageUri(str(m, "imageUri"));
+        item.setStatus(str(m, "status") != null ? str(m, "status") : "Gefunden");
+        item.setUploaderName(str(m, "uploaderName") != null ? str(m, "uploaderName") : "Unbekannt");
+        item.setWorkflowStatus(str(m, "workflowStatus") != null ? str(m, "workflowStatus") : "Gemeldet");
+
+        Object ts = m.get("createdAt");
+        if (ts instanceof Number) item.setCreatedAt(((Number) ts).longValue());
+
+        Object resolved = m.get("isResolved");
+        item.setResolved(Boolean.TRUE.equals(resolved));
+
+        Object likes = m.get("likes");
+        if (likes instanceof Number) item.setLikes(((Number) likes).intValue());
+
+        // imageEmbedding (List<Double>) — stored in Firestore for search
+        @SuppressWarnings("unchecked")
+        List<Object> rawEmb = (List<Object>) m.get("imageEmbedding");
+        if (rawEmb != null) {
+            List<Double> emb = new ArrayList<>();
+            for (Object v : rawEmb) {
+                if (v instanceof Number) emb.add(((Number) v).doubleValue());
+            }
+            item.setImageEmbedding(emb);
+        }
+
+        return item;
     }
 
-    @Autowired
-    private EmbeddingService embeddingService;
+    private String str(Map<String, Object> m, String key) {
+        Object v = m.get(key);
+        return v != null ? v.toString() : null;
+    }
 
-    /**
-     * Returns all found items sorted by descending creation time.
-     */
+    private Map<String, Object> itemToMap(FoundItem item) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (item.getId() != null)           m.put("id", item.getId());
+        if (item.getTitle() != null)        m.put("title", item.getTitle());
+        if (item.getDescription() != null)  m.put("description", item.getDescription());
+        if (item.getImageUri() != null)     m.put("imageUri", item.getImageUri());
+        if (item.getCreatedAt() != null)    m.put("createdAt", item.getCreatedAt());
+        m.put("status", item.getStatus() != null ? item.getStatus() : "Gefunden");
+        m.put("isResolved", item.isResolved());
+        m.put("uploaderName", item.getUploaderName() != null ? item.getUploaderName() : "Unbekannt");
+        m.put("likes", item.getLikes());
+        m.put("workflowStatus", item.getWorkflowStatus() != null ? item.getWorkflowStatus() : "Gemeldet");
+        if (item.getImageEmbedding() != null) m.put("imageEmbedding", item.getImageEmbedding());
+        return m;
+    }
+
+    // ─── endpoints ──────────────────────────────────────────────────────────
+
+    /** Returns all found items sorted by descending creation time. */
     @GetMapping
-    public ResponseEntity<List<FoundItem>> getAll() {
+    public ResponseEntity<?> getAll() {
         try {
-            Firestore db = getFirestore();
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
             List<FoundItem> items = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : docs) {
-                FoundItem item = doc.toObject(FoundItem.class);
-                item.setId(doc.getId());
-                items.add(item);
+            for (Map<String, Object> doc : docs) {
+                FoundItem item = mapToItem(doc);
+                if (item != null) items.add(item);
             }
-
-            // sort descending by createdAt (nulls last)
+            // Sort descending by createdAt (nulls last)
             items.sort((a, b) -> {
-                Long tsA = a.getCreatedAt();
-                Long tsB = b.getCreatedAt();
+                Long tsA = a.getCreatedAt(), tsB = b.getCreatedAt();
                 if (tsA == null && tsB == null) return 0;
                 if (tsA == null) return 1;
                 if (tsB == null) return -1;
                 return tsB.compareTo(tsA);
             });
-
             return ResponseEntity.ok(items);
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    /**
-     * Retrieves a single found item by its Firestore document ID.
-     */
+    /** Retrieves a single found item by Firestore document ID. */
     @GetMapping("/{id}")
-    public ResponseEntity<FoundItem> getById(@PathVariable String id) {
+    public ResponseEntity<?> getById(@PathVariable String id) {
         try {
-            Firestore db = getFirestore();
-            DocumentReference docRef = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = docRef.get().get();
-
-            if (snapshot.exists()) {
-                FoundItem item = snapshot.toObject(FoundItem.class);
-                item.setId(snapshot.getId());
-                return ResponseEntity.ok(item);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-
+            Map<String, Object> doc = db.getDocument(COLLECTION, id);
+            if (doc == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(mapToItem(doc));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    /**
-     * Creates a new found item (auto-generates Firestore ID if missing).
-     */
+    /** Creates a new found item (auto-generates ID if missing). */
     @PostMapping
-    public ResponseEntity<FoundItem> create(@RequestBody FoundItem item) {
+    public ResponseEntity<?> create(@RequestBody FoundItem item) {
         try {
-            Firestore db = getFirestore();
-
-            // ID setzen, falls nicht vorhanden
+            // ID
             if (item.getId() == null || item.getId().isBlank()) {
                 item.setId(UUID.randomUUID().toString());
             }
-
-            // Timestamp setzen, falls nicht vorhanden
+            // Timestamp
             if (item.getCreatedAt() == null) {
                 item.setCreatedAt(System.currentTimeMillis());
             }
-
-            // Image-URI validieren (muss öffentlich erreichbar sein)
+            // Validate URI
             if (item.getImageUri() != null) {
                 String uri = item.getImageUri();
-
-                // Lokale URIs blocken (Frontend-Fehler)
                 if (uri.startsWith("content://") || uri.startsWith("file://")) {
-                    return ResponseEntity.badRequest().build();
+                    return ResponseEntity.badRequest().body(Map.of("error", "Local URIs not allowed"));
                 }
-
-                // 🔑 Embedding ist OPTIONAL – darf niemals den Request killen
+                // Compute embedding if missing (optional — never blocks)
                 if (item.getImageEmbedding() == null) {
                     try {
                         item.setImageEmbedding(embeddingService.embedImage(uri));
                     } catch (Exception e) {
-                        // Wichtig: nur loggen, NICHT abbrechen
-                        System.err.println("⚠️ Embedding fehlgeschlagen – Item wird ohne Embedding gespeichert");
-                        e.printStackTrace();
-                        item.setImageEmbedding(null);
+                        System.err.println("⚠️ Embedding fehlgeschlagen – Item wird ohne Embedding gespeichert: " + e.getMessage());
                     }
                 }
             }
 
-            // In Firestore speichern
-            db.collection(COLLECTION_NAME)
-                    .document(item.getId())
-                    .set(item)
-                    .get();
-
+            db.setDocument(COLLECTION, item.getId(), itemToMap(item));
             return ResponseEntity.ok(item);
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-
+    /** Marks an item as resolved. */
     @PutMapping("/{id}/resolve")
-    public ResponseEntity<Void> resolve(@PathVariable String id) {
+    public ResponseEntity<?> resolve(@PathVariable String id) {
         try {
-            Firestore db = getFirestore();
-            DocumentReference ref = db.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot snapshot = ref.get().get();
+            Map<String, Object> doc = db.getDocument(COLLECTION, id);
+            if (doc == null) return ResponseEntity.notFound().build();
 
-            if (!snapshot.exists()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            Map<String, Object> update = new HashMap<>();
-            update.put("resolved", true);
-
-            ref.update(update).get();
-
+            FoundItem item = mapToItem(doc);
+            item.setResolved(true);
+            db.setDocument(COLLECTION, id, itemToMap(item));
             return ResponseEntity.noContent().build();
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    /**
-     * Deletes all found items in the Firestore collection.
-     */
+    /** Deletes all found items. */
     @DeleteMapping
-    public ResponseEntity<Void> deleteAll() {
+    public ResponseEntity<?> deleteAll() {
         try {
-            Firestore db = getFirestore();
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
-            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
-
-            for (QueryDocumentSnapshot doc : docs) {
-                db.collection(COLLECTION_NAME).document(doc.getId()).delete();
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
+            for (Map<String, Object> doc : docs) {
+                String id = (String) doc.get("id");
+                if (id != null) db.deleteDocument(COLLECTION, id);
             }
-
             return ResponseEntity.noContent().build();
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
+    /** Deletes a single item. */
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable String id) throws Exception {
-        getFirestore()
-                .collection("found_items")
-                .document(id)
-                .delete()
-                .get();
+    public ResponseEntity<?> delete(@PathVariable String id) {
+        try {
+            db.deleteDocument(COLLECTION, id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 }
