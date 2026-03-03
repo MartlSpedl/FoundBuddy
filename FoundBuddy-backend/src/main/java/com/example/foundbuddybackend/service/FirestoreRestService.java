@@ -104,12 +104,12 @@ public class FirestoreRestService {
         String body = toFirestoreJson(data);
         
         // Check if document exists first
-        try {
-            getDocument(collection, documentId);
+        Map<String, Object> existing = getDocument(collection, documentId);
+        if (existing != null) {
             // Document exists, use PATCH to update
             rest.exchange(url, HttpMethod.PATCH,
                     new HttpEntity<>(body, authHeaders()), String.class);
-        } catch (Exception e) {
+        } else {
             // Document doesn't exist, use POST to create
             String createUrl = base() + "/" + collection + "?documentId=" + documentId;
             rest.exchange(createUrl, HttpMethod.POST,
