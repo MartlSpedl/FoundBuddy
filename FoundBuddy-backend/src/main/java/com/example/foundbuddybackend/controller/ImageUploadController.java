@@ -37,7 +37,9 @@ public class ImageUploadController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("upload failed");
+            String msg = e.getClass().getSimpleName() + ": " + e.getMessage();
+            if (e.getCause() != null) msg += " | caused by: " + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("upload failed: " + msg);
         }
     }
 }
