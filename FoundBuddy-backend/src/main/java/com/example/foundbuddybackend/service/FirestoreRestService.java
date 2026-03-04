@@ -276,14 +276,12 @@ public class FirestoreRestService {
             System.err.println("⚠️ FirestoreRestService: could not read classpath firebase-key.json: " + e.getMessage());
         }
 
-        // 2. Environment variable
-        // NOTE: Render stores literal "\n" (2 chars) in env vars. Replace them with real newlines
-        // so the Google Auth JSON parser and PEM reader work correctly.
+        // 2. Environment variable (FIREBASE_CREDENTIALS_JSON on Render)
+        // IMPORTANT: paste the COMPACT (single-line) JSON from firebase-key.json.
+        // Do NOT paste multiline JSON — Render may truncate it.
         String env = System.getenv("FIREBASE_CREDENTIALS_JSON");
         if (env != null && !env.isBlank()) {
-            // Replace escaped newlines that env var systems (like Render) may produce
-            env = env.replace("\\n", "\n");
-            System.out.println("✅ FirestoreRestService: loaded credentials from FIREBASE_CREDENTIALS_JSON env var");
+            System.out.println("✅ FirestoreRestService: loaded credentials from FIREBASE_CREDENTIALS_JSON env var (" + env.length() + " chars)");
             return env;
         }
 
