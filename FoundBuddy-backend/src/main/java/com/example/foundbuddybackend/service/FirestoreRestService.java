@@ -277,8 +277,12 @@ public class FirestoreRestService {
         }
 
         // 2. Environment variable
+        // NOTE: Render stores literal "\n" (2 chars) in env vars. Replace them with real newlines
+        // so the Google Auth JSON parser and PEM reader work correctly.
         String env = System.getenv("FIREBASE_CREDENTIALS_JSON");
         if (env != null && !env.isBlank()) {
+            // Replace escaped newlines that env var systems (like Render) may produce
+            env = env.replace("\\n", "\n");
             System.out.println("✅ FirestoreRestService: loaded credentials from FIREBASE_CREDENTIALS_JSON env var");
             return env;
         }
