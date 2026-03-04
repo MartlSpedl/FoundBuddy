@@ -126,14 +126,17 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             val cleanPassword = password.trim()
 
             // Hole alle Benutzer vom Backend (wartet bis zu 90s auf Cold Start)
-            val users = api.getAll()
+            val usersResult = api.getAll()
 
-            // Wenn die Liste leer ist → Server schläft gerade oder Netzwerkfehler
-            if (users.isEmpty()) {
+            // Wenn ein Fehler aufgetreten ist → Server-Problem oder Netzwerkfehler
+            if (usersResult.isFailure) {
                 return LoginResult.ServerError(
-                    "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
+                    usersResult.exceptionOrNull()?.message
+                        ?: "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
                 )
             }
+
+            val users = usersResult.getOrElse { emptyList() }
 
             println("DEBUG: Gefundene Benutzer: ${users.size}")
 

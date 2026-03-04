@@ -28,20 +28,31 @@ class UserRepository {
     private val adapter = moshi.adapter(User::class.java)
     private val errorAdapter = moshi.adapter(ValidationErrorResponse::class.java)
 
-    suspend fun getAll(): List<User> = withContext(Dispatchers.IO) {
+    suspend fun getAll(): Result<List<User>> = withContext(Dispatchers.IO) {
         try {
             val url = java.net.URL("$baseUrl/api/users")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = 90_000  // Render Cold Start kann bis zu 60s dauern
             conn.readTimeout = 90_000
-            conn.inputStream.use {
-                val json = it.bufferedReader().readText()
-                listAdapter.fromJson(json) ?: emptyList()
+
+            val code = conn.responseCode
+            if (code == HttpURLConnection.HTTP_OK) {
+                conn.inputStream.use {
+                    val json = it.bufferedReader().readText()
+                    Result.success(listAdapter.fromJson(json) ?: emptyList())
+                }
+            } else if (code == 502 || code == 503 || code == 504) {
+                Result.failure(IllegalStateException(friendlyServerStartingMessage()))
+            } else {
+                Result.failure(IllegalStateException("Server-Fehler: $code"))
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            e.printStackTrace()
+            Result.failure(IllegalStateException(friendlyServerStartingMessage()))
         } catch (e: Exception) {
             e.printStackTrace()
-            emptyList()
+            Result.failure(e)
         }
     }
 
