@@ -24,8 +24,9 @@ WORKDIR /app
 
 # Netty tcnative deaktivieren (wichtig bei grpc-netty-shaded)
 ENV JAVA_TOOL_OPTIONS="-Dio.grpc.netty.shaded.io.netty.handler.ssl.noOpenSsl=true -Dio.netty.handler.ssl.noOpenSsl=true"
+ENV SERVER_PORT=7860
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 7860
 ENTRYPOINT ["java","-jar","app.jar"]
