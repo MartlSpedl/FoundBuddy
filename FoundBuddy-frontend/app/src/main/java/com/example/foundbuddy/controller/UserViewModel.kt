@@ -54,6 +54,9 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isSessionRestoring = MutableStateFlow(true)
+    val isSessionRestoring: StateFlow<Boolean> = _isSessionRestoring.asStateFlow()
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
@@ -65,8 +68,8 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun restoreSession() {
-        val userId = sessionStore.loadUserId() ?: return
         try {
+            val userId = sessionStore.loadUserId() ?: return
             val user = api.getCurrentUser(userId)
             if (user != null) {
                 _currentUserFlow.value = user
@@ -78,6 +81,8 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         } catch (_: Exception) {
             // Wenn Backend gerade nicht erreichbar ist, lassen wir die Session-ID mal drin.
             // User bleibt dann ggf. "ausgeloggt", bis wieder Netzwerk da ist.
+        } finally {
+            _isSessionRestoring.value = false
         }
     }
 
@@ -99,7 +104,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val newUser = User(
-            id = System.currentTimeMillis().toString(),
+            id = "",  // Backend vergibt die endgültige ID
             username = username,
             email = email,
             password = password,

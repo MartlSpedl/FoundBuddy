@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -64,8 +65,20 @@ class MainActivity : ComponentActivity() {
             MaterialTheme(colorScheme = colors) {
 
                 val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+                val isSessionRestoring by userViewModel.isSessionRestoring.collectAsState(initial = true)
                 val isLoggedIn = currentUser != null
                 val scope = rememberCoroutineScope()
+
+                // ⏳ Warte auf Session-Wiederherstellung bevor navigiert wird
+                if (isSessionRestoring) {
+                    Box(
+                        modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                    return@MaterialTheme
+                }
 
                 LaunchedEffect(isLoggedIn) {
                     if (isLoggedIn) {

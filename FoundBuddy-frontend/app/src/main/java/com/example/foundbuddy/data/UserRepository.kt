@@ -36,20 +36,16 @@ class UserRepository {
             conn.connectTimeout = 90_000  // Render Cold Start kann bis zu 60s dauern
             conn.readTimeout = 90_000
 
-            val code = conn.responseCode
-            if (code == HttpURLConnection.HTTP_OK) {
-                conn.inputStream.use {
-                    val json = it.bufferedReader().readText()
-                    Result.success(listAdapter.fromJson(json) ?: emptyList())
-                }
-            } else if (code == 502 || code == 503 || code == 504) {
-                Result.failure(IllegalStateException(friendlyServerStartingMessage()))
-            } else {
-                Result.failure(IllegalStateException("Server-Fehler: $code"))
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) {
+                return@withContext Result.failure(
+                    Exception("Server-Fehler: ${conn.responseCode}")
+                )
             }
-        } catch (e: java.net.SocketTimeoutException) {
-            e.printStackTrace()
-            Result.failure(IllegalStateException(friendlyServerStartingMessage()))
+
+            conn.inputStream.use {
+                val json = it.bufferedReader().readText()
+                Result.success(listAdapter.fromJson(json) ?: emptyList())
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
@@ -160,6 +156,8 @@ class UserRepository {
             val url = java.net.URL("$baseUrl/api/users/resend-verification?email=$email")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
             conn.responseCode == HttpURLConnection.HTTP_OK
         } catch (e: Exception) {
             e.printStackTrace()

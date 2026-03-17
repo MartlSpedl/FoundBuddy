@@ -212,7 +212,7 @@ class HomeViewModel : ViewModel() {
 
                 val results = repo?.aiSearch(q)
                 // wir zeigen nur die Items an (Scores könnten wir später auch anzeigen)
-                _searchResults.value = results?.map { it.item }!!
+                _searchResults.value = results?.map { it.item } ?: emptyList()
                 _errorMessage.value = null
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Fehler bei der KI-Suche"

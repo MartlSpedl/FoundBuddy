@@ -39,6 +39,13 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             connection.connectTimeout = 5_000
             connection.readTimeout = 5_000
 
+            val responseCode = connection.responseCode
+            if (responseCode != java.net.HttpURLConnection.HTTP_OK) {
+                val errorBody = connection.errorStream?.bufferedReader()?.readText() ?: ""
+                Log.w("FoundItemRepository", "getAll() HTTP $responseCode: $errorBody")
+                return@withContext emptyList()
+            }
+
             connection.inputStream.use { input ->
                 val body = input.bufferedReader().use { it.readText() }
                 val dtoList = listAdapter.fromJson(body) ?: emptyList()
@@ -312,7 +319,8 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             
             // Bestimme MIME-Type und Dateinamen
             val mimeType = contentResolver.getType(imageUri) ?: "image/jpeg"
-            val fileName = "image_${System.currentTimeMillis()}.${mimeType.split("/")[1]}"
+            val extension = mimeType.substringAfterLast("/", missingDelimiterValue = "jpeg")
+            val fileName = "image_${System.currentTimeMillis()}.$extension"
             println("LOGCAT: MIME-Type: $mimeType, Filename: $fileName")
             
             // Erstelle Multipart-Request für Backend-Upload

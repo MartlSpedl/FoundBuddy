@@ -272,7 +272,7 @@ fun ItemDetailScreen(
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(text = comment.text, style = MaterialTheme.typography.bodyMedium)
-                    Divider(modifier = Modifier.padding(top = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
                 }
             }
 
