@@ -48,11 +48,10 @@ public class FirestoreRestService {
                         .createScoped("https://www.googleapis.com/auth/datastore",
                                 "https://www.googleapis.com/auth/cloud-platform");
                 if (resolvedProjectId == null || resolvedProjectId.isBlank()) {
-                    // Try to extract project_id from the JSON
-                    if (json.contains("\"project_id\"")) {
-                        int start = json.indexOf("\"project_id\"") + 14;
-                        int end = json.indexOf("\"", start);
-                        resolvedProjectId = json.substring(start, end);
+                    // Try to extract project_id from the JSON (more robustly)
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"project_id\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
+                    if (m.find()) {
+                        resolvedProjectId = m.group(1);
                     }
                 }
                 System.out.println("✅ FirestoreRestService: credentials loaded, projectId=" + resolvedProjectId);
