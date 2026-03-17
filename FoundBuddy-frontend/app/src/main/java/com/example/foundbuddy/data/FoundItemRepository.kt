@@ -16,7 +16,7 @@ import java.net.HttpURLConnection
 
 class FoundItemRepository(private val context: Context, private val api: FoundBuddyApi) {
 
-    private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
+    private val baseUrl: String = "https://martlspedl-foundbuddy-backend.hf.space"
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()

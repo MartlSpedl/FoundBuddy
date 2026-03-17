@@ -11,7 +11,7 @@ object ApiClient {
 
     // Emulator: http://10.0.2.2:8080/
     // Handy im WLAN: http://DEIN-PC-IP:8080/
-    private const val BASE_URL = "https://foundbuddy-rzyh.onrender.com/"
+    private const val BASE_URL = "https://martlspedl-foundbuddy-backend.hf.space/"
 
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()

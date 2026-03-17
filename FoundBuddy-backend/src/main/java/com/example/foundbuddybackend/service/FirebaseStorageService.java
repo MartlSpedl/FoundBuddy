@@ -31,8 +31,8 @@ public class FirebaseStorageService {
     public FirebaseStorageService() {
         // Base URL für lokale Bilder - Backend URL sollte bekannt sein
         // Für lokale Entwicklung: localhost:8080
-        // Für Production: https://foundbuddy-rzyh.onrender.com
-        this.baseUrl = "https://foundbuddy-rzyh.onrender.com";
+        // Für Production: https://martlspedl-foundbuddy-backend.hf.space
+        this.baseUrl = "https://martlspedl-foundbuddy-backend.hf.space";
     }
 
     /**

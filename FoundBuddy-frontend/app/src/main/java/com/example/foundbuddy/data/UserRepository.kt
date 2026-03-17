@@ -18,7 +18,7 @@ sealed class UserOperationResult {
 
 class UserRepository {
     // private val baseUrl: String = "http://10.0.2.2:8080"
-    private val baseUrl: String = "https://foundbuddy-rzyh.onrender.com"
+    private val baseUrl: String = "https://martlspedl-foundbuddy-backend.hf.space"
 
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
