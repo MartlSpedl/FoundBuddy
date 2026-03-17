@@ -26,12 +26,30 @@ jobs:
           # Clone the HF Space
           git clone https://MartlSpedl:$HF_TOKEN@huggingface.co/spaces/MartlSpedl/foundbuddy-backend /tmp/hf-space
 
-          # Sync backend files (excluding build artifacts and secrets)
+          # Write correct HF Space README (must not be overwritten by rsync)
+          cat > /tmp/hf-space/README.md << 'HFREADME'
+---
+title: FoundBuddy Backend
+emoji: 🐾
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
+# FoundBuddy Backend
+
+Spring Boot REST API for the FoundBuddy Android app.
+HFREADME
+
+          # Sync backend files (excluding build artifacts, secrets and README)
           rsync -av --delete \
             --exclude='.git' \
             --exclude='bin/' \
             --exclude='build/' \
             --exclude='uploads/' \
+            --exclude='README.md' \
             --exclude='src/main/resources/firebase-key.json' \
             FoundBuddy-backend/ /tmp/hf-space/
 
