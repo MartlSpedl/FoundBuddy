@@ -36,19 +36,35 @@ class UserRepository {
             conn.connectTimeout = 90_000  // Render Cold Start kann bis zu 60s dauern
             conn.readTimeout = 90_000
 
-            if (conn.responseCode != HttpURLConnection.HTTP_OK) {
+            val code = conn.responseCode
+            android.util.Log.d("UserRepository", "getAll() responseCode=$code")
+
+            if (code != HttpURLConnection.HTTP_OK) {
+                val body = conn.errorStream?.bufferedReader()?.readText() ?: "(kein Body)"
+                android.util.Log.w("UserRepository", "getAll() Fehler $code: $body")
                 return@withContext Result.failure(
-                    Exception("Server-Fehler: ${conn.responseCode}")
+                    Exception("Server antwortet mit HTTP $code. Bitte warte kurz und versuche es erneut.")
                 )
             }
 
             conn.inputStream.use {
                 val json = it.bufferedReader().readText()
-                Result.success(listAdapter.fromJson(json) ?: emptyList())
+                android.util.Log.d("UserRepository", "getAll() OK, ${json.length} Zeichen erhalten")
+                val parsed = listAdapter.fromJson(json)
+                if (parsed == null) {
+                    return@withContext Result.failure(Exception("Antwort konnte nicht verarbeitet werden (JSON-Parsing fehlgeschlagen)."))
+                }
+                Result.success(parsed)
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            android.util.Log.e("UserRepository", "getAll() Timeout", e)
+            Result.failure(Exception("Verbindung zum Server hat zu lange gedauert (Timeout). Bitte versuche es erneut."))
+        } catch (e: java.net.UnknownHostException) {
+            android.util.Log.e("UserRepository", "getAll() Host nicht gefunden", e)
+            Result.failure(Exception("Server nicht erreichbar. Bitte prüfe deine Internetverbindung."))
         } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
+            android.util.Log.e("UserRepository", "getAll() unbekannter Fehler", e)
+            Result.failure(Exception(e.message ?: "Unbekannter Fehler beim Verbinden mit dem Server."))
         }
     }
 

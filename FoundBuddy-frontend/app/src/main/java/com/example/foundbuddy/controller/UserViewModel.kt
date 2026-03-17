@@ -133,12 +133,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             // Hole alle Benutzer vom Backend (wartet bis zu 90s auf Cold Start)
             val usersResult = api.getAll()
 
-            // Wenn ein Fehler aufgetreten ist → Server-Problem oder Netzwerkfehler
             if (usersResult.isFailure) {
-                return LoginResult.ServerError(
-                    usersResult.exceptionOrNull()?.message
-                        ?: "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
-                )
+                val msg = usersResult.exceptionOrNull()?.message
+                    ?: "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
+                android.util.Log.e("UserViewModel", "login() getAll() fehlgeschlagen: $msg")
+                return LoginResult.ServerError(msg)
             }
 
             val users = usersResult.getOrElse { emptyList() }
