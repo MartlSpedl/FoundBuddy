@@ -1,0 +1,43 @@
+name: Deploy Backend to HuggingFace Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'FoundBuddy-backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to HuggingFace Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "ci@foundbuddy"
+          git config --global user.name "FoundBuddy CI"
+
+          # Clone the HF Space
+          git clone https://MartlSpedl:$HF_TOKEN@huggingface.co/spaces/MartlSpedl/foundbuddy-backend /tmp/hf-space
+
+          # Sync backend files (excluding build artifacts and secrets)
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='bin/' \
+            --exclude='build/' \
+            --exclude='uploads/' \
+            --exclude='src/main/resources/firebase-key.json' \
+            FoundBuddy-backend/ /tmp/hf-space/
+
+          # Commit and push
+          cd /tmp/hf-space
+          git add -A
+          git diff --staged --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Auto-deploy from GitHub commit ${{ github.sha }}"
+          git push
