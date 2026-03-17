@@ -36,7 +36,7 @@ public class FirestoreRestService {
         // 1. Try classpath (firebase-key.json in src/main/resources — works locally and when bundled)
         // 2. Fall back to FIREBASE_CREDENTIALS_JSON env var (set this on Render if the file is gitignored)
         String json = loadJson();
-        String pid = "foundbuddy";
+        String pid = null;
 
         GoogleCredentials creds = null;
         String resolvedProjectId = pid;
