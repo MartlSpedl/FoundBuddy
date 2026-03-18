@@ -287,4 +287,5 @@ public class FirestoreRestService {
         System.err.println("❌ FirestoreRestService: no credentials found (classpath or env var)");
         return null;
     }
+    // new test kommi
 }
