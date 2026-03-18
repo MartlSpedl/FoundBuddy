@@ -4,6 +4,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -33,8 +34,8 @@ public class FirestoreRestService {
     private final GoogleCredentials credentials;
 
     public FirestoreRestService() {
-        // Use JDK 11 HttpClient to support HTTP PATCH
-        rest = new RestTemplate(new org.springframework.http.client.JdkClientHttpRequestFactory());
+        // Use Apache HttpClient 5 to support HTTP PATCH (since JdkClientHttpRequestFactory needs Spring Boot 3.2+)
+        rest = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
 
         // 1. Try classpath (firebase-key.json in src/main/resources — works locally and when bundled)
         // 2. Fall back to FIREBASE_CREDENTIALS_JSON env var (set this on Render if the file is gitignored)
