@@ -58,4 +58,4 @@ HFREADME
           git add -A
           git diff --staged --quiet && echo "No changes to deploy" && exit 0
           git commit -m "Auto-deploy from GitHub commit ${{ github.sha }}"
-          git push
+          git push --force
