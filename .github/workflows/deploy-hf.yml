@@ -12,58 +12,40 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Push to HuggingFace Space
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Upload backend to HF Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          set -e
+          python3 - <<'EOF'
+import os
+from huggingface_hub import HfApi
 
-          git config --global user.email "ci@foundbuddy"
-          git config --global user.name "FoundBuddy CI"
+token = os.environ["HF_TOKEN"]
+api = HfApi()
 
-          # Store HF credentials so git can authenticate
-          git config --global credential.helper store
-          echo "https://MartlSpedl:${HF_TOKEN}@huggingface.co" > ~/.git-credentials
+print("Uploading FoundBuddy-backend to HuggingFace Space...")
 
-          # Clone the HF Space (public clone, push uses credentials above)
-          git clone https://huggingface.co/spaces/MartlSpedl/foundbuddy-backend /tmp/hf-space
+api.upload_folder(
+    folder_path="FoundBuddy-backend",
+    repo_id="MartlSpedl/foundbuddy-backend",
+    repo_type="space",
+    token=token,
+    ignore_patterns=[
+        "bin/**",
+        "build/**",
+        "uploads/**",
+        "*.class",
+        "*.jar",
+        "src/main/resources/firebase-key.json",
+        ".idea/**",
+        ".gradle/**",
+    ],
+    commit_message=f"Auto-deploy from GitHub commit ${{ github.sha }}"
+)
 
-          # Write correct HF Space README (never overwritten by rsync)
-          cat > /tmp/hf-space/README.md << 'HFREADME'
----
-title: FoundBuddy Backend
-emoji: 🐾
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
----
-
-# FoundBuddy Backend
-
-Spring Boot REST API for the FoundBuddy Android app.
-HFREADME
-
-          # Sync backend files (excluding build artifacts, secrets and README)
-          rsync -av --delete \
-            --exclude='.git' \
-            --exclude='bin/' \
-            --exclude='build/' \
-            --exclude='uploads/' \
-            --exclude='README.md' \
-            --exclude='src/main/resources/firebase-key.json' \
-            FoundBuddy-backend/ /tmp/hf-space/
-
-          # Commit and force-push (GitHub is always the source of truth)
-          cd /tmp/hf-space
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No changes to deploy"
-            exit 0
-          fi
-          git commit -m "Auto-deploy from GitHub commit ${{ github.sha }}"
-          git push --force https://MartlSpedl:${HF_TOKEN}@huggingface.co/spaces/MartlSpedl/foundbuddy-backend main
+print("Upload complete!")
+EOF
