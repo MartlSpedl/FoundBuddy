@@ -14,19 +14,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
 
       - name: Push to HuggingFace Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          set -e
+
           git config --global user.email "ci@foundbuddy"
           git config --global user.name "FoundBuddy CI"
 
-          # Clone the HF Space
-          git clone https://MartlSpedl:$HF_TOKEN@huggingface.co/spaces/MartlSpedl/foundbuddy-backend /tmp/hf-space
+          # Store HF credentials so git can authenticate
+          git config --global credential.helper store
+          echo "https://MartlSpedl:${HF_TOKEN}@huggingface.co" > ~/.git-credentials
 
-          # Write correct HF Space README (must not be overwritten by rsync)
+          # Clone the HF Space (public clone, push uses credentials above)
+          git clone https://huggingface.co/spaces/MartlSpedl/foundbuddy-backend /tmp/hf-space
+
+          # Write correct HF Space README (never overwritten by rsync)
           cat > /tmp/hf-space/README.md << 'HFREADME'
 ---
 title: FoundBuddy Backend
@@ -53,9 +58,12 @@ HFREADME
             --exclude='src/main/resources/firebase-key.json' \
             FoundBuddy-backend/ /tmp/hf-space/
 
-          # Commit and push
+          # Commit and force-push (GitHub is always the source of truth)
           cd /tmp/hf-space
           git add -A
-          git diff --staged --quiet && echo "No changes to deploy" && exit 0
+          if git diff --staged --quiet; then
+            echo "No changes to deploy"
+            exit 0
+          fi
           git commit -m "Auto-deploy from GitHub commit ${{ github.sha }}"
-          git push --force
+          git push --force https://MartlSpedl:${HF_TOKEN}@huggingface.co/spaces/MartlSpedl/foundbuddy-backend main
