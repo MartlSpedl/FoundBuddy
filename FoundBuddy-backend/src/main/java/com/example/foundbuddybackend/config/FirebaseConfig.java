@@ -25,10 +25,14 @@ public class FirebaseConfig {
             InputStream serviceAccount;
 
             // Service-Account aus Umgebungsvariable lesen (kompletter JSON-Inhalt)
-            String firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+            // Wir prüfen zuerst FIREBASE_CREDENTIALS_JSON (HuggingFace/Render Standard)
+            String firebaseJson = System.getenv("FIREBASE_CREDENTIALS_JSON");
+            if (firebaseJson == null || firebaseJson.isBlank()) {
+                firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+            }
 
             if (firebaseJson != null && !firebaseJson.isBlank()) {
-                System.out.println("🔑 FIREBASE_SERVICE_ACCOUNT_JSON gefunden, Länge: " + firebaseJson.length());
+                System.out.println("🔑 Firebase-JSON aus Umgebungsvariable gefunden, Länge: " + firebaseJson.length());
 
                 // ⚠️ Render encodes newlines in env vars as literal \n (two chars) instead of real newlines.
                 // RSA private keys NEED real newlines — fix them before parsing.
