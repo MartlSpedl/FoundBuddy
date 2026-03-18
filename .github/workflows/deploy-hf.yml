@@ -19,33 +19,5 @@ jobs:
       - name: Upload backend to HF Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          python3 - <<'EOF'
-import os
-from huggingface_hub import HfApi
-
-token = os.environ["HF_TOKEN"]
-api = HfApi()
-
-print("Uploading FoundBuddy-backend to HuggingFace Space...")
-
-api.upload_folder(
-    folder_path="FoundBuddy-backend",
-    repo_id="MartlSpedl/foundbuddy-backend",
-    repo_type="space",
-    token=token,
-    ignore_patterns=[
-        "bin/**",
-        "build/**",
-        "uploads/**",
-        "*.class",
-        "*.jar",
-        "src/main/resources/firebase-key.json",
-        ".idea/**",
-        ".gradle/**",
-    ],
-    commit_message=f"Auto-deploy from GitHub commit ${{ github.sha }}"
-)
-
-print("Upload complete!")
-EOF
+          GITHUB_SHA: ${{ github.sha }}
+        run: python3 .github/scripts/deploy_hf.py
