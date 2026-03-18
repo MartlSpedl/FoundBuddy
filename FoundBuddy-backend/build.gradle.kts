@@ -14,6 +14,8 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    // Apache HttpClient 5 für PATCH-Support im RestTemplate
+    implementation("org.apache.httpcomponents.client5:httpclient5")
     // Spring Mail für Email-Versand
     implementation("org.springframework.boot:spring-boot-starter-mail")
     // Bean Validation
