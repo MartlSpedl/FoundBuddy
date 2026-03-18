@@ -33,8 +33,8 @@ class UserRepository {
             val url = java.net.URL("$baseUrl/api/users")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
-            conn.connectTimeout = 90_000  // Render Cold Start kann bis zu 60s dauern
-            conn.readTimeout = 90_000
+            conn.connectTimeout = 30_000  // HuggingFace Space braucht evtl. etwas beim Aufwachen
+            conn.readTimeout = 30_000
 
             val code = conn.responseCode
             android.util.Log.d("UserRepository", "getAll() responseCode=$code")
@@ -83,7 +83,7 @@ class UserRepository {
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
             conn.connectTimeout = 20_000
-            conn.readTimeout = 30_000  // Render braucht Zeit für Firestore + E-Mail
+            conn.readTimeout = 30_000  // Backend braucht Zeit für Firestore + E-Mail
 
             val json = adapter.toJson(user)
             conn.outputStream.use { it.write(json.toByteArray()) }
@@ -221,8 +221,8 @@ class UserRepository {
         var lastCode: Int? = null
         var lastException: Exception? = null
 
-        // 6 Versuche: 0s, 2s, 5s, 10s, 20s, 30s (Render Cold Start kann bis zu 60s dauern)
-        val delays = listOf(0L, 2000L, 5000L, 10000L, 20000L, 30000L)
+        // HuggingFace Space wacht schneller auf, braucht aber kurz
+        val delays = listOf(0L, 2000L, 5000L, 10000L)
 
         for (d in delays) {
             if (d > 0) delay(d)
@@ -241,12 +241,12 @@ class UserRepository {
                     return WarmUpResult.Ready
                 }
 
-                // typische Render-Codes beim Aufwachen
-                if (code == 502 || code == 503 || code == 504 || code == 500) {
+                // typische Codes, wenn der Space noch bootet/buildet
+                if (code == 502 || code == 503 || code == 504) {
                     continue
                 }
 
-                // alles andere: nicht “Cold start”, sondern echter Fehler
+                // alles andere als Cold start werten wir als echten Fehler
                 return WarmUpResult.Failed(code, null)
 
             } catch (e: Exception) {
@@ -265,7 +265,7 @@ class UserRepository {
     }
 
     fun friendlyServerStartingMessage(): String {
-        return "Server startet gerade (Render Cold Start). Dies dauert 30-60 Sekunden. Bitte versuche es in 1 Minute erneut."
+        return "Server Cloud Space startet gerade. Bitte versuche es in Kürze erneut."
     }
 
 }

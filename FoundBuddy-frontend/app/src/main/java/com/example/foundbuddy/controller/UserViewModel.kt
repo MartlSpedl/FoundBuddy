@@ -121,7 +121,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
      * Login - prüft auch ob Email verifiziert ist.
      *
      * Kein isServerReady()-Check mehr vor dem Login – stattdessen wird getAll()
-     * direkt aufgerufen (hat jetzt 90s Timeout für Render Cold Start).
+     * direkt aufgerufen.
      * Wenn die User-Liste leer ist, zeigen wir eine klare Fehlermeldung.
      */
     suspend fun login(email: String, password: String): LoginResult {
@@ -130,12 +130,12 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             val cleanEmail = email.trim()
             val cleanPassword = password.trim()
 
-            // Hole alle Benutzer vom Backend (wartet bis zu 90s auf Cold Start)
+            // Hole alle Benutzer vom Backend
             val usersResult = api.getAll()
 
             if (usersResult.isFailure) {
                 val msg = usersResult.exceptionOrNull()?.message
-                    ?: "Server startet gerade (Render Cold Start). Bitte warte 30–60 Sekunden und versuche es erneut."
+                    ?: "Server Cloud Space startet gerade. Bitte versuche es in Kürze erneut."
                 android.util.Log.e("UserViewModel", "login() getAll() fehlgeschlagen: $msg")
                 return LoginResult.ServerError(msg)
             }
