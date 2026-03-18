@@ -28,11 +28,14 @@ public class FirestoreRestService {
     private static final String FIRESTORE_BASE =
             "https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents";
 
-    private final RestTemplate rest = new RestTemplate();
+    private final RestTemplate rest;
     private final String projectId;
     private final GoogleCredentials credentials;
 
     public FirestoreRestService() {
+        // Use JDK 11 HttpClient to support HTTP PATCH
+        rest = new RestTemplate(new org.springframework.http.client.JdkClientHttpRequestFactory());
+
         // 1. Try classpath (firebase-key.json in src/main/resources — works locally and when bundled)
         // 2. Fall back to FIREBASE_CREDENTIALS_JSON env var (set this on Render if the file is gitignored)
         String json = loadJson();
