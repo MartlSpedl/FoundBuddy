@@ -50,6 +50,45 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
         .build()
 
     Box(modifier = modifier.fillMaxSize()) {
+        AsyncImage(
+            model = imageModel,
+            contentDescription = "Zoombares Bild",
+            contentScale = ContentScale.Fit,
+            onError = { error ->
+                imageLoadFailed = true
+                isLoading = false
+            },
+            onLoading = {
+                imageLoadFailed = false
+                isLoading = true
+            },
+            onSuccess = { 
+                imageLoadFailed = false
+                isLoading = false
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale.coerceAtLeast(1f),
+                    scaleY = scale.coerceAtLeast(1f),
+                    translationX = offsetX,
+                    translationY = offsetY
+                )
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(1f, 5f)
+                        if (scale > 1f) {
+                            offsetX += pan.x
+                            offsetY += pan.y
+                        } else {
+                            offsetX = 0f
+                            offsetY = 0f
+                        }
+                    }
+                }
+        )
+
+        // Loading/Error overlay
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -62,44 +101,6 @@ fun ZoomImage(url: String?, modifier: Modifier = Modifier) {
                     Text("Bild konnte nicht geladen werden", color = MaterialTheme.colorScheme.error)
                 }
             }
-        } else {
-            AsyncImage(
-                model = imageModel,
-                contentDescription = "Zoombares Bild",
-                contentScale = ContentScale.Fit,
-                onError = { error ->
-                    imageLoadFailed = true
-                    isLoading = false
-                },
-                onLoading = {
-                    imageLoadFailed = false
-                    isLoading = true
-                },
-                onSuccess = { 
-                    imageLoadFailed = false
-                    isLoading = false
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer(
-                        scaleX = scale.coerceAtLeast(1f),
-                        scaleY = scale.coerceAtLeast(1f),
-                        translationX = offsetX,
-                        translationY = offsetY
-                    )
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 5f)
-                            if (scale > 1f) {
-                                offsetX += pan.x
-                                offsetY += pan.y
-                            } else {
-                                offsetX = 0f
-                                offsetY = 0f
-                            }
-                        }
-                    }
-            )
         }
     }
 }

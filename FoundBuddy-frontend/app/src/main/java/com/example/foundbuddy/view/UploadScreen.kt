@@ -27,6 +27,7 @@ import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.network.ApiClient
 import com.example.foundbuddy.network.FoundBuddyApi
 import kotlinx.coroutines.launch
+import com.example.foundbuddy.controller.UserViewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
