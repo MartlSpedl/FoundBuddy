@@ -32,6 +32,7 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(
+    userViewModel: UserViewModel,
     onUpload: (FoundItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -39,6 +40,9 @@ fun UploadScreen(
     val scope = rememberCoroutineScope()
     val api = remember { ApiClient.retrofit.create(FoundBuddyApi::class.java) }
     val apiRepo = remember { FoundItemRepository(context, api) }
+
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val username by userViewModel.username.collectAsState(initial = "Unbekannt")
 
     var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedItem by remember { mutableStateOf("") }
@@ -287,7 +291,8 @@ fun UploadScreen(
                                 description = if (desc.isBlank()) null else desc,
                                 imagePath = imageUrl, // ✅ URL statt content:// oder file://
                                 status = type,
-                                isResolved = false
+                                isResolved = false,
+                                uploaderName = username
                             )
                         )
 

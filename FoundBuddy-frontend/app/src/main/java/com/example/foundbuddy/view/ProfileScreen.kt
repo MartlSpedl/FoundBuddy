@@ -150,17 +150,8 @@ fun ProfileScreen(
                     }
 
                     if (imageUri != null) {
-                        // Dekodiere URL falls nötig (Firebase URLs sind oft URL-encodiert)
-                        val decodedUrl = try {
-                            if (imageUri.contains("%2F") || imageUri.contains("%3A")) {
-                                java.net.URLDecoder.decode(imageUri, "UTF-8")
-                            } else {
-                                imageUri
-                            }
-                        } catch (e: Exception) {
-                            println("LOGCAT: ProfileScreen URL Dekodierung fehlgeschlagen: ${e.message}")
-                            imageUri
-                        }
+                        // Firebase URLs sollten nicht dekodiert werden (da sie %2F benötigen)
+                        val decodedUrl = imageUri
                         
                         println("LOGCAT: ProfileScreen - Dekodierte URL: $decodedUrl")
                         

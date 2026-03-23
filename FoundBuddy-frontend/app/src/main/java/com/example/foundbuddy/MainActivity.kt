@@ -189,6 +189,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 "upload" -> UploadScreen(
+                                    userViewModel = userViewModel,
                                     onUpload = { newItem ->
                                         scope.launch {
                                             // Lade alle Daten neu vom Backend statt lokal hinzuzufügen

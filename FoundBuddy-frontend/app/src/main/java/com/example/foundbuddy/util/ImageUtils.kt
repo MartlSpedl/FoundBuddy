@@ -10,18 +10,7 @@ object ImageUtils {
      * Firebase Storage gibt oft URLs mit %2F statt / zurück
      */
     fun decodeImageUrl(url: String?): String? {
-        if (url.isNullOrBlank()) return null
-        
-        return try {
-            if (url.contains("%2F") || url.contains("%3A")) {
-                val decoded = java.net.URLDecoder.decode(url, "UTF-8")
-                decoded
-            } else {
-                url
-            }
-        } catch (e: Exception) {
-            url
-        }
+        return url
     }
     
     /**

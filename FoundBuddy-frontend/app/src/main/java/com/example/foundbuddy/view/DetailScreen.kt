@@ -31,17 +31,8 @@ fun DetailScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         item.imagePath?.let { imagePath ->
-            // Dekodiere URL falls nötig (Firebase URLs sind oft URL-encodiert)
-            val decodedUrl = try {
-                if (imagePath.contains("%2F") || imagePath.contains("%3A")) {
-                    java.net.URLDecoder.decode(imagePath, "UTF-8")
-                } else {
-                    imagePath
-                }
-            } catch (e: Exception) {
-                println("LOGCAT: URL Dekodierung fehlgeschlagen: ${e.message}")
-                imagePath
-            }
+            // Firebase URLs sollten nicht dekodiert werden
+            val decodedUrl = imagePath
             
             println("LOGCAT: DetailScreen - Dekodierte URL: $decodedUrl")
             
