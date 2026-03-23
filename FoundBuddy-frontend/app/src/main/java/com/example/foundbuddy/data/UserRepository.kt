@@ -69,7 +69,6 @@ class UserRepository {
     }
 
     suspend fun create(user: User): UserOperationResult = withContext(Dispatchers.IO) {
-        try {
             when (val warm = warmUpServer()) {
                 is WarmUpResult.Failed -> {
                     return@withContext UserOperationResult.Error(friendlyServerStartingMessage())
@@ -82,8 +81,8 @@ class UserRepository {
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
-            conn.connectTimeout = 20_000
-            conn.readTimeout = 30_000  // Backend braucht Zeit für Firestore + E-Mail
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 90_000  // HF kann Anfragen lange halten, wenn Space aufwacht
 
             val json = adapter.toJson(user)
             conn.outputStream.use { it.write(json.toByteArray()) }
@@ -130,8 +129,8 @@ class UserRepository {
             val url = java.net.URL("$baseUrl/api/users/$userId")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
-            conn.connectTimeout = 12_000
-            conn.readTimeout = 12_000
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 30_000
             
             if (conn.responseCode == HttpURLConnection.HTTP_OK) {
                 conn.inputStream.use {
@@ -197,8 +196,8 @@ class UserRepository {
             val url = java.net.URL("$baseUrl/api/users/request-password-reset?email=$encoded")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
-            conn.connectTimeout = 12_000
-            conn.readTimeout = 12_000
+            conn.connectTimeout = 30_000
+            conn.readTimeout = 90_000
 
             conn.responseCode == HttpURLConnection.HTTP_OK
         } catch (e: Exception) {
@@ -218,46 +217,33 @@ class UserRepository {
     suspend fun warmUpServer(): WarmUpResult {
         val url = java.net.URL("$baseUrl/api/health")
 
-        var lastCode: Int? = null
-        var lastException: Exception? = null
-
-        // HuggingFace Space braucht evtl. länger (vor allem wenn der Space frisch buildet)
-        val delays = listOf(0L, 2000L, 5000L, 10000L, 15000L, 20000L)
-
-        for (d in delays) {
-            if (d > 0) delay(d)
-
-            try {
-                val conn = (url.openConnection() as HttpURLConnection).apply {
-                    requestMethod = "GET"
-                    connectTimeout = 12_000
-                    readTimeout = 12_000
-                }
-
-                val code = conn.responseCode
-                lastCode = code
-
-                if (code == HttpURLConnection.HTTP_OK) {
-                    // Prüfen ob wir wirklich das Backend erreicht haben (vermeidet HF HTML-Ladeseite)
-                    val body = conn.inputStream.bufferedReader().use { it.readText() }
-                    if (body.contains("\"status\"") && body.contains("\"ok\"")) {
-                        return WarmUpResult.Ready
-                    }
-                    continue // HTML Seite von Hugging Face -> weiter warten
-                }
-
-                // Hugging Face kann während dem Boot/Build verschiedenste Codes liefern (503, 502, 404, etc.)
-                // Alles außer einem gültigen 200 OK mit JSON ist für uns "noch nicht wach"
-                continue
-
-            } catch (e: Exception) {
-                lastException = e
-                // Timeouts/IO beim Starten sind normal -> nächster Versuch
-                continue
+        // Hugging Face hält eingehende Requests oft in der Warteschlange, während der Space bootet.
+        // Daher kein Loop mehr (das war Render-spezifisch), sondern einfach ein langes Timeout.
+        try {
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 30_000
+                readTimeout = 90_000 // Bis zu 90s warten auf HF Boot
             }
-        }
 
-        return WarmUpResult.Failed(lastCode, lastException)
+            val code = conn.responseCode
+
+            if (code == HttpURLConnection.HTTP_OK) {
+                // Prüfen ob wir wirklich das Backend erreicht haben (vermeidet HF HTML-Ladeseite)
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                if (body.contains("\"status\"") && body.contains("\"ok\"")) {
+                    return WarmUpResult.Ready
+                }
+                // Wenn es eine 200 OK Ladeseite ist, werten wir es als Failed, da der Code nicht weiter wartet
+                return WarmUpResult.Failed(code, Exception("HF Loading Page received"))
+            }
+
+            // Andere HF Codes während Boot (502, 503, 504)
+            return WarmUpResult.Failed(code, null)
+
+        } catch (e: Exception) {
+            return WarmUpResult.Failed(null, e)
+        }
     }
 
     sealed class WarmUpResult {
