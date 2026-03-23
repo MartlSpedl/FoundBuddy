@@ -69,9 +69,11 @@ class UserRepository {
     }
 
     suspend fun create(user: User): UserOperationResult = withContext(Dispatchers.IO) {
+        try{
             when (val warm = warmUpServer()) {
                 is WarmUpResult.Failed -> {
-                    return@withContext UserOperationResult.Error(friendlyServerStartingMessage())
+                    val reason = warm.exception?.message ?: "HTTP Code ${warm.code}"
+                    return@withContext UserOperationResult.Error("WarmUp fehlgeschlagen: $reason")
                 }
                 WarmUpResult.Ready -> { /* weiter */ }
             }
@@ -110,14 +112,14 @@ class UserRepository {
                     }
                 }
             } else if (responseCode == 502 || responseCode == 503 || responseCode == 504) {
-                UserOperationResult.Error(friendlyServerStartingMessage())
+                UserOperationResult.Error("HTTP $responseCode: Space startet (ggf. kurz warten)")
             } else {
                 UserOperationResult.Error("Server-Fehler: $responseCode")
             }
 
         } catch (e: java.net.SocketTimeoutException) {
             e.printStackTrace()
-            UserOperationResult.Error(friendlyServerStartingMessage())
+            UserOperationResult.Error("Timeout: Space braucht zu lange zum Antworten")
         } catch (e: Exception) {
             e.printStackTrace()
             UserOperationResult.Error("Registrierung fehlgeschlagen: ${e.message}")
@@ -229,20 +231,19 @@ class UserRepository {
             val code = conn.responseCode
 
             if (code == HttpURLConnection.HTTP_OK) {
-                // Prüfen ob wir wirklich das Backend erreicht haben (vermeidet HF HTML-Ladeseite)
+                // Prüfen ob wir wirklich das Backend erreicht haben
                 val body = conn.inputStream.bufferedReader().use { it.readText() }
                 if (body.contains("\"status\"") && body.contains("\"ok\"")) {
                     return WarmUpResult.Ready
                 }
-                // Wenn es eine 200 OK Ladeseite ist, werten wir es als Failed, da der Code nicht weiter wartet
-                return WarmUpResult.Failed(code, Exception("HF Loading Page received"))
+                return WarmUpResult.Failed(code, Exception("Unerwarteter Body: " + body.take(80)))
             }
 
-            // Andere HF Codes während Boot (502, 503, 504)
-            return WarmUpResult.Failed(code, null)
+            // Andere HF Codes während Boot
+            return WarmUpResult.Failed(code, Exception("Server lieferte HTTP $code stat 200 OK"))
 
         } catch (e: Exception) {
-            return WarmUpResult.Failed(null, e)
+            return WarmUpResult.Failed(null, Exception("${e.javaClass.simpleName}: ${e.message}"))
         }
     }
 
