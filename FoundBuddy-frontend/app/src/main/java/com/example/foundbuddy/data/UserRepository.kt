@@ -221,8 +221,8 @@ class UserRepository {
         var lastCode: Int? = null
         var lastException: Exception? = null
 
-        // HuggingFace Space wacht schneller auf, braucht aber kurz
-        val delays = listOf(0L, 2000L, 5000L, 10000L)
+        // HuggingFace Space braucht evtl. länger (vor allem wenn der Space frisch buildet)
+        val delays = listOf(0L, 2000L, 5000L, 10000L, 15000L, 20000L)
 
         for (d in delays) {
             if (d > 0) delay(d)
@@ -238,16 +238,17 @@ class UserRepository {
                 lastCode = code
 
                 if (code == HttpURLConnection.HTTP_OK) {
-                    return WarmUpResult.Ready
+                    // Prüfen ob wir wirklich das Backend erreicht haben (vermeidet HF HTML-Ladeseite)
+                    val body = conn.inputStream.bufferedReader().use { it.readText() }
+                    if (body.contains("\"status\"") && body.contains("\"ok\"")) {
+                        return WarmUpResult.Ready
+                    }
+                    continue // HTML Seite von Hugging Face -> weiter warten
                 }
 
-                // typische Codes, wenn der Space noch bootet/buildet
-                if (code == 502 || code == 503 || code == 504) {
-                    continue
-                }
-
-                // alles andere als Cold start werten wir als echten Fehler
-                return WarmUpResult.Failed(code, null)
+                // Hugging Face kann während dem Boot/Build verschiedenste Codes liefern (503, 502, 404, etc.)
+                // Alles außer einem gültigen 200 OK mit JSON ist für uns "noch nicht wach"
+                continue
 
             } catch (e: Exception) {
                 lastException = e
