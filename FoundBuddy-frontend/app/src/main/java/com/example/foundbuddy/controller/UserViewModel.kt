@@ -238,7 +238,13 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
                 return false
             }
 
-            val updated = user.copy(profileImage = uri)
+            val finalUri = if (uri != null && (uri.startsWith("content://") || uri.startsWith("file://"))) {
+                api.uploadProfileImage(getApplication(), android.net.Uri.parse(uri))
+            } else {
+                uri
+            }
+
+            val updated = user.copy(profileImage = finalUri)
             val success = api.update(updated)
 
             if (success) {

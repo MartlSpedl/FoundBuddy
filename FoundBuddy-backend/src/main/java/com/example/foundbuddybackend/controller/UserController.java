@@ -41,6 +41,7 @@ public class UserController {
         u.setEmailVerified(Boolean.TRUE.equals(m.get("emailVerified")));
         u.setVerificationToken(str(m, "verificationToken"));
         u.setPasswordResetToken(str(m, "passwordResetToken"));
+        u.setProfileImage(str(m, "profileImage"));
         Object ts = m.get("passwordResetRequestedAt");
         if (ts instanceof Number) u.setPasswordResetRequestedAt(((Number) ts).longValue());
         return u;
@@ -62,6 +63,7 @@ public class UserController {
         if (u.getVerificationToken() != null) m.put("verificationToken", u.getVerificationToken());
         if (u.getPasswordResetToken() != null) m.put("passwordResetToken", u.getPasswordResetToken());
         if (u.getPasswordResetRequestedAt() != null) m.put("passwordResetRequestedAt", u.getPasswordResetRequestedAt());
+        if (u.getProfileImage() != null) m.put("profileImage", u.getProfileImage());
         return m;
     }
 
@@ -139,6 +141,24 @@ public class UserController {
 
             return new ResponseEntity<>(user, HttpStatus.CREATED);
 
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody User user) {
+        try {
+            Map<String, Object> existing = db.getDocument(COLLECTION, id);
+            if (existing == null) return ResponseEntity.notFound().build();
+            
+            User u = mapToUser(existing);
+            if (user.getUsername() != null) u.setUsername(user.getUsername());
+            if (user.getProfileImage() != null) u.setProfileImage(user.getProfileImage());
+            
+            db.setDocument(COLLECTION, id, userToMap(u));
+            return ResponseEntity.ok(u);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

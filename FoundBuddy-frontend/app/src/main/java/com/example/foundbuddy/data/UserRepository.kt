@@ -168,6 +168,52 @@ class UserRepository {
         }
     }
 
+    suspend fun uploadProfileImage(context: android.content.Context, imageUri: android.net.Uri): String = withContext(Dispatchers.IO) {
+        val contentResolver = context.contentResolver
+        val inputStream = contentResolver.openInputStream(imageUri) ?: throw Exception("Bild konnte nicht gelesen werden")
+        val bytes = inputStream.use { it.readBytes() }
+        
+        val mimeType = contentResolver.getType(imageUri) ?: "image/jpeg"
+        val extension = mimeType.substringAfterLast("/", missingDelimiterValue = "jpg")
+        val fileName = "profile_${System.currentTimeMillis()}.$extension"
+        val boundary = "----${System.currentTimeMillis()}"
+        
+        val url = java.net.URL("$baseUrl/api/images")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+        conn.setRequestProperty("Accept", "application/json")
+        conn.connectTimeout = 30_000
+        conn.readTimeout = 30_000
+        
+        val outputStream = conn.outputStream
+        val writer = outputStream.writer()
+        
+        writer.append("--$boundary\r\n")
+        writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+        writer.append("Content-Type: $mimeType\r\n\r\n")
+        writer.flush()
+        
+        outputStream.write(bytes)
+        outputStream.flush()
+        
+        writer.append("\r\n--$boundary--\r\n")
+        writer.flush()
+        writer.close()
+        
+        if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+            val response = conn.inputStream.use { it.bufferedReader().readText() }
+            val json = org.json.JSONObject(response)
+            val imageUrl = json.getString("imageUrl")
+            if (!imageUrl.startsWith("http")) throw Exception("Ungültige Bild-URL")
+            imageUrl
+        } else {
+            val err = conn.errorStream?.use { it.bufferedReader().readText() } ?: "Unknown error"
+            throw Exception("Upload failed: ${conn.responseCode} - $err")
+        }
+    }
+
     suspend fun resendVerificationEmail(email: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = java.net.URL("$baseUrl/api/users/resend-verification?email=$email")

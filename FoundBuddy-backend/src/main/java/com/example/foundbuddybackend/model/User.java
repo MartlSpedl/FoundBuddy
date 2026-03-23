@@ -10,6 +10,8 @@ public class User {
     private boolean emailVerified;
     private String verificationToken;
 
+    private String profileImage;
+
     // Passwort Reset
     private String passwordResetToken;
     private Long passwordResetRequestedAt;
@@ -78,5 +80,13 @@ public class User {
 
     public void setPasswordResetRequestedAt(Long passwordResetRequestedAt) {
         this.passwordResetRequestedAt = passwordResetRequestedAt;
+    }
+
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
 }
