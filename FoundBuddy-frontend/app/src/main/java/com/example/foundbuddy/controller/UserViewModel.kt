@@ -98,10 +98,8 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             return RegisterResult.ValidationErrors(errors)
         }
 
-        // Server WarmUp vor Registrierung
-        if (!api.isServerReady()) {
-            return RegisterResult.ServerError(api.friendlyServerStartingMessage())
-        }
+        // Server WarmUp vor Registrierung wird nun im UserRepository.create() erledigt,
+        // damit wir die exakten Diagnosemeldungen bekommen!
 
         val newUser = User(
             id = "",  // Backend vergibt die endgültige ID
