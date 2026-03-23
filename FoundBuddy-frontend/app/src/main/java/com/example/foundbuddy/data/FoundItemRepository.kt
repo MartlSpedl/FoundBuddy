@@ -248,6 +248,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             status = mappedStatus,
             isResolved = isResolved ?: false,
             uploaderName = uploaderName ?: "Unbekannt",
+            uploaderId = uploaderId ?: "",
             likes = likes ?: 0,
             likedByUser = false,
             timestamp = timestamp ?: System.currentTimeMillis(),
@@ -282,6 +283,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             timestamp = timestamp,
             imageUri = imagePath,    // ← was photoUri = imagePath
             uploaderName = uploaderName,
+            uploaderId = uploaderId,
             isResolved = isResolved,
             workflowStatus = workflowStatus,
             isFavorite = isFavorite,
@@ -472,6 +474,7 @@ data class ItemDto(
     val timestamp: Long? = null,
     val imageUri: String? = null, // matches backend FoundItem.imageUri
     val uploaderName: String? = null,
+    val uploaderId: String? = null,
     val likes: Int? = 0,
     val isResolved: Boolean? = false,
     // Sprint 5: Neue Felder

@@ -7,12 +7,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -24,6 +32,8 @@ import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.network.ApiClient
 import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.view.*
+import com.example.foundbuddy.ui.theme.*
+import com.example.foundbuddy.ui.components.*
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -48,21 +58,7 @@ class MainActivity : ComponentActivity() {
                 initial = isSystemInDarkTheme()
             )
 
-            val colors = if (isDarkMode) darkColorScheme(
-                primary = Color(0xFFBB86FC),
-                secondary = Color(0xFF03DAC6),
-                background = Color(0xFF121212),
-                surface = Color(0xFF1E1E1E),
-                onSurface = Color(0xFFEAEAEA)
-            ) else lightColorScheme(
-                primary = Color(0xFF7B68EE),
-                secondary = Color(0xFF8A7FF5),
-                background = Color(0xFFF5F7FF),
-                surface = Color.White,
-                onSurface = Color(0xFF1E1E1E)
-            )
-
-            MaterialTheme(colorScheme = colors) {
+            FoundBuddyTheme(darkTheme = isDarkMode) {
 
                 val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
                 val isSessionRestoring by userViewModel.isSessionRestoring.collectAsState(initial = true)
@@ -77,12 +73,12 @@ class MainActivity : ComponentActivity() {
                     ) {
                         CircularProgressIndicator()
                     }
-                    return@MaterialTheme
+                    return@FoundBuddyTheme
                 }
 
                 LaunchedEffect(isLoggedIn) {
                     if (isLoggedIn) {
-                        homeViewModel.refreshItems(repository.getAll())
+                        homeViewModel.loadItems()
                         currentUser?.id?.let { userId ->
                             homeViewModel.loadFavorites(userId)
                         }
@@ -106,62 +102,94 @@ class MainActivity : ComponentActivity() {
 
                     composable("main") {
                         var selectedTab by remember { mutableStateOf("feed") }
-
                         Scaffold(
                             bottomBar = {
-                                NavigationBar {
-                                    NavigationBarItem(
-                                        selected = selectedTab == "feed",
-                                        onClick = { selectedTab = "feed" },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.home_icon),
-                                                contentDescription = "Feed",
-                                                tint = Color.Unspecified
-                                            )
-                                        },
-                                        label = { Text("Feed") }
-                                    )
+                                // Glassmorphism Bottom Nav
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 8.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    NavigationBar(
+                                        containerColor = Color.Transparent,
+                                        tonalElevation = 0.dp,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    ) {
+                                        val indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                        
+                                        NavigationBarItem(
+                                            selected = selectedTab == "feed",
+                                            onClick = { selectedTab = "feed" },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = indicatorColor,
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            icon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Home,
+                                                    contentDescription = "Feed",
+                                                    modifier = Modifier.size(26.dp)
+                                                )
+                                            },
+                                            label = { Text("Entdecken") }
+                                        )
 
-                                    // Sprint 5: Neue Favoriten-Tab
-                                    NavigationBarItem(
-                                        selected = selectedTab == "favorites",
-                                        onClick = { selectedTab = "favorites" },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_star_filled),
-                                                contentDescription = "Favoriten",
-                                                tint = Color.Unspecified
-                                            )
-                                        },
-                                        label = { Text("Favoriten") }
-                                    )
+                                        NavigationBarItem(
+                                            selected = selectedTab == "favorites",
+                                            onClick = { selectedTab = "favorites" },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = indicatorColor,
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            icon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Star,
+                                                    contentDescription = "Favoriten",
+                                                    modifier = Modifier.size(26.dp)
+                                                )
+                                            },
+                                            label = { Text("Gemerkt") }
+                                        )
 
-                                    NavigationBarItem(
-                                        selected = selectedTab == "upload",
-                                        onClick = { selectedTab = "upload" },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.camera_icon),
-                                                contentDescription = "Upload",
-                                                tint = Color.Unspecified
-                                            )
-                                        },
-                                        label = { Text("Upload") }
-                                    )
+                                        NavigationBarItem(
+                                            selected = selectedTab == "upload",
+                                            onClick = { selectedTab = "upload" },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = indicatorColor,
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            icon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.AddCircle,
+                                                    contentDescription = "Upload",
+                                                    modifier = Modifier.size(30.dp)
+                                                )
+                                            },
+                                            label = { Text("Posten") }
+                                        )
 
-                                    NavigationBarItem(
-                                        selected = selectedTab == "profile",
-                                        onClick = { selectedTab = "profile" },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.profile_icon),
-                                                contentDescription = "Profil",
-                                                tint = Color.Unspecified
-                                            )
-                                        },
-                                        label = { Text("Profil") }
-                                    )
+                                        NavigationBarItem(
+                                            selected = selectedTab == "profile",
+                                            onClick = { selectedTab = "profile" },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = indicatorColor,
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            icon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Person,
+                                                    contentDescription = "Profil",
+                                                    modifier = Modifier.size(26.dp)
+                                                )
+                                            },
+                                            label = { Text("Profil") }
+                                        )
+                                    }
                                 }
                             }
                         ) { padding ->
@@ -203,11 +231,16 @@ class MainActivity : ComponentActivity() {
                                 "profile" -> Box(modifier = Modifier.padding(padding)) {
                                     ProfileScreen(
                                         userViewModel = userViewModel,
+                                        homeViewModel = homeViewModel,
                                         onLogout = {
                                             userViewModel.logout()
                                             navController.navigate("auth") {
                                                 popUpTo("main") { inclusive = true }
                                             }
+                                        },
+                                        onItemClick = { id ->
+                                            homeViewModel.loadStatusHistory(id)
+                                            navController.navigate("detail/$id")
                                         }
                                     )
                                 }

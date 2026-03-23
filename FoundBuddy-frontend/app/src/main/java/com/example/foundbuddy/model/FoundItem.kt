@@ -11,6 +11,7 @@ data class FoundItem(
     val status: String,          // "Gefunden" oder "Verloren"
     val isResolved: Boolean,
     val uploaderName: String = "Unbekannt",
+    val uploaderId: String = "", // ✅ Wer hat das Item hochgeladen?
     val likes: Int = 0,
     val likedByUser: Boolean = false,
     val timestamp: Long = System.currentTimeMillis(),

@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +55,29 @@ fun ItemDetailScreen(
                     }
                 },
                 actions = {
+                    // Share-Button
+                    item?.let { currentItem ->
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        IconButton(onClick = {
+                            val shareIntent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, "Schau mal, was ich bei FoundBuddy gefunden habe: ${currentItem.title}\n\n${currentItem.description ?: ""}")
+                                if (currentItem.imagePath?.isNotBlank() == true) {
+                                    // In a real app, you might want to share the image URI too
+                                    // putExtra(android.content.Intent.EXTRA_STREAM, Uri.parse(currentItem.imagePath))
+                                }
+                            }
+                            context.startActivity(android.content.Intent.createChooser(shareIntent, "Teilen via"))
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Teilen",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
                     // Favoriten-Button
                     IconButton(onClick = {
                         currentUser?.id?.let { userId ->
@@ -60,9 +85,7 @@ fun ItemDetailScreen(
                         }
                     }) {
                         Icon(
-                            painter = painterResource(
-                                if (item?.isFavorite == true) R.drawable.ic_star_filled else R.drawable.ic_star_outline
-                            ),
+                            imageVector = if (item?.isFavorite == true) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = if (item?.isFavorite == true)
                                 "Aus Favoriten entfernen"
                             else
@@ -70,18 +93,22 @@ fun ItemDetailScreen(
                             tint = if (item?.isFavorite == true) Color(0xFFFFD700) else LocalContentColor.current
                         )
                     }
-
-                    // Status-Änderungs-Button (nur wenn berechtigt)
-                    if (item != null && currentUser != null) {
-                        val user = currentUser
-                        if (item.allowedEditors.isEmpty() || item.allowedEditors.contains(user?.id)) {
-                            IconButton(onClick = { showStatusDialog = true }) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(vm.getStatusColor(item.workflowStatus)))
-                                )
+                    
+                    // Status-Änderungs-Button (nur wenn Uploader)
+                    currentUser?.let { user ->
+                        item?.let { currentItem ->
+                            // Nur der Uploader darf den Status ändern (oder Fallback für alte Items ohne ID)
+                            val isOwner = currentItem.uploaderId == user.id || (currentItem.uploaderId.isBlank() && currentItem.uploaderName == user.username)
+                            
+                            if (isOwner) {
+                                IconButton(onClick = { showStatusDialog = true }) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(vm.getStatusColor(currentItem.workflowStatus)))
+                                    )
+                                }
                             }
                         }
                     }
@@ -337,13 +364,15 @@ fun ItemDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        val user = currentUser ?: return@TextButton
+                        val currentItem = item ?: return@TextButton
+                        
                         if (selectedNewStatus.isNotBlank() &&
-                            selectedNewStatus != item.workflowStatus &&
-                            vm.getNextPossibleStatus(item.workflowStatus).contains(selectedNewStatus)
+                            selectedNewStatus != currentItem.workflowStatus &&
+                            vm.getNextPossibleStatus(currentItem.workflowStatus).contains(selectedNewStatus)
                         ) {
-                            val user = currentUser ?: return@TextButton
                             vm.updateWorkflowStatus(
-                                itemId = item.id,
+                                itemId = currentItem.id,
                                 newStatus = selectedNewStatus,
                                 userId = user.id,
                                 username = user.username,
@@ -355,8 +384,8 @@ fun ItemDetailScreen(
                         }
                     },
                     enabled = selectedNewStatus.isNotBlank() &&
-                            selectedNewStatus != item.workflowStatus &&
-                            vm.getNextPossibleStatus(item.workflowStatus).contains(selectedNewStatus)
+                            selectedNewStatus != (item?.workflowStatus ?: "") &&
+                            vm.getNextPossibleStatus(item?.workflowStatus ?: "").contains(selectedNewStatus)
                 ) {
                     Text("Status aktualisieren")
                 }

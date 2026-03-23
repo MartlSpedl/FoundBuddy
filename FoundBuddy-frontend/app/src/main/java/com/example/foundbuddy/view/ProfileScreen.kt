@@ -11,7 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,19 +28,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.UserViewModel
+import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.model.FoundItem
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     userViewModel: UserViewModel,
-    onLogout: () -> Unit
+    homeViewModel: HomeViewModel,
+    onLogout: () -> Unit,
+    onItemClick: (String) -> Unit = {}
 ) {
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val username by userViewModel.username.collectAsState(initial = "Gast")
@@ -91,250 +100,256 @@ fun ProfileScreen(
         }
     }
 
-    // Platzhalter-Stats (ersetzen wenn du echte Daten hast)
-    val postsCount = 0
+    // Echt-Daten aus HomeViewModel
+    val allItems by homeViewModel.items.collectAsState(initial = emptyList())
+    val userPosts = remember(allItems, currentUser) {
+        allItems.filter { 
+            val isOwner = it.uploaderId == currentUser?.id || 
+                    (it.uploaderId.isBlank() && it.uploaderName == username)
+            isOwner
+        }
+    }
+    
+    val postsCount = userPosts.size
     val followersCount = 0
     val followingCount = 0
 
-    // Grid Platzhalter
-    val gridItems = remember { List(12) { it } }
+    // Register-State
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Gefunden", "Verloren")
+    
+    val displayPosts = remember(userPosts, selectedTabIndex) {
+        val status = if (selectedTabIndex == 0) "Gefunden" else "Verloren"
+        userPosts.filter { it.status.equals(status, ignoreCase = true) }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // Header
+        // --- Header (Compact & Premium) ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp),
+                .padding(bottom = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = username,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = { /* Settings */ }) {
+                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        // Avatar + Stats
+        // --- Avatar & Stats Row ---
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val hasImage = !profileImageUri.isNullOrBlank()
-
+            // Instagram-like Avatar
             Box(
                 modifier = Modifier
                     .size(86.dp)
                     .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                     .clickable(enabled = currentUser != null) { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (hasImage) {
-                    val imageUri = remember(profileImageUri) {
-                        try {
-                            val uri = Uri.parse(profileImageUri)
-                            if (uri.scheme != null) uri.toString() else null
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-
-                    if (imageUri != null) {
-                        // Firebase URLs sollten nicht dekodiert werden (da sie %2F benötigen)
-                        val decodedUrl = imageUri
-                        
-                        println("LOGCAT: ProfileScreen - Dekodierte URL: $decodedUrl")
-                        
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(decodedUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Profilbild",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = R.drawable.profile_icon),
-                            contentDescription = "Standardbild",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(44.dp)
-                        )
-                    }
-                } else {
+                if (profileImageUri.isNullOrBlank()) {
                     Icon(
-                        painter = painterResource(id = R.drawable.profile_icon),
+                        imageVector = Icons.Default.Person,
                         contentDescription = "Standardbild",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(44.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp)
+                    )
+                } else {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(profileImageUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profilbild",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
 
-            Spacer(Modifier.width(18.dp))
+            Spacer(Modifier.width(32.dp))
 
+            // Stats Block
             Row(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatBlock(value = postsCount, label = "Beiträge")
                 StatBlock(value = followersCount, label = "Follower")
-                StatBlock(value = followingCount, label = "Folge ich")
+                StatBlock(value = followingCount, label = "Gefolgt")
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        Text(
-            text = username,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = "Lost & Found mit FoundBuddy",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = email,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(Modifier.height(14.dp))
-
-        // Buttons (optional, ohne Funktion)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            OutlinedButton(
-                onClick = { /* später */ },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(vertical = 10.dp)
-            ) {
-                Text("Profil bearbeiten")
-            }
-
-            OutlinedButton(
-                onClick = { /* später */ },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(vertical = 10.dp)
-            ) {
-                Text("Profil teilen")
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        // Dark Mode Row (stabil)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // --- Bio Section ---
+        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
             Text(
-                text = "Dark Mode",
+                text = "Lost & Found Buddy ✨",
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = isDarkMode,
-                onCheckedChange = {
-                    scope.launch {
-                        try {
-                            userViewModel.toggleDarkMode()
-                        } catch (_: Exception) {}
-                    }
-                }
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // Logout Button: nur wenn eingeloggt
-        if (currentUser != null) {
-            OutlinedButton(
-                onClick = onLogout,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Abmelden")
-                Spacer(Modifier.width(10.dp))
-                Text("Abmelden")
-            }
-        }
-
-        Spacer(Modifier.height(18.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Beiträge",
-                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
+            Text(
+                text = "Hilf anderen, ihre Schätze wiederzufinden.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (email.isNotBlank()) {
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        // IMPORTANT:
-        // Kein LazyVerticalGrid innerhalb einer Column(verticalScroll), sonst kann Compose
-        // "infinite height constraints" werfen und crasht.
-        // Deshalb bauen wir das Grid hier als normales (nicht scrollbares) Layout.
-        val rows = remember(gridItems) { gridItems.chunked(3) }
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        // --- Action Buttons (Rounded & Clean) ---
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            rows.forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ProfileActionButton(
+                text = "Profil bearbeiten",
+                onClick = { /* TODO */ },
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.primary
+            )
+            ProfileActionButton(
+                text = "Teilen",
+                onClick = { /* TODO */ },
+                modifier = Modifier.weight(0.4f),
+                color = MaterialTheme.colorScheme.secondary
+            )
+            if (currentUser != null) {
+                Surface(
+                    onClick = onLogout,
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
                 ) {
-                    rowItems.forEach {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.profile_icon),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    // falls letzte Reihe < 3 Items hat: mit Platzhaltern auffüllen
-                    repeat(3 - rowItems.size) {
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
                         )
+                    }
+                }
+            }
+        }
+
+        // --- Tabs ---
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.primary,
+            divider = {},
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    color = MaterialTheme.colorScheme.primary,
+                    height = 2.dp
+                )
+            }
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium,
+                            color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(2.dp))
+
+        if (displayPosts.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "Keine Beiträge vorhanden",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            val rows = remember(displayPosts) { displayPosts.chunked(3) }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                rows.forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        rowItems.forEach { item ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                    .clickable { onItemClick(item.id) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (item.imagePath.isNullOrBlank()) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.outlineVariant,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(item.imagePath)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = item.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+                        repeat(3 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                        }
                     }
                 }
             }
@@ -345,16 +360,45 @@ fun ProfileScreen(
 }
 
 @Composable
+private fun ProfileActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.secondaryContainer
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.15f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = color.copy(alpha = 0.3f)
+        )
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = color
+            )
+        }
+    }
+}
+
+@Composable
 private fun StatBlock(value: Int, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value.toString(),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

@@ -29,6 +29,9 @@ class HomeViewModel : ViewModel() {
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private var searchJob: Job? = null
 
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -43,6 +46,22 @@ class HomeViewModel : ViewModel() {
         _items.value = newItems
         // Favoriten aus den Items filtern
         _favorites.value = newItems.filter { it.isFavorite }
+        _isLoading.value = false
+    }
+
+    fun loadItems() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                repo?.getAll()?.let { newItems ->
+                    refreshItems(newItems)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Fehler beim Laden: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun refreshFavorites(newFavorites: List<FoundItem>) {

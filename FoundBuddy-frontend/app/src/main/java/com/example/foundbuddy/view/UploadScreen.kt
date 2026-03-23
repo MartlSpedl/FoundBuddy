@@ -5,9 +5,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -16,10 +18,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
 import com.example.foundbuddy.data.FoundItemRepository
@@ -45,7 +55,7 @@ fun UploadScreen(
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val username by userViewModel.username.collectAsState(initial = "Unbekannt")
 
-    var selectedType by remember { mutableStateOf<String?>(null) }
+    var selectedType by remember { mutableStateOf("Gefunden") }
     var selectedItem by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -59,297 +69,252 @@ fun UploadScreen(
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        imageUri = uri
+        if (uri != null) imageUri = uri
     }
 
     val itemOptions = listOf(
-        "Schlüssel",
-        "Handy",
-        "Geldbörse",
-        "Jacke",
-        "Kopfhörer",
-        "Schülerausweis",
-        "Sonstiges"
+        "Schlüssel", "Handy", "Geldbörse", "Jacke",
+        "Kopfhörer", "Schülerausweis", "Sonstiges"
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Neuer Eintrag", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(24.dp))
+    val canUpload = selectedItem.isNotBlank() && imageUri != null && currentUser?.id != null
 
-        if (selectedType == null) {
-            Text("Was möchtest du melden?", style = MaterialTheme.typography.bodyLarge)
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = { selectedType = "Gefunden" },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF7B68EE),
-                    contentColor = Color.White
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.camera_icon),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(30.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text("Ich habe etwas gefunden")
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = { selectedType = "Verloren" },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFDADA),
-                    contentColor = Color.Black
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.camera_icon),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(30.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text("Ich habe etwas verloren")
-            }
-
-            return@Column
-        }
-
-        Text(
-            text = if (selectedType == "Gefunden") "Ich habe etwas gefunden" else "Ich habe etwas verloren",
-            style = MaterialTheme.typography.titleMedium
-        )
-        Spacer(Modifier.height(16.dp))
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = selectedItem,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Gegenstand auswählen") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                itemOptions.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            selectedItem = option
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = desc,
-            onValueChange = { desc = it },
-            label = { Text("Beschreibung (optional)") },
-            minLines = 3,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(18.dp))
-
-        Text(
-            text = "Bild",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-                .clickable(enabled = !isUploading) {
-                    imagePicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { 
+                    Text(
+                        "Beitrag erstellen", 
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    ) 
                 },
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                actions = {
+                    if (isUploading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp).padding(end = 16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                if (!canUpload) return@TextButton
+                                uploadError = null
+                                isUploading = true
+                                scope.launch {
+                                    try {
+                                        val uri = imageUri ?: throw IllegalStateException("Kein Bild")
+                                        val imageUrl = apiRepo.uploadImageAndGetUrl(uri)
+                                        val created = apiRepo.createFoundItem(
+                                            FoundItem(
+                                                id = UUID.randomUUID().toString(),
+                                                title = selectedItem,
+                                                description = if (desc.isBlank()) null else desc,
+                                                imagePath = imageUrl,
+                                                status = selectedType,
+                                                isResolved = false,
+                                                uploaderId = currentUser?.id ?: "",
+                                                uploaderName = username
+                                            )
+                                        )
+                                        onUpload(created)
+                                        // Reset UI
+                                        selectedItem = ""
+                                        desc = ""
+                                        imageUri = null
+                                    } catch (e: Exception) {
+                                        uploadError = e.message ?: "Fehler beim Upload"
+                                    } finally {
+                                        isUploading = false
+                                    }
+                                }
+                            },
+                            enabled = canUpload
+                        ) {
+                            Text(
+                                "Hochladen",
+                                color = if (canUpload) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            // --- Bild (Instagram Style Square) ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .clickable(enabled = !isUploading) {
+                        imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
                 if (imageUri == null) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.camera_icon),
-                            contentDescription = null,
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(42.dp)
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Text("Tippe hier, um ein Bild auszuwählen")
-                        Spacer(Modifier.height(4.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            modifier = Modifier.size(64.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
                         Text(
-                            "Galerie öffnet sich automatisch",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "Beitrag erstellen",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 } else {
                     AsyncImage(
                         model = imageUri,
                         contentDescription = "Vorschau",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(16.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Button(
-                onClick = {
-                    imagePicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                enabled = !isUploading,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    painterResource(id = R.drawable.camera_icon),
-                    contentDescription = null,
-                    tint = Color.Unspecified
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(if (imageUri == null) "Bild auswählen" else "Bild ändern")
-            }
-
-            OutlinedButton(
-                onClick = { imageUri = null },
-                enabled = imageUri != null && !isUploading,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Entfernen")
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        val canUpload = selectedItem.isNotBlank() && selectedType != null
-
-        Button(
-            onClick = {
-                val type = selectedType ?: return@Button
-                if (!canUpload || isUploading) return@Button
-
-                uploadError = null
-                isUploading = true
-
-                scope.launch {
-                    try {
-                        // 1) Bild muss vorhanden sein
-                        val uri = imageUri ?: throw IllegalStateException("Bitte ein Bild auswählen")
-
-                        // 2) Upload -> URL (multiuser tauglich)
-                        val imageUrl = apiRepo.uploadImageAndGetUrl(uri)
-
-                        // 3) Item mit URL speichern
-                        val created = apiRepo.createFoundItem(
-                            FoundItem(
-                                id = UUID.randomUUID().toString(),
-                                title = selectedItem,
-                                description = if (desc.isBlank()) null else desc,
-                                imagePath = imageUrl, // ✅ URL statt content:// oder file://
-                                status = type,
-                                isResolved = false,
-                                uploaderName = username
-                            )
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            "Ändern",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
-
-                        // 4) UI aktualisieren
-                        onUpload(created)
-
-                        // Reset
-                        selectedType = null
-                        selectedItem = ""
-                        desc = ""
-                        imageUri = null
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        uploadError = e.message ?: "Upload fehlgeschlagen"
-                    } finally {
-                        isUploading = false
                     }
                 }
-            },
-            enabled = canUpload && !isUploading,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF7B68EE),
-                contentColor = Color.White
-            )
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.save_icon),
-                contentDescription = null,
-                tint = Color.Unspecified
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(if (isUploading) "Lade hoch..." else "Hochladen")
-        }
-
-        uploadError?.let {
-            Spacer(Modifier.height(10.dp))
-            Text(it, color = MaterialTheme.colorScheme.error)
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(
-            onClick = {
-                if (isUploading) return@TextButton
-                selectedType = null
-                selectedItem = ""
-                desc = ""
-                imageUri = null
-                uploadError = null
             }
-        ) {
-            Text("Abbrechen")
-        }
 
-        Spacer(Modifier.height(10.dp))
+            // --- Formular ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Status Toggle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(4.dp)
+                ) {
+                    listOf("Gefunden", "Verloren").forEach { type ->
+                        val isSel = selectedType == type
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSel) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                .clickable { selectedType = type },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                type,
+                                color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+
+                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+
+                // Item Select
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { if (!isUploading) expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedItem,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Was hast du ${if(selectedType=="Gefunden") "gefunden" else "verloren"}?") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        itemOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    selectedItem = option
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Description
+                OutlinedTextField(
+                    value = desc,
+                    onValueChange = { desc = it },
+                    label = { Text("Schreibe eine Bildunterschrift...") },
+                    placeholder = { Text("Details wie Marke, Farbe oder Fundort...") },
+                    minLines = 4,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+                )
+
+                if (uploadError != null) {
+                    Text(
+                        text = uploadError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+                
+                Spacer(Modifier.height(40.dp))
+            }
+        }
     }
 }

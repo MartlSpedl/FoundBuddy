@@ -10,7 +10,13 @@ object ImageUtils {
      * Firebase Storage gibt oft URLs mit %2F statt / zurück
      */
     fun decodeImageUrl(url: String?): String? {
-        return url
+        if (url.isNullOrBlank()) return null
+        // If it's already a full HF URL or similar, keep it.
+        if (url.startsWith("http")) return url
+        
+        // Potential fallback: absolute path prefix if the backend returns relative ones
+        val baseUrl = "https://martlspedl-foundbuddy-backend.hf.space"
+        return if (url.startsWith("/")) "$baseUrl$url" else "$baseUrl/$url"
     }
     
     /**

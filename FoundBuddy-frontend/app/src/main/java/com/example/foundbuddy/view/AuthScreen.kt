@@ -29,20 +29,11 @@ import com.example.foundbuddy.controller.RegisterResult
 import com.example.foundbuddy.controller.UserViewModel
 import kotlinx.coroutines.launch
 
-// ─── Farben im Instagram-Stil ──────────────────────────────────────────────
-private val IgBackground   = Color(0xFFFFFFFF)
-private val IgFieldBg      = Color(0xFFFAFAFA)
-private val IgBorder       = Color(0xFFDBDBDB)
-private val IgTextPrimary  = Color(0xFF262626)
-private val IgTextSecondary = Color(0xFF8E8E8E)
-private val IgBlue         = Color(0xFF0095F6)
-private val IgBlueDisabled = Color(0xFFB2DFFC)
-private val IgDivider      = Color(0xFFDBDBDB)
-private val IgError        = Color(0xFFED4956)
+import com.example.foundbuddy.ui.theme.*
 
-// Instagram-typischer Logofarb-Gradient
+// Instagram-typischer Logofarb-Gradient (Now using decentralized PremiumGradient)
 private val IgGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045))
+    colors = PremiumGradient
 )
 
 @Composable

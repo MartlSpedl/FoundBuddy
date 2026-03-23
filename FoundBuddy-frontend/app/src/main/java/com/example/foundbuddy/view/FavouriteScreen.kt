@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
+import com.example.foundbuddy.ui.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,11 +93,13 @@ fun FavoritesScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(favorites) { item ->
-                    FavoriteItemCard(
+                    FoundItemCard(
                         item = item,
                         vm = vm,
+                        userViewModel = userViewModel,
                         onClick = { onItemClick(item.id) },
-                        onUnfavorite = {
+                        onLike = { vm.toggleLike(item.id) },
+                        onFavorite = {
                             currentUser?.id?.let { userId ->
                                 vm.toggleFavorite(item.id, userId)
                             }
@@ -106,86 +109,4 @@ fun FavoritesScreen(
             }
         }
     }
-}
-
-@Composable
-fun FavoriteItemCard(
-    item: com.example.foundbuddy.model.FoundItem,
-    vm: HomeViewModel,
-    onClick: () -> Unit,
-    onUnfavorite: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f)
-                )
-
-                IconButton(
-                    onClick = onUnfavorite,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        Icons.Filled.Star,
-                        contentDescription = "Aus Favoriten entfernen",
-                        tint = Color(0xFFFFD700)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            item.description?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(item.status) }
-                )
-
-                AssistChip(
-                    onClick = {},
-                    label = { Text(item.workflowStatus) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                "Hochgeladen: ${vm.formatTimeAgo(item.timestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
+}
