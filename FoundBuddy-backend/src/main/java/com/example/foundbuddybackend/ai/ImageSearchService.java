@@ -1,12 +1,16 @@
 package com.example.foundbuddybackend.ai;
 
-import com.example.foundbuddybackend.dto.AiSearchResult;
-import com.example.foundbuddybackend.model.FoundItem;
-import com.example.foundbuddybackend.service.FirestoreRestService;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import com.example.foundbuddybackend.dto.AiSearchResult;
+import com.example.foundbuddybackend.model.FoundItem;
+import com.example.foundbuddybackend.service.FirestoreRestService;
 
 /**
  * Searches found items by natural language query.
@@ -99,7 +103,7 @@ public class ImageSearchService {
             double finalScore = 0.75 * textScore + 0.25 * recency;
 
             if (finalScore > 0.0) {
-                results.add(new AiSearchResult(item, finalScore, 0.0, textScore, recency));
+                results.add(new AiSearchResult(item, finalScore, 0.1, textScore, recency));
             }
         }
 
