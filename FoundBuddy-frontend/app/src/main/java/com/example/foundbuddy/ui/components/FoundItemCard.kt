@@ -143,7 +143,7 @@ fun FoundItemCard(
                 Spacer(Modifier.weight(1f))
 
                 Text(
-                    vm.formatTimeAgo(item.createdAt),
+                    vm.formatTimeAgo(item.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
