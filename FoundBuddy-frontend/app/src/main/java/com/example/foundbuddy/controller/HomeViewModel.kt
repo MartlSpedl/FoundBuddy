@@ -311,19 +311,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         currentConversations.add(0, newConv)
         _conversations.value = currentConversations
 
-        // Simulate incoming request for the recipient (frontend-only demo)
-        val senderConv = com.example.foundbuddy.model.Conversation(
-            participantId = senderId,
-            participantName = senderName,
-            lastMessage = newMessage
-        )
-        val existingRequests = _messageRequests.value
-        val existingConvs = _conversations.value
-        val alreadyKnown = existingRequests.any { it.participantId == senderId } ||
-            existingConvs.any { it.participantId == senderId }
-        if (!alreadyKnown) {
-            _messageRequests.value = listOf(senderConv) + existingRequests
-        }
+
         saveChatData()
     }
     private fun saveChatData() {
