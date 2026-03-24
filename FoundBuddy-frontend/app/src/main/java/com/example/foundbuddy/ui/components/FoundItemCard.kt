@@ -1,10 +1,7 @@
 package com.example.foundbuddy.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -146,7 +143,7 @@ fun FoundItemCard(
                 Spacer(Modifier.weight(1f))
 
                 Text(
-                    vm.formatTimeAgo(item.timestamp),
+                    vm.formatTimeAgo(item.createdAt),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
