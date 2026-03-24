@@ -173,6 +173,24 @@ class MainActivity : ComponentActivity() {
                                         )
 
                                         NavigationBarItem(
+                                            selected = selectedTab == "messages",
+                                            onClick = { selectedTab = "messages" },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = indicatorColor,
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_message),
+                                                    contentDescription = "Nachrichten",
+                                                    modifier = Modifier.size(26.dp)
+                                                )
+                                            },
+                                            label = { Text("Nachrichten") }
+                                        )
+
+                                        NavigationBarItem(
                                             selected = selectedTab == "profile",
                                             onClick = { selectedTab = "profile" },
                                             colors = NavigationBarItemDefaults.colors(
@@ -228,6 +246,14 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(padding)
                                 )
 
+                                "messages" -> ChatListScreen(
+                                    vm = homeViewModel,
+                                    onConversationClick = { id, name ->
+                                        navController.navigate("chat_detail/$id/$name")
+                                    },
+                                    modifier = Modifier.padding(padding)
+                                )
+
                                 "profile" -> Box(modifier = Modifier.padding(padding)) {
                                     ProfileScreen(
                                         userViewModel = userViewModel,
@@ -266,6 +292,18 @@ class MainActivity : ComponentActivity() {
                                 userViewModel = userViewModel
                             )
                         }
+                    }
+
+                    composable("chat_detail/{recipientId}/{recipientName}") { backStackEntry ->
+                        val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
+                        val recipientName = backStackEntry.arguments?.getString("recipientName") ?: ""
+                        ChatDetailScreen(
+                            recipientId = recipientId,
+                            recipientName = recipientName,
+                            vm = homeViewModel,
+                            userViewModel = userViewModel,
+                            onBack = { navController.popBackStack() }
+                        )
                     }
                 }
             }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
@@ -25,6 +26,8 @@ import androidx.navigation.NavController
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
+import com.example.foundbuddy.model.User
+import com.example.foundbuddy.ui.components.ChatDialog
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +47,9 @@ fun ItemDetailScreen(
     var showStatusDialog by remember { mutableStateOf(false) }
     var selectedNewStatus by remember { mutableStateOf("") }
     var statusComment by remember { mutableStateOf("") }
+    
+    // Chat-Dialog State
+    var showChatDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -216,6 +222,30 @@ fun ItemDetailScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    val isOwner = item.uploaderId == currentUser?.id || (item.uploaderId.isBlank() && item.uploaderName == currentUser?.username)
+                    if (!isOwner) {
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = { 
+                                val id = item.uploaderId.ifBlank { item.uploaderName }
+                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_message),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Nachricht schreiben", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
                 // Sprint 5: Status-Workflow Abschnitt

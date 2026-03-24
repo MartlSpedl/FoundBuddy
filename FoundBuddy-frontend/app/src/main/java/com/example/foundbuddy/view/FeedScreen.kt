@@ -26,6 +26,7 @@ import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.ui.components.*
+import com.example.foundbuddy.model.User
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -158,6 +159,10 @@ fun FeedScreen(
                             item = item,
                             onClick = { onItemClick(item.id) },
                             onLike = { vm.toggleLike(item.id) },
+                            onMessageClick = {
+                                val id = item.uploaderId.ifBlank { item.uploaderName }
+                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                            },
                             userViewModel = userViewModel,
                             onFavorite = {
                                 currentUser?.let { user ->
@@ -183,6 +188,10 @@ fun FeedScreen(
                             item = item,
                             onClick = { onItemClick(item.id) },
                             onLike = { vm.toggleLike(item.id) },
+                            onMessageClick = {
+                                val id = item.uploaderId.ifBlank { item.uploaderName }
+                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                            },
                             userViewModel = userViewModel,
                             onFavorite = {
                                 currentUser?.let { user ->
@@ -208,6 +217,10 @@ fun FeedScreen(
                             item = item,
                             onClick = { onItemClick(item.id) },
                             onLike = { vm.toggleLike(item.id) },
+                            onMessageClick = {
+                                val id = item.uploaderId.ifBlank { item.uploaderName }
+                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                            },
                             userViewModel = userViewModel,
                             onFavorite = {
                                 currentUser?.let { user ->

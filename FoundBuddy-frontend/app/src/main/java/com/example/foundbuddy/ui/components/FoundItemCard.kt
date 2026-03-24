@@ -3,7 +3,7 @@ package com.example.foundbuddy.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,6 +16,7 @@ import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.FoundItem
+import com.example.foundbuddy.model.User
 import com.example.foundbuddy.view.ZoomImage
 
 @Composable
@@ -23,10 +24,14 @@ fun FoundItemCard(
     item: FoundItem,
     onClick: () -> Unit,
     onLike: () -> Unit,
+    onMessageClick: (() -> Unit)? = null,
     userViewModel: UserViewModel? = null,
     onFavorite: (() -> Unit)? = null,
     vm: HomeViewModel
 ) {
+    val currentUser by if (userViewModel != null) userViewModel.currentUserFlow.collectAsState(initial = null) else remember { mutableStateOf(null) }
+    val isOwner = currentUser?.id == item.uploaderId || (item.uploaderId.isBlank() && currentUser?.username == item.uploaderName)
+
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
@@ -141,6 +146,28 @@ fun FoundItemCard(
                 }
 
                 Spacer(Modifier.weight(1f))
+
+                // NEU: Nachricht-Button
+                if (!isOwner && onMessageClick != null) {
+                    Button(
+                        onClick = onMessageClick,
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_message), // Ensure this icon exists or use a default
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Nachricht", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                }
 
                 Text(
                     vm.formatTimeAgo(item.timestamp),

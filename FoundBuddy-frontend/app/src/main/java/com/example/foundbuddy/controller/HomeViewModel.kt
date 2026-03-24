@@ -1,11 +1,18 @@
 package com.example.foundbuddy.controller
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.model.Comment
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
+import com.example.foundbuddy.model.Conversation
+import com.example.foundbuddy.model.Message
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _items = MutableStateFlow<List<FoundItem>>(emptyList())
     val items: StateFlow<List<FoundItem>> = _items
@@ -37,6 +44,41 @@ class HomeViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    // --- Sprint 6: Chat/DM System ---
+    private val sharedPreferences = application.getSharedPreferences("foundbuddy_chat", Context.MODE_PRIVATE)
+    private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    private val convListAdapter = moshi.adapter<List<Conversation>>(Types.newParameterizedType(List::class.java, Conversation::class.java))
+    private val msgListAdapter = moshi.adapter<List<Message>>(Types.newParameterizedType(List::class.java, Message::class.java))
+
+    init {
+        loadChatData()
+    }
+    private val _conversations = MutableStateFlow<List<com.example.foundbuddy.model.Conversation>>(emptyList())
+    val conversations: StateFlow<List<com.example.foundbuddy.model.Conversation>> = _conversations.asStateFlow()
+
+    private val conversationMessages = mutableMapOf<String, MutableStateFlow<List<com.example.foundbuddy.model.Message>>>()
+
+    fun getMessages(participantId: String): StateFlow<List<com.example.foundbuddy.model.Message>> =
+        conversationMessages.getOrPut(participantId) { MutableStateFlow(emptyList()) }.asStateFlow()
+
+
+    // Message Requests (Anfragen)
+    private val _messageRequests = MutableStateFlow<List<com.example.foundbuddy.model.Conversation>>(emptyList())
+    val messageRequests: StateFlow<List<com.example.foundbuddy.model.Conversation>> = _messageRequests.asStateFlow()
+
+    fun acceptRequest(participantId: String) {
+        val req = _messageRequests.value.find { it.participantId == participantId } ?: return
+        _messageRequests.value = _messageRequests.value.filter { it.participantId != participantId }
+        val current = _conversations.value.toMutableList()
+        if (current.none { it.participantId == participantId }) current.add(0, req)
+        _conversations.value = current
+        saveChatData()
+    }
+
+    fun declineRequest(participantId: String) {
+        _messageRequests.value = _messageRequests.value.filter { it.participantId != participantId }
+        saveChatData()
+    }
     fun setRepository(repo: FoundItemRepository) {
         this@HomeViewModel.repo = repo
     }
@@ -241,4 +283,81 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+
+    fun sendMessage(
+        recipientId: String,
+        recipientName: String,
+        senderId: String,
+        senderName: String,
+        content: String
+    ) {
+        val newMessage = com.example.foundbuddy.model.Message(
+            senderId = senderId,
+            senderName = senderName,
+            recipientId = recipientId,
+            content = content
+        )
+        val messagesFlow = conversationMessages.getOrPut(recipientId) { MutableStateFlow(emptyList()) }
+        messagesFlow.value = messagesFlow.value + newMessage
+
+        val currentConversations = _conversations.value.toMutableList()
+        val index = currentConversations.indexOfFirst { it.participantId == recipientId }
+        val newConv = com.example.foundbuddy.model.Conversation(
+            participantId = recipientId,
+            participantName = recipientName,
+            lastMessage = newMessage
+        )
+        if (index != -1) currentConversations.removeAt(index)
+        currentConversations.add(0, newConv)
+        _conversations.value = currentConversations
+
+        // Simulate incoming request for the recipient (frontend-only demo)
+        val senderConv = com.example.foundbuddy.model.Conversation(
+            participantId = senderId,
+            participantName = senderName,
+            lastMessage = newMessage
+        )
+        val existingRequests = _messageRequests.value
+        val existingConvs = _conversations.value
+        val alreadyKnown = existingRequests.any { it.participantId == senderId } ||
+            existingConvs.any { it.participantId == senderId }
+        if (!alreadyKnown) {
+            _messageRequests.value = listOf(senderConv) + existingRequests
+        }
+        saveChatData()
+    }
+    private fun saveChatData() {
+        val editor = sharedPreferences.edit()
+        editor.putString("conversations", convListAdapter.toJson(_conversations.value))
+        editor.putString("messageRequests", convListAdapter.toJson(_messageRequests.value))
+        
+        // Save individual message flows
+        conversationMessages.forEach { (participantId, flow) ->
+            editor.putString("messages_$participantId", msgListAdapter.toJson(flow.value))
+        }
+        editor.apply()
+    }
+
+    private fun loadChatData() {
+        try {
+            val convsJson = sharedPreferences.getString("conversations", null)
+            if (convsJson != null) _conversations.value = convListAdapter.fromJson(convsJson) ?: emptyList()
+            
+            val reqsJson = sharedPreferences.getString("messageRequests", null)
+            if (reqsJson != null) _messageRequests.value = convListAdapter.fromJson(reqsJson) ?: emptyList()
+            
+            // We don't have a list of all participants, but conversations list has them
+            val allParticipants = _conversations.value.map { it.participantId } + _messageRequests.value.map { it.participantId }
+            allParticipants.distinct().forEach { participantId ->
+                val msgsJson = sharedPreferences.getString("messages_$participantId", null)
+                if (msgsJson != null) {
+                    val msgs = msgListAdapter.fromJson(msgsJson) ?: emptyList()
+                    conversationMessages[participantId] = MutableStateFlow(msgs)
+                }
+            }
+        } catch (e: Exception) {
+            // Handle parse errors on schema change by clearing
+            sharedPreferences.edit().clear().apply()
+        }
+    }
 }
