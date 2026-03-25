@@ -44,6 +44,13 @@ fun ChatDetailScreen(
         }
     }
 
+    // Load messages from backend when screen opens
+    LaunchedEffect(recipientId) {
+        currentUser?.id?.let { userId ->
+            vm.loadMessagesFromBackend(userId, recipientId)
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(

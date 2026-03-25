@@ -246,14 +246,24 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(padding)
                                 )
 
-                                "messages" -> ChatListScreen(
-                                    vm = homeViewModel,
-                                    userViewModel = userViewModel,
-                                    onConversationClick = { id, name ->
-                                        navController.navigate("chat_detail/$id/$name")
-                                    },
-                                    modifier = Modifier.padding(padding)
-                                )
+                                "messages" -> {
+                                    LaunchedEffect(Unit) {
+                                        userViewModel.currentUserFlow.collect { user ->
+                                            user?.id?.let { userId ->
+                                                homeViewModel.loadConversationsFromBackend(userId)
+                                            }
+                                        }
+                                    }
+                                    
+                                    ChatListScreen(
+                                        vm = homeViewModel,
+                                        userViewModel = userViewModel,
+                                        onConversationClick = { id, name ->
+                                            navController.navigate("chat_detail/$id/$name")
+                                        },
+                                        modifier = Modifier.padding(padding)
+                                    )
+                                }
 
                                 "profile" -> Box(modifier = Modifier.padding(padding)) {
                                     ProfileScreen(

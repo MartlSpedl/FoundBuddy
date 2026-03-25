@@ -1,17 +1,31 @@
 package com.example.foundbuddybackend.controller;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.example.foundbuddybackend.model.Conversation;
 import com.example.foundbuddybackend.model.Message;
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/chats")
@@ -89,6 +103,22 @@ public class ChatController {
     }
 
     /**
+     * Fetches a user's name from the database
+     */
+    private String getUserName(String userId) {
+        try {
+            Firestore db = getFirestore();
+            DocumentSnapshot userDoc = db.collection("users").document(userId).get().get();
+            if (userDoc.exists()) {
+                return userDoc.getString("username");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return userId; // Fallback to userId if name not found
+    }
+
+    /**
      * Sends a new message and updates both users' conversation metadata.
      */
     @PostMapping("/messages")
@@ -116,11 +146,13 @@ public class ChatController {
             // 2. Update sender's conversation metadata
             DocumentReference senderConvRef = db.collection("users").document(message.getSenderId())
                     .collection("conversations").document(message.getRecipientId());
-            DocumentSnapshot senderConvDoc = senderConvRef.get().get();
+            
+            // Fetch recipient's actual name
+            String recipientName = getUserName(message.getRecipientId());
             
             Conversation senderConv = new Conversation(
                 message.getRecipientId(), 
-                message.getRecipientId(), // In a real app we'd fetch the recipient's name from DB if not known
+                recipientName, // Use actual recipient name
                 message, 
                 true // Sender already accepts the chat
             );
@@ -142,7 +174,7 @@ public class ChatController {
             
             Conversation recipientConv = new Conversation(
                 message.getSenderId(), 
-                message.getSenderName(),
+                message.getSenderName(), // Use sender's name from message
                 message, 
                 isAccepted
             );

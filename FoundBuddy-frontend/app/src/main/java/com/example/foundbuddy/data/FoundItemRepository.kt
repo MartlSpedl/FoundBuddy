@@ -6,6 +6,8 @@ import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.model.AiSearchResult
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
+import com.example.foundbuddy.model.Message
+import com.example.foundbuddy.model.Conversation
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
@@ -27,6 +29,12 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     private val itemAdapter = moshi.adapter(ItemDto::class.java)
     private val statusChangeListType = Types.newParameterizedType(List::class.java, StatusChangeDto::class.java)
     private val statusChangeListAdapter = moshi.adapter<List<StatusChangeDto>>(statusChangeListType)
+    
+    // Chat JSON adapters
+    private val messageType = Types.newParameterizedType(Message::class.java)
+    private val messageAdapter = moshi.adapter(Message::class.java)
+    private val conversationListType = Types.newParameterizedType(List::class.java, Conversation::class.java)
+    private val conversationListAdapter = moshi.adapter<List<Conversation>>(conversationListType)
 
     /**
      * Holt alle Items vom Backend und mappt sie auf das FoundItem-Modell fürs UI.
@@ -458,6 +466,139 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             throw IllegalStateException("AI-Suche fehlgeschlagen: HTTP ${resp.code()} ${err ?: ""}")
         }
         return resp.body() ?: emptyList()
+    }
+
+    // ===== Chat API Methods =====
+
+    /**
+     * Sends a message to the backend
+     */
+    suspend fun sendMessage(message: Message): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val url = java.net.URL("$baseUrl/api/chats/messages")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doOutput = true
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+
+            val json = messageAdapter.toJson(message)
+            connection.outputStream.use { os ->
+                os.write(json.toByteArray(Charsets.UTF_8))
+            }
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_CREATED
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Gets all conversations for a user
+     */
+    suspend fun getUserConversations(userId: String): List<Conversation> = withContext(Dispatchers.IO) {
+        try {
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/chats/$encodedUserId")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            val responseCode = connection.responseCode
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.w("FoundItemRepository", "getUserConversations() HTTP $responseCode")
+                return@withContext emptyList()
+            }
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                conversationListAdapter.fromJson(body) ?: emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    /**
+     * Gets messages between two users
+     */
+    suspend fun getMessages(userId: String, otherUserId: String): List<Message> = withContext(Dispatchers.IO) {
+        try {
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val encodedOtherUserId = java.net.URLEncoder.encode(otherUserId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/chats/messages/$encodedUserId/$encodedOtherUserId")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            val responseCode = connection.responseCode
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.w("FoundItemRepository", "getMessages() HTTP $responseCode")
+                return@withContext emptyList()
+            }
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                // Parse as list of messages since backend returns array
+                val listType = Types.newParameterizedType(List::class.java, Message::class.java)
+                val listAdapter = moshi.adapter<List<Message>>(listType)
+                listAdapter.fromJson(body) ?: emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    /**
+     * Accepts a chat request
+     */
+    suspend fun acceptRequest(userId: String, otherUserId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val encodedOtherUserId = java.net.URLEncoder.encode(otherUserId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/chats/$encodedUserId/accept/$encodedOtherUserId")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "PUT"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_OK
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
+     * Declines a chat request
+     */
+    suspend fun declineRequest(userId: String, otherUserId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+            val encodedOtherUserId = java.net.URLEncoder.encode(otherUserId, "UTF-8")
+            val url = java.net.URL("$baseUrl/api/chats/$encodedUserId/decline/$encodedOtherUserId")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "PUT"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_NO_CONTENT
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
 }

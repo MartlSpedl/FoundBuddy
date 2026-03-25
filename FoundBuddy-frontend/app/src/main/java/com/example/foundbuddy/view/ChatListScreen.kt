@@ -83,10 +83,16 @@ fun ChatListScreen(
                             conversation = req,
                             vm = vm,
                             onAccept = {
-                                vm.acceptRequest(req.participantId)
+                                currentUser?.id?.let { userId ->
+                                    vm.acceptRequestFromBackend(userId, req.participantId)
+                                }
                                 onConversationClick(req.participantId, req.participantName)
                             },
-                            onDecline = { vm.declineRequest(req.participantId) }
+                            onDecline = { 
+                                currentUser?.id?.let { userId ->
+                                    vm.declineRequestFromBackend(userId, req.participantId)
+                                }
+                            }
                         )
                     }
                     if (conversations.isNotEmpty()) {

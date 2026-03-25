@@ -66,6 +66,95 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _messageRequests = MutableStateFlow<List<com.example.foundbuddy.model.Conversation>>(emptyList())
     val messageRequests: StateFlow<List<com.example.foundbuddy.model.Conversation>> = _messageRequests.asStateFlow()
 
+    fun loadConversationsFromBackend(userId: String) {
+        viewModelScope.launch {
+            try {
+                repo?.getUserConversations(userId)?.let { backendConversations ->
+                    // Convert backend conversations to frontend model
+                    val frontendConversations = backendConversations.map { backendConv ->
+                        com.example.foundbuddy.model.Conversation(
+                            participantId = backendConv.participantId,
+                            participantName = backendConv.participantName,
+                            lastMessage = com.example.foundbuddy.model.Message(
+                                id = backendConv.lastMessage?.id ?: "",
+                                senderId = backendConv.lastMessage?.senderId ?: "",
+                                senderName = backendConv.lastMessage?.senderName ?: "",
+                                recipientId = backendConv.lastMessage?.recipientId ?: "",
+                                content = backendConv.lastMessage?.content ?: "",
+                                timestamp = backendConv.lastMessage?.timestamp ?: System.currentTimeMillis()
+                            ),
+                            isAccepted = backendConv.isAccepted
+                        )
+                    }
+                    
+                    // Separate accepted conversations and requests
+                    val accepted = frontendConversations.filter { it.isAccepted }
+                    val requests = frontendConversations.filter { !it.isAccepted }
+                    
+                    _conversations.value = accepted
+                    _messageRequests.value = requests
+                    
+                    saveChatData()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun loadMessagesFromBackend(userId: String, otherUserId: String) {
+        viewModelScope.launch {
+            try {
+                repo?.getMessages(userId, otherUserId)?.let { backendMessages ->
+                    val frontendMessages = backendMessages.map { backendMsg ->
+                        com.example.foundbuddy.model.Message(
+                            id = backendMsg.id ?: "",
+                            senderId = backendMsg.senderId ?: "",
+                            senderName = backendMsg.senderName ?: "",
+                            recipientId = backendMsg.recipientId ?: "",
+                            content = backendMsg.content ?: "",
+                            timestamp = backendMsg.timestamp ?: System.currentTimeMillis()
+                        )
+                    }
+                    
+                    // Update the messages flow
+                    val messagesFlow = conversationMessages.getOrPut(otherUserId) { MutableStateFlow(emptyList()) }
+                    messagesFlow.value = frontendMessages
+                    
+                    saveChatData()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun acceptRequestFromBackend(userId: String, otherUserId: String) {
+        viewModelScope.launch {
+            try {
+                val success = repo?.acceptRequest(userId, otherUserId) ?: false
+                if (success) {
+                    acceptRequest(otherUserId)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun declineRequestFromBackend(userId: String, otherUserId: String) {
+        viewModelScope.launch {
+            try {
+                val success = repo?.declineRequest(userId, otherUserId) ?: false
+                if (success) {
+                    declineRequest(otherUserId)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun acceptRequest(participantId: String) {
         val req = _messageRequests.value.find { it.participantId == participantId } ?: return
         _messageRequests.value = _messageRequests.value.filter { it.participantId != participantId }
@@ -298,14 +387,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             content = content
         )
         
-        // Store messages for BOTH sender and recipient
+        // Store messages for BOTH sender and recipient locally
         val recipientMessagesFlow = conversationMessages.getOrPut(recipientId) { MutableStateFlow(emptyList()) }
         recipientMessagesFlow.value = recipientMessagesFlow.value + newMessage
         
         val senderMessagesFlow = conversationMessages.getOrPut(senderId) { MutableStateFlow(emptyList()) }
         senderMessagesFlow.value = senderMessagesFlow.value + newMessage
 
-        // Create only ONE conversation for the current user (sender)
+        // Create conversation for the current user (sender)
         val currentConversations = _conversations.value.toMutableList()
         
         // Remove existing conversation with this participant if it exists
@@ -321,6 +410,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         currentConversations.add(0, newConversation)
         
         _conversations.value = currentConversations
+
+        // Save to backend
+        viewModelScope.launch {
+            try {
+                repo?.sendMessage(newMessage)
+            } catch (e: Exception) {
+                // Handle error - maybe show a toast or error message
+                e.printStackTrace()
+            }
+        }
 
         saveChatData()
     }
