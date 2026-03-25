@@ -31,7 +31,6 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     private val statusChangeListAdapter = moshi.adapter<List<StatusChangeDto>>(statusChangeListType)
     
     // Chat JSON adapters
-    private val messageType = Types.newParameterizedType(Message::class.java)
     private val messageAdapter = moshi.adapter(Message::class.java)
     private val conversationListType = Types.newParameterizedType(List::class.java, Conversation::class.java)
     private val conversationListAdapter = moshi.adapter<List<Conversation>>(conversationListType)
