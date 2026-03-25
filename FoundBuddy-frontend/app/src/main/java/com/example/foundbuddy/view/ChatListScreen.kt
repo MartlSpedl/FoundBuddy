@@ -17,16 +17,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
     vm: HomeViewModel,
+    userViewModel: UserViewModel,
     onConversationClick: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val conversations by vm.conversations.collectAsState()
     val requests by vm.messageRequests.collectAsState()
+    val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
 
     Scaffold(
         topBar = {

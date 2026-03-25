@@ -297,20 +297,30 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             recipientId = recipientId,
             content = content
         )
-        val messagesFlow = conversationMessages.getOrPut(recipientId) { MutableStateFlow(emptyList()) }
-        messagesFlow.value = messagesFlow.value + newMessage
+        
+        // Store messages for BOTH sender and recipient
+        val recipientMessagesFlow = conversationMessages.getOrPut(recipientId) { MutableStateFlow(emptyList()) }
+        recipientMessagesFlow.value = recipientMessagesFlow.value + newMessage
+        
+        val senderMessagesFlow = conversationMessages.getOrPut(senderId) { MutableStateFlow(emptyList()) }
+        senderMessagesFlow.value = senderMessagesFlow.value + newMessage
 
+        // Create only ONE conversation for the current user (sender)
         val currentConversations = _conversations.value.toMutableList()
-        val index = currentConversations.indexOfFirst { it.participantId == recipientId }
-        val newConv = com.example.foundbuddy.model.Conversation(
+        
+        // Remove existing conversation with this participant if it exists
+        val existingIndex = currentConversations.indexOfFirst { it.participantId == recipientId }
+        if (existingIndex != -1) currentConversations.removeAt(existingIndex)
+        
+        // Add new conversation at the top
+        val newConversation = com.example.foundbuddy.model.Conversation(
             participantId = recipientId,
             participantName = recipientName,
             lastMessage = newMessage
         )
-        if (index != -1) currentConversations.removeAt(index)
-        currentConversations.add(0, newConv)
+        currentConversations.add(0, newConversation)
+        
         _conversations.value = currentConversations
-
 
         saveChatData()
     }
@@ -323,7 +333,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         conversationMessages.forEach { (participantId, flow) ->
             editor.putString("messages_$participantId", msgListAdapter.toJson(flow.value))
         }
-        editor.apply()
+        editor.commit() // Use commit() instead of apply() for immediate saving
     }
 
     private fun loadChatData() {
@@ -334,9 +344,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val reqsJson = sharedPreferences.getString("messageRequests", null)
             if (reqsJson != null) _messageRequests.value = convListAdapter.fromJson(reqsJson) ?: emptyList()
             
-            // We don't have a list of all participants, but conversations list has them
-            val allParticipants = _conversations.value.map { it.participantId } + _messageRequests.value.map { it.participantId }
-            allParticipants.distinct().forEach { participantId ->
+            // Get all possible participant IDs from conversations and message requests
+            val conversationParticipants = _conversations.value.map { it.participantId }
+            val requestParticipants = _messageRequests.value.map { it.participantId }
+            
+            // Also scan for any stored message keys to ensure we load all messages
+            val allKeys = sharedPreferences.all.keys.filter { it.startsWith("messages_") }
+            val messageParticipants = allKeys.map { it.removePrefix("messages_") }
+            
+            // Combine all participant IDs and load their messages
+            val allParticipants = (conversationParticipants + requestParticipants + messageParticipants).distinct()
+            allParticipants.forEach { participantId ->
                 val msgsJson = sharedPreferences.getString("messages_$participantId", null)
                 if (msgsJson != null) {
                     val msgs = msgListAdapter.fromJson(msgsJson) ?: emptyList()

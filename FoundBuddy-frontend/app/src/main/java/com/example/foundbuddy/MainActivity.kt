@@ -248,6 +248,7 @@ class MainActivity : ComponentActivity() {
 
                                 "messages" -> ChatListScreen(
                                     vm = homeViewModel,
+                                    userViewModel = userViewModel,
                                     onConversationClick = { id, name ->
                                         navController.navigate("chat_detail/$id/$name")
                                     },

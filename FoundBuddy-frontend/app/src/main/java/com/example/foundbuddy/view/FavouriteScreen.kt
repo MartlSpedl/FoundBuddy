@@ -99,6 +99,10 @@ fun FavoritesScreen(
                         userViewModel = userViewModel,
                         onClick = { onItemClick(item.id) },
                         onLike = { vm.toggleLike(item.id) },
+                        onMessageClick = {
+                            val id = item.uploaderId.ifBlank { item.uploaderName }
+                            navController.navigate("chat_detail/$id/${item.uploaderName}")
+                        },
                         onFavorite = {
                             currentUser?.id?.let { userId ->
                                 vm.toggleFavorite(item.id, userId)
@@ -109,4 +113,4 @@ fun FavoritesScreen(
             }
         }
     }
-}
+}
