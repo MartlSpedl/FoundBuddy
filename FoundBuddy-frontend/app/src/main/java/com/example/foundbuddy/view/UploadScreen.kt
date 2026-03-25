@@ -1,5 +1,6 @@
 package com.example.foundbuddy.view
 
+import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -26,10 +27,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.foundbuddy.R
 import com.example.foundbuddy.data.FoundItemRepository
@@ -38,7 +42,9 @@ import com.example.foundbuddy.network.ApiClient
 import com.example.foundbuddy.network.FoundBuddyApi
 import kotlinx.coroutines.launch
 import com.example.foundbuddy.controller.UserViewModel
-import java.util.UUID
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +66,7 @@ fun UploadScreen(
     var desc by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var expanded by remember { mutableStateOf(false) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
 
     var isUploading by remember { mutableStateOf(false) }
     var uploadError by remember { mutableStateOf<String?>(null) }
@@ -70,6 +77,39 @@ fun UploadScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) imageUri = uri
+    }
+
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageFile(): Uri {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.GERMANY).format(Date())
+        val imageFileName = "FoundBuddy_${timeStamp}_"
+        val storageDir = File(context.cacheDir, "images")
+        if (!storageDir.exists()) storageDir.mkdirs()
+        val imageFile = File.createTempFile(imageFileName, ".jpg", storageDir)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            imageFile
+        )
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && photoUri != null) {
+            imageUri = photoUri
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val newPhotoUri = createImageFile()
+            photoUri = newPhotoUri
+            cameraLauncher.launch(newPhotoUri)
+        }
     }
 
     val itemOptions = listOf(
@@ -161,7 +201,7 @@ fun UploadScreen(
                     .aspectRatio(1f)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                     .clickable(enabled = !isUploading) {
-                        imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        showImageSourceDialog = true
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -316,5 +356,50 @@ fun UploadScreen(
                 Spacer(Modifier.height(40.dp))
             }
         }
+    }
+
+    // Image Source Selection Dialog
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Bild auswählen") },
+            text = {
+                Column {
+                    Text("Möchtest du ein Foto machen oder ein Bild aus der Galerie auswählen?")
+                }
+            },
+            confirmButton = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(20.dp).padding(end = 8.dp))
+                        Text("Galerie")
+                    }
+                    TextButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp).padding(end = 8.dp))
+                        Text("Kamera")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImageSourceDialog = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }
