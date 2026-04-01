@@ -44,6 +44,25 @@ public class ChatController {
         }
     }
 
+    private String resolveUsernameToId(String identifier) {
+        if (identifier == null || identifier.contains("_at_")) {
+            return identifier;
+        }
+        try {
+            Firestore db = getFirestore();
+            QuerySnapshot snapshot = db.collection("users")
+                .whereEqualTo("username", identifier)
+                .limit(1)
+                .get().get();
+            if (!snapshot.isEmpty()) {
+                return snapshot.getDocuments().get(0).getId();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return identifier;
+    }
+
     /**
      * Gets all conversations for a specific user (both accepted and pending requests).
      */
@@ -129,6 +148,11 @@ public class ChatController {
             }
 
             Firestore db = getFirestore();
+
+            String resolvedRecipientId = resolveUsernameToId(message.getRecipientId());
+            String resolvedSenderId = resolveUsernameToId(message.getSenderId());
+            message.setRecipientId(resolvedRecipientId);
+            message.setSenderId(resolvedSenderId);
             
             if (message.getId() == null || message.getId().isBlank()) {
                 message.setId(UUID.randomUUID().toString());

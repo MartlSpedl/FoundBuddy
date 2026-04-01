@@ -51,6 +51,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val msgListAdapter = moshi.adapter<List<Message>>(Types.newParameterizedType(List::class.java, Message::class.java))
 
     init {
+        sharedPreferences.edit().clear().apply()
         loadChatData()
     }
     private val _conversations = MutableStateFlow<List<com.example.foundbuddy.model.Conversation>>(emptyList())
