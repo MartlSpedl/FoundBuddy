@@ -34,6 +34,7 @@ import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.view.*
 import com.example.foundbuddy.ui.theme.*
 import com.example.foundbuddy.ui.components.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -250,7 +251,10 @@ class MainActivity : ComponentActivity() {
                                     LaunchedEffect(Unit) {
                                         userViewModel.currentUserFlow.collect { user ->
                                             user?.id?.let { userId ->
-                                                homeViewModel.loadConversationsFromBackend(userId)
+                                                while (true) {
+                                                    homeViewModel.loadConversationsFromBackend(userId)
+                                                    delay(5000)
+                                                }
                                             }
                                         }
                                     }

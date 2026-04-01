@@ -224,12 +224,11 @@ fun ItemDetailScreen(
                     )
 
                     val isOwner = item.uploaderId == currentUser?.id || (item.uploaderId.isBlank() && item.uploaderName == currentUser?.username)
-                    if (!isOwner) {
+                    if (!isOwner && item.uploaderId.isNotBlank()) {
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { 
-                                val id = item.uploaderId.ifBlank { item.uploaderName }
-                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                                navController.navigate("chat_detail/${item.uploaderId}/${item.uploaderName}")
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),

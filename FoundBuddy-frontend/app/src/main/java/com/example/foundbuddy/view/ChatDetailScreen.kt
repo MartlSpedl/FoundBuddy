@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.Message
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,10 +45,13 @@ fun ChatDetailScreen(
         }
     }
 
-    // Load messages from backend when screen opens
+    // Poll messages from backend every 3 seconds
     LaunchedEffect(recipientId) {
         currentUser?.id?.let { userId ->
-            vm.loadMessagesFromBackend(userId, recipientId)
+            while (true) {
+                vm.loadMessagesFromBackend(userId, recipientId)
+                delay(3000)
+            }
         }
     }
 
