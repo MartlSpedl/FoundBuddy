@@ -15,7 +15,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,6 +62,12 @@ fun ProfileScreen(
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
     val scope = rememberCoroutineScope()
 
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var editUsername by remember { mutableStateOf("") }
+    var editProfileImageUri by remember { mutableStateOf<String?>(null) }
+    var showImagePicker by remember { mutableStateOf(false) }
+
     // Load user data when the screen is first shown
     LaunchedEffect(Unit) {
         currentUser?.id?.let { userId ->
@@ -95,7 +104,11 @@ fun ProfileScreen(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { newUri ->
             scope.launch {
-                userViewModel.updateProfileImage(newUri.toString())
+                if (showEditProfileDialog) {
+                    editProfileImageUri = newUri.toString()
+                } else {
+                    userViewModel.updateProfileImage(newUri.toString())
+                }
             }
         }
     }
@@ -143,7 +156,7 @@ fun ProfileScreen(
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = { /* Settings */ }) {
+            IconButton(onClick = { showSettingsSheet = true }) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -224,7 +237,11 @@ fun ProfileScreen(
         ) {
             ProfileActionButton(
                 text = "Profil bearbeiten",
-                onClick = { /* TODO */ },
+                onClick = {
+                    editUsername = username
+                    editProfileImageUri = profileImageUri
+                    showEditProfileDialog = true
+                },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -357,6 +374,35 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(22.dp))
     }
+
+    if (showSettingsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettingsSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            SettingsScreen(
+                userViewModel = userViewModel,
+                onClear = { /* TODO: Items löschen Logik */ }
+            )
+        }
+    }
+
+    if (showEditProfileDialog) {
+        EditProfileDialog(
+            username = editUsername,
+            profileImageUri = editProfileImageUri ?: profileImageUri,
+            onUsernameChange = { editUsername = it },
+            onPickImage = { launcher.launch("image/*") },
+            onSave = { newUsername, newImageUri ->
+                scope.launch {
+                    userViewModel.updateUsername(newUsername)
+                    newImageUri?.let { userViewModel.updateProfileImage(it) }
+                }
+                showEditProfileDialog = false
+            },
+            onDismiss = { showEditProfileDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -401,5 +447,118 @@ private fun StatBlock(value: Int, label: String) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun EditProfileDialog(
+    username: String,
+    profileImageUri: String?,
+    onUsernameChange: (String) -> Unit,
+    onPickImage: () -> Unit,
+    onSave: (newUsername: String, newImageUri: String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var currentUsername by remember { mutableStateOf(username) }
+    var currentImageUri by remember { mutableStateOf(profileImageUri) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Profil bearbeiten",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onPickImage() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (currentImageUri.isNullOrBlank()) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profilbild auswählen",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    } else {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(currentImageUri)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Profilbild",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Bearbeiten",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = currentUsername,
+                    onValueChange = {
+                        currentUsername = it
+                        onUsernameChange(it)
+                    },
+                    label = { Text("Benutzername") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Abbrechen")
+                    }
+                    Button(
+                        onClick = {
+                            onSave(currentUsername, currentImageUri)
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = currentUsername.isNotBlank()
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Speichern")
+                    }
+                }
+            }
+        }
     }
 }
