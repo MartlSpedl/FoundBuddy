@@ -48,6 +48,7 @@ fun ChatDetailScreen(
     // Poll messages from backend every 3 seconds
     LaunchedEffect(recipientId) {
         currentUser?.id?.let { userId ->
+            vm.markMessagesAsRead(userId, recipientId)
             while (true) {
                 vm.loadMessagesFromBackend(userId, recipientId)
                 delay(3000)

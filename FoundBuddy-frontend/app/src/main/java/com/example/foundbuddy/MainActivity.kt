@@ -17,10 +17,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -77,11 +79,16 @@ class MainActivity : ComponentActivity() {
                     return@FoundBuddyTheme
                 }
 
+                val unreadCount by homeViewModel.unreadCount.collectAsState()
                 LaunchedEffect(isLoggedIn) {
                     if (isLoggedIn) {
                         homeViewModel.loadItems()
                         currentUser?.id?.let { userId ->
                             homeViewModel.loadFavorites(userId)
+                            while (true) {
+                                homeViewModel.loadConversationsFromBackend(userId)
+                                delay(15000)
+                            }
                         }
                     }
                 }
@@ -182,11 +189,24 @@ class MainActivity : ComponentActivity() {
                                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                             ),
                                             icon = {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.ic_message),
-                                                    contentDescription = "Nachrichten",
-                                                    modifier = Modifier.size(26.dp)
-                                                )
+                                                Box {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.ic_message),
+                                                        contentDescription = "Nachrichten",
+                                                        modifier = Modifier.size(26.dp)
+                                                    )
+                                                    if (unreadCount > 0) {
+                                                        Badge(
+                                                            modifier = Modifier.align(Alignment.TopEnd)
+                                                        ) {
+                                                            Text(
+                                                                text = if (unreadCount > 99) "99+"
+                                                                       else unreadCount.toString(),
+                                                                fontSize = 10.sp
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                             },
                                             label = { Text("Nachrichten") }
                                         )

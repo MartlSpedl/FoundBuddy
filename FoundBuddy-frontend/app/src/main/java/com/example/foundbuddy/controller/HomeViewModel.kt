@@ -67,6 +67,38 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _messageRequests = MutableStateFlow<List<com.example.foundbuddy.model.Conversation>>(emptyList())
     val messageRequests: StateFlow<List<com.example.foundbuddy.model.Conversation>> = _messageRequests.asStateFlow()
 
+    // Unread messages tracking
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
+    private val lastReadTimestamps = mutableMapOf<String, Long>()
+
+    fun markMessagesAsRead(userId: String, otherUserId: String) {
+        lastReadTimestamps[otherUserId] = System.currentTimeMillis()
+        updateUnreadCount(userId)
+    }
+
+    fun updateUnreadCount(userId: String) {
+        var count = 0
+        conversationMessages.forEach { (participantId, messagesFlow) ->
+            if (participantId != userId) {
+                val lastRead = lastReadTimestamps[participantId] ?: 0L
+                count += messagesFlow.value.count { msg ->
+                    msg.timestamp > lastRead && msg.senderId != userId
+                }
+            }
+        }
+        _unreadCount.value = count
+    }
+
+    fun updateUnreadFromConversations(userId: String, conversations: List<com.example.foundbuddy.model.Conversation>) {
+        _unreadCount.value = conversations.count { conv ->
+            val lastRead = lastReadTimestamps[conv.participantId] ?: 0L
+            val lastMsg = conv.lastMessage
+            lastMsg.senderId != userId && lastMsg.timestamp > lastRead
+        }
+    }
+
     fun loadConversationsFromBackend(userId: String) {
         viewModelScope.launch {
             try {
@@ -95,6 +127,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _conversations.value = accepted
                     _messageRequests.value = requests
                     
+                    updateUnreadFromConversations(userId, accepted)
                     saveChatData()
                 }
             } catch (e: Exception) {
@@ -121,6 +154,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     // Update the messages flow
                     val messagesFlow = conversationMessages.getOrPut(otherUserId) { MutableStateFlow(emptyList()) }
                     messagesFlow.value = frontendMessages
+                    updateUnreadCount(userId)
                     
                     saveChatData()
                 }
