@@ -12,6 +12,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.foundbuddy.R
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,7 @@ fun SettingsScreen(
     val lang by userViewModel.language.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     val isLoading by userViewModel.isLoading.collectAsState()
+    val lmLang = lang
 
     Column(
         modifier = modifier
@@ -37,7 +39,7 @@ fun SettingsScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(if (lang == "en") "Profile" else "Profil", style = MaterialTheme.typography.headlineSmall)
+        Text(LanguageManager.tr("profile", lmLang), style = MaterialTheme.typography.headlineSmall)
 
         OutlinedTextField(
             value = username,
@@ -48,14 +50,14 @@ fun SettingsScreen(
                 }
 
             },
-            label = { Text(if (lang == "en") "Username" else "Benutzername") },
+            label = { Text(LanguageManager.tr("username", lmLang)) },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = email,
             onValueChange = {},
-            label = { Text(if (lang == "en") "Email Address" else "E-Mail-Adresse") },
+            label = { Text(LanguageManager.tr("email", lmLang)) },
             enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
@@ -68,12 +70,12 @@ fun SettingsScreen(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (lang == "en") "Save Profile" else "Profil speichern")
+            Text(LanguageManager.tr("save_profile", lmLang))
         }
 
         HorizontalDivider()
 
-        Text(if (lang == "en") "Language" else "Sprache", style = MaterialTheme.typography.titleMedium)
+        Text(LanguageManager.tr("language", lmLang), style = MaterialTheme.typography.titleMedium)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -97,13 +99,13 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(if (lang == "en") "Dark Mode" else "Dark Mode", style = MaterialTheme.typography.bodyLarge)
+            Text(LanguageManager.tr("dark_mode", lmLang), style = MaterialTheme.typography.bodyLarge)
             Switch(checked = isDarkMode, onCheckedChange = { userViewModel.toggleDarkMode() })
         }
 
         HorizontalDivider()
 
-        Text(if (lang == "en") "App Management" else "App-Verwaltung", style = MaterialTheme.typography.headlineSmall)
+        Text(LanguageManager.tr("app_management", lmLang), style = MaterialTheme.typography.headlineSmall)
 
         Button(
             onClick = onClear,
@@ -114,10 +116,10 @@ fun SettingsScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.delete_icon),
-                contentDescription = if (lang == "en") "Delete" else "Löschen"
+                contentDescription = LanguageManager.tr("delete", lmLang)
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (lang == "en") "Delete All Items" else "Alle Fundsachen löschen")
+            Text(LanguageManager.tr("delete_all_items", lmLang))
         }
 
         OutlinedButton(
@@ -129,10 +131,10 @@ fun SettingsScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_message),
-                contentDescription = if (lang == "en") "Logout" else "Abmelden"
+                contentDescription = LanguageManager.tr("logout", lmLang)
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (lang == "en") "Logout" else "Abmelden")
+            Text(LanguageManager.tr("logout", lmLang))
         }
 
         Spacer(Modifier.height(16.dp))
@@ -146,10 +148,10 @@ fun SettingsScreen(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.delete_icon),
-                contentDescription = if (lang == "en") "Delete Account" else "Account löschen"
+                contentDescription = LanguageManager.tr("delete_account", lmLang)
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (lang == "en") "Delete Account" else "Account löschen")
+            Text(LanguageManager.tr("delete_account", lmLang))
         }
 
         Spacer(Modifier.height(32.dp))
@@ -158,14 +160,9 @@ fun SettingsScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text(if (lang == "en") "Delete Account?" else "Account löschen?") },
+            title = { Text(LanguageManager.tr("delete_account", lmLang) + "?") },
             text = {
-                Text(
-                    if (lang == "en")
-                        "Are you sure you want to delete your account? This action cannot be undone."
-                    else
-                        "Möchtest du deinen Account wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-                )
+                Text(LanguageManager.tr("delete_account_confirm", lmLang))
             },
             confirmButton = {
                 TextButton(
@@ -180,12 +177,12 @@ fun SettingsScreen(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text(if (lang == "en") "Delete" else "Löschen")
+                    Text(LanguageManager.tr("delete", lmLang))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(if (lang == "en") "Cancel" else "Abbrechen")
+                    Text(LanguageManager.tr("cancel", lmLang))
                 }
             }
         )

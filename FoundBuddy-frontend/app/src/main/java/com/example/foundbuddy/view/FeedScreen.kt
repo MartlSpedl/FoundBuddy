@@ -24,6 +24,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.ui.components.*
 import com.example.foundbuddy.model.User
@@ -44,6 +45,7 @@ fun FeedScreen(
     val isLoading by vm.isLoading.collectAsState(initial = true)
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val username by userViewModel.username.collectAsState(initial = "Buddy")
+    val lang by userViewModel.language.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -92,7 +94,8 @@ fun FeedScreen(
             item {
                 GreetingHeader(
                     username = username,
-                    profileImageUri = currentUser?.profileImage
+                    profileImageUri = currentUser?.profileImage,
+                    lang = lang
                 )
             }
 
@@ -107,7 +110,7 @@ fun FeedScreen(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     placeholder = { 
                         Text(
-                            "Finde verlorene Schätze...", 
+                            LanguageManager.tr("search_placeholder"), 
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         ) 
@@ -115,7 +118,7 @@ fun FeedScreen(
                     leadingIcon = { 
                         Icon(
                             Icons.Filled.Search, 
-                            contentDescription = "Suche",
+                            contentDescription = LanguageManager.tr("search"),
                             tint = MaterialTheme.colorScheme.primary
                         ) 
                     },
@@ -148,7 +151,7 @@ fun FeedScreen(
                 if (foundItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = "Gefundene Gegenstände (${foundItems.size})",
+                            text = String.format(LanguageManager.tr("found_items_count"), foundItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -177,7 +180,7 @@ fun FeedScreen(
                 if (lostItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = "Verlorene Gegenstände (${lostItems.size})",
+                            text = String.format(LanguageManager.tr("lost_items_count"), lostItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -206,7 +209,7 @@ fun FeedScreen(
                 if (otherItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = "Andere (${otherItems.size})",
+                            text = String.format(LanguageManager.tr("other_items_count"), otherItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -241,7 +244,7 @@ fun FeedScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (searchQuery.isBlank()) "Noch keine Beiträge…" else "Keine Ergebnisse",
+                                text = if (searchQuery.isBlank()) LanguageManager.tr("no_posts_yet") else LanguageManager.tr("no_results"),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -256,16 +259,17 @@ fun FeedScreen(
 @Composable
 private fun GreetingHeader(
     username: String,
-    profileImageUri: String?
+    profileImageUri: String?,
+    lang: String
 ) {
     val currentTime = remember { Calendar.getInstance() }
     val hour = currentTime.get(Calendar.HOUR_OF_DAY)
     
     val greeting = when {
-        hour in 5..11 -> "Guten Morgen"
-        hour in 12..17 -> "Guten Tag"
-        hour in 18..22 -> "Guten Abend"
-        else -> "Hallo"
+        hour in 5..11 -> LanguageManager.tr("good_morning", lang)
+        hour in 12..17 -> LanguageManager.tr("good_afternoon", lang)
+        hour in 18..22 -> LanguageManager.tr("good_evening", lang)
+        else -> LanguageManager.tr("hello", lang)
     }
 
     Row(
@@ -290,7 +294,7 @@ private fun GreetingHeader(
                 )
             }
             Text(
-                text = "Willkommen zurück, $username",
+                text = String.format(LanguageManager.tr("welcome_back", lang), username),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -314,7 +318,7 @@ private fun GreetingHeader(
                         .data(profileImageUri)
                         .crossfade(true)
                         .build(),
-                    contentDescription = "Profilbild",
+                    contentDescription = LanguageManager.tr("profile_image", lang),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )

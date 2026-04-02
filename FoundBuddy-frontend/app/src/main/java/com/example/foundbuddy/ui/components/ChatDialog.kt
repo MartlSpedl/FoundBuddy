@@ -13,10 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.foundbuddy.controller.LanguageManager
 
 @Composable
 fun ChatDialog(
     recipientName: String,
+    lang: String = "de",
     onDismiss: () -> Unit,
     onSendMessage: (String) -> Unit
 ) {
@@ -43,7 +45,7 @@ fun ChatDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Nachricht an $recipientName",
+                    text = String.format(LanguageManager.tr("message_to", lang), recipientName),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -52,7 +54,7 @@ fun ChatDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Schreibe eine Nachricht, um Kontakt aufzunehmen.",
+                    text = LanguageManager.tr("write_message_to_contact", lang),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 20.dp)
@@ -61,7 +63,7 @@ fun ChatDialog(
                 OutlinedTextField(
                     value = messageText,
                     onValueChange = { messageText = it },
-                    placeholder = { Text("Deine Nachricht...") },
+                    placeholder = { Text(LanguageManager.tr("your_message", lang)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp),
@@ -83,7 +85,7 @@ fun ChatDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Abbrechen")
+                        Text(LanguageManager.tr("cancel", lang))
                     }
 
                     Button(
@@ -109,7 +111,7 @@ fun ChatDialog(
                         } else {
                             Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Senden")
+                            Text(LanguageManager.tr("send", lang))
                         }
                     }
                 }

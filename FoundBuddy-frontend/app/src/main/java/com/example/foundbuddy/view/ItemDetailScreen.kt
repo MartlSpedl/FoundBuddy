@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.User
 import com.example.foundbuddy.ui.components.ChatDialog
@@ -42,6 +43,7 @@ fun ItemDetailScreen(
     var commentText by remember { mutableStateOf("") }
     val comments by vm.getComments(itemId).collectAsState(initial = emptyList())
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val lang by userViewModel.language.collectAsState()
 
     // Sprint 5: Status-Änderungs-Dialog
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -54,10 +56,10 @@ fun ItemDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(item?.title ?: "Details") },
+                title = { Text(item?.title ?: LanguageManager.tr("details", lang)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = LanguageManager.tr("back", lang))
                     }
                 },
                 actions = {
@@ -68,17 +70,17 @@ fun ItemDetailScreen(
                             val shareIntent = android.content.Intent().apply {
                                 action = android.content.Intent.ACTION_SEND
                                 type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, "Schau mal, was ich bei FoundBuddy gefunden habe: ${currentItem.title}\n\n${currentItem.description ?: ""}")
+                                putExtra(android.content.Intent.EXTRA_TEXT, String.format(LanguageManager.tr("uploaded_by", lang), currentItem.title) + "\n\n${currentItem.description ?: ""}")
                                 if (currentItem.imagePath?.isNotBlank() == true) {
                                     // In a real app, you might want to share the image URI too
                                     // putExtra(android.content.Intent.EXTRA_STREAM, Uri.parse(currentItem.imagePath))
                                 }
                             }
-                            context.startActivity(android.content.Intent.createChooser(shareIntent, "Teilen via"))
+                            context.startActivity(android.content.Intent.createChooser(shareIntent, LanguageManager.tr("share_via", lang)))
                         }) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Teilen",
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = LanguageManager.tr("share", lang),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -93,9 +95,9 @@ fun ItemDetailScreen(
                         Icon(
                             imageVector = if (item?.isFavorite == true) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = if (item?.isFavorite == true)
-                                "Aus Favoriten entfernen"
+                                LanguageManager.tr("remove_from_favorites", lang)
                             else
-                                "Zu Favoriten hinzufügen",
+                                LanguageManager.tr("add_to_favorites", lang),
                             tint = if (item?.isFavorite == true) Color(0xFFFFD700) else LocalContentColor.current
                         )
                     }
@@ -132,7 +134,7 @@ fun ItemDetailScreen(
                 OutlinedTextField(
                     value = commentText,
                     onValueChange = { commentText = it },
-                    placeholder = { Text("Kommentar hinzufügen…") },
+                    placeholder = { Text(LanguageManager.tr("add_comment", lang)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true
                 )
@@ -146,7 +148,7 @@ fun ItemDetailScreen(
                     },
                     enabled = commentText.isNotBlank()
                 ) {
-                    Text("Senden")
+                    Text(LanguageManager.tr("send", lang))
                 }
             }
         }
@@ -158,7 +160,7 @@ fun ItemDetailScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Item nicht gefunden", style = MaterialTheme.typography.titleMedium)
+                Text(LanguageManager.tr("item_not_found", lang), style = MaterialTheme.typography.titleMedium)
             }
             return@Scaffold
         }
@@ -218,7 +220,7 @@ fun ItemDetailScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        "Hochgeladen von ${item.uploaderName} • ${vm.formatTimeAgo(item.timestamp)}",
+                        String.format(LanguageManager.tr("uploaded_by", lang), item.uploaderName) + " • ${vm.formatTimeAgo(item.timestamp)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -242,7 +244,7 @@ fun ItemDetailScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Nachricht schreiben", fontWeight = FontWeight.Bold)
+                            Text(LanguageManager.tr("send_message_button", lang), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -250,7 +252,7 @@ fun ItemDetailScreen(
                 // Sprint 5: Status-Workflow Abschnitt
                 Spacer(Modifier.height(24.dp))
                 Text(
-                    "Status-Verlauf",
+                    LanguageManager.tr("status_history", lang),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -271,7 +273,7 @@ fun ItemDetailScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "Aktuell: ${item.workflowStatus}",
+                        String.format(LanguageManager.tr("current_status", lang), item.workflowStatus),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -283,14 +285,14 @@ fun ItemDetailScreen(
                 ) {
                     if (item.statusHistory.isEmpty()) {
                         Text(
-                            "Noch keine Statusänderungen",
+                            LanguageManager.tr("no_status_changes", lang),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 16.dp)
                         )
                     } else {
                         item.statusHistory.forEachIndexed { index, change ->
-                            StatusChangeItem(change = change, vm = vm, isLast = index == item.statusHistory.size - 1)
+                            StatusChangeItem(change = change, vm = vm, isLast = index == item.statusHistory.size - 1, lang = lang)
                             if (index < item.statusHistory.size - 1) {
                                 Spacer(Modifier.height(8.dp))
                             }
@@ -300,7 +302,7 @@ fun ItemDetailScreen(
 
                 Spacer(Modifier.height(32.dp))
                 Text(
-                    "Kommentare",
+                    LanguageManager.tr("comments", lang),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -344,17 +346,17 @@ fun ItemDetailScreen(
                 selectedNewStatus = ""
                 statusComment = ""
             },
-            title = { Text("Status ändern") },
+            title = { Text(LanguageManager.tr("change_status", lang)) },
             text = {
                 Column {
-                    Text("Aktueller Status: ${item.workflowStatus}")
+                    Text(String.format(LanguageManager.tr("current_status_label", lang), item.workflowStatus))
                     Spacer(Modifier.height(16.dp))
 
                     val possibleStatuses = vm.getNextPossibleStatus(item.workflowStatus)
 
                     if (possibleStatuses.isEmpty()) {
                         Text(
-                            "Keine weiteren Statusänderungen möglich.",
+                            LanguageManager.tr("no_more_status_changes", lang),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -384,7 +386,7 @@ fun ItemDetailScreen(
                         OutlinedTextField(
                             value = statusComment,
                             onValueChange = { statusComment = it },
-                            label = { Text("Kommentar (optional)") },
+                            label = { Text(LanguageManager.tr("comment_optional", lang)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -416,7 +418,7 @@ fun ItemDetailScreen(
                             selectedNewStatus != (item?.workflowStatus ?: "") &&
                             vm.getNextPossibleStatus(item?.workflowStatus ?: "").contains(selectedNewStatus)
                 ) {
-                    Text("Status aktualisieren")
+                    Text(LanguageManager.tr("update_status", lang))
                 }
             },
             dismissButton = {
@@ -425,7 +427,7 @@ fun ItemDetailScreen(
                     selectedNewStatus = ""
                     statusComment = ""
                 }) {
-                    Text("Abbrechen")
+                    Text(LanguageManager.tr("cancel", lang))
                 }
             }
         )
@@ -436,7 +438,8 @@ fun ItemDetailScreen(
 fun StatusChangeItem(
     change: com.example.foundbuddy.model.StatusChange,
     vm: HomeViewModel,
-    isLast: Boolean
+    isLast: Boolean,
+    lang: String = "de"
 ) {
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -470,19 +473,19 @@ fun StatusChangeItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                "${change.oldStatus} → ${change.newStatus}",
+                String.format(LanguageManager.tr("status_change", lang), change.oldStatus, change.newStatus),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "von ${change.username}",
+                String.format(LanguageManager.tr("by_user", lang), change.username),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             change.comment?.let {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Kommentar: $it",
+                    String.format(LanguageManager.tr("comment_label", lang), it),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

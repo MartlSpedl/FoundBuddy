@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.example.foundbuddy.R
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.model.FoundItem
@@ -56,13 +57,13 @@ fun ProfileScreen(
     val email by userViewModel.email.collectAsState(initial = "nicht angemeldet")
     val isLoading by userViewModel.isLoading.collectAsState()
     val errorMessage by userViewModel.errorMessage.collectAsState()
+    val lang by userViewModel.language.collectAsState()
 
     // Achtung: kann null/leer/kaputt sein
     val profileImageUri = currentUser?.profileImage
     val userBio = currentUser?.bio
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
     val scope = rememberCoroutineScope()
-    val lang by userViewModel.language.collectAsState()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
@@ -82,8 +83,8 @@ fun ProfileScreen(
     if (!errorMessage.isNullOrEmpty()) {
         AlertDialog(
             onDismissRequest = { userViewModel.clearErrorMessage() },
-            title = { Text("Fehler") },
-            text = { Text(errorMessage ?: "Ein unbekannter Fehler ist aufgetreten") },
+            title = { Text(LanguageManager.tr("error", lang)) },
+            text = { Text(errorMessage ?: LanguageManager.tr("error_unknown", lang)) },
             confirmButton = {
                 TextButton(onClick = { userViewModel.clearErrorMessage() }) {
                     Text("OK")
@@ -130,12 +131,12 @@ fun ProfileScreen(
     val followersCount = 0
     val followingCount = 0
 
-    // Register-State
+                    // Register-State
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = if (lang == "en") listOf("Found", "Lost") else listOf("Gefunden", "Verloren")
+    val tabs = listOf(LanguageManager.tr("found", lang), LanguageManager.tr("lost", lang))
     
     val displayPosts = remember(userPosts, selectedTabIndex) {
-        val status = if (selectedTabIndex == 0) "Gefunden" else "Verloren"
+                    val status = if (selectedTabIndex == 0) LanguageManager.tr("found", lang) else LanguageManager.tr("lost", lang)
         userPosts.filter { it.status.equals(status, ignoreCase = true) }
     }
 
@@ -160,7 +161,7 @@ fun ProfileScreen(
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = { showSettingsSheet = true }) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Default.Settings, contentDescription = LanguageManager.tr("settings", lang), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -182,7 +183,7 @@ fun ProfileScreen(
                 if (profileImageUri.isNullOrBlank()) {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Standardbild",
+                        contentDescription = LanguageManager.tr("default_profile_image", lang),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(40.dp)
                     )
@@ -206,9 +207,9 @@ fun ProfileScreen(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatBlock(value = postsCount, label = "Beiträge")
-                StatBlock(value = followersCount, label = "Follower")
-                StatBlock(value = followingCount, label = "Gefolgt")
+                StatBlock(value = postsCount, label = LanguageManager.tr("posts", lang))
+                StatBlock(value = followersCount, label = LanguageManager.tr("followers", lang))
+                StatBlock(value = followingCount, label = LanguageManager.tr("following", lang))
             }
         }
 
@@ -222,13 +223,13 @@ fun ProfileScreen(
                 )
             } else {
                 Text(
-                    text = "Lost & Found Buddy",
+                    text = LanguageManager.tr("bio_default", lang),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
             }
             Text(
-                text = if (lang == "en") "Help others find their treasures." else "Hilf anderen, ihre Schätze wiederzufinden.",
+                text = LanguageManager.tr("bio_tagline", lang),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -247,7 +248,7 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ProfileActionButton(
-                text = if (lang == "en") "Edit Profile" else "Profil bearbeiten",
+                text = LanguageManager.tr("edit_profile", lang),
                 onClick = {
                     editUsername = username
                     editBio = userBio ?: ""
@@ -258,7 +259,7 @@ fun ProfileScreen(
                 color = MaterialTheme.colorScheme.primary
             )
             ProfileActionButton(
-                text = if (lang == "en") "Share" else "Teilen",
+                text = LanguageManager.tr("share", lang),
                 onClick = { /* TODO */ },
                 modifier = Modifier.weight(0.4f),
                 color = MaterialTheme.colorScheme.secondary
@@ -330,7 +331,7 @@ fun ProfileScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = if (lang == "en") "No posts yet" else "Keine Beiträge vorhanden",
+                        text = LanguageManager.tr("no_posts", lang),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -499,7 +500,7 @@ private fun EditProfileDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = if (language == "en") "Edit Profile" else "Profil bearbeiten",
+                    text = LanguageManager.tr("edit_profile", language),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -515,7 +516,7 @@ private fun EditProfileDialog(
                     if (currentImageUri.isNullOrBlank()) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "Profilbild auswählen",
+                            contentDescription = LanguageManager.tr("select_profile_image", language),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(48.dp)
                         )
@@ -525,7 +526,7 @@ private fun EditProfileDialog(
                                 .data(currentImageUri)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "Profilbild",
+                        contentDescription = LanguageManager.tr("profile_image", language),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -540,7 +541,7 @@ private fun EditProfileDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Bearbeiten",
+                            contentDescription = LanguageManager.tr("edit", language),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -553,7 +554,7 @@ private fun EditProfileDialog(
                         currentUsername = it
                         onUsernameChange(it)
                     },
-                    label = { Text(if (language == "en") "Username" else "Benutzername") },
+                    label = { Text(LanguageManager.tr("username", language)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -564,8 +565,8 @@ private fun EditProfileDialog(
                         currentBio = it
                         onBioChange(it)
                     },
-                    label = { Text(if (language == "en") "Bio" else "Bio") },
-                    placeholder = { Text(if (language == "en") "About you..." else "Über dich...") },
+                    label = { Text(LanguageManager.tr("bio", language)) },
+                    placeholder = { Text(LanguageManager.tr("bio_placeholder", language)) },
                     singleLine = false,
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
@@ -581,7 +582,7 @@ private fun EditProfileDialog(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text(if (language == "en") "Cancel" else "Abbrechen")
+                        Text(LanguageManager.tr("cancel", language))
                     }
                     Button(
                         onClick = {
@@ -592,7 +593,7 @@ private fun EditProfileDialog(
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text(if (language == "en") "Save" else "Speichern")
+                    Text(LanguageManager.tr("save", language))
                 }
             }
         }

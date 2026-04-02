@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.ui.components.*
 
@@ -31,6 +32,7 @@ fun FavoritesScreen(
 ) {
     val favorites by vm.favorites.collectAsState(initial = emptyList())
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val lang by userViewModel.language.collectAsState()
 
     Scaffold(
         topBar = {
@@ -42,12 +44,12 @@ fun FavoritesScreen(
                     ) {
                         Icon(
                             Icons.Filled.Star,
-                            contentDescription = "Favoriten",
+                            contentDescription = LanguageManager.tr("favorites", lang),
                             tint = Color(0xFFFFD700),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Deine Favoriten", fontWeight = FontWeight.Bold)
+                        Text(LanguageManager.tr("your_favorites", lang), fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -66,19 +68,19 @@ fun FavoritesScreen(
                 ) {
                     Icon(
                         Icons.Filled.Star,
-                        contentDescription = "Keine Favoriten",
+                        contentDescription = LanguageManager.tr("no_favorites", lang),
                         tint = Color(0xFFBDBDBD),
                         modifier = Modifier.size(64.dp)
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Noch keine Favoriten",
+                        LanguageManager.tr("no_favorites_yet", lang),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Markiere interessante Funde als Favorit",
+                        LanguageManager.tr("mark_favorites_hint", lang),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

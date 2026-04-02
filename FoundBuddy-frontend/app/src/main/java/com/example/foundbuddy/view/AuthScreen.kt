@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.LoginResult
 import com.example.foundbuddy.controller.RegisterResult
 import com.example.foundbuddy.controller.UserViewModel
@@ -63,6 +64,7 @@ fun AuthScreen(
 
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val scope       = rememberCoroutineScope()
+    val lang by userViewModel.language.collectAsState()
 
     LaunchedEffect(currentUser) {
         if (currentUser != null) onLoginSuccess()
@@ -78,10 +80,9 @@ fun AuthScreen(
 
     if (showEmailConfirmation) {
         IgAlertDialog(
-            title = "Registrierung erfolgreich!",
-            text = "Wir haben eine Bestätigungs-E-Mail an $registeredEmail gesendet. " +
-                    "Bitte klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.",
-            confirmText = "Zur Anmeldung",
+            title = LanguageManager.tr("registration_success"),
+            text = String.format(LanguageManager.tr("verification_email_sent"), registeredEmail),
+            confirmText = LanguageManager.tr("back_to_login"),
             onConfirm = {
                 showEmailConfirmation = false
                 isRegister = false
@@ -94,13 +95,12 @@ fun AuthScreen(
 
     if (showEmailNotVerified) {
         IgAlertDialog(
-            title = "E-Mail nicht bestätigt",
-            text = "Deine E-Mail-Adresse wurde noch nicht bestätigt. " +
-                    "Bitte prüfe dein Postfach und klicke auf den Bestätigungslink.",
-            confirmText = "OK",
+            title = LanguageManager.tr("email_not_verified"),
+            text = LanguageManager.tr("email_not_verified_desc"),
+            confirmText = LanguageManager.tr("ok"),
             onConfirm = { showEmailNotVerified = false },
             onDismiss = { showEmailNotVerified = false },
-            dismissText = if (isLoading) null else "E-Mail erneut senden",
+            dismissText = if (isLoading) null else LanguageManager.tr("resend_email"),
             onDismissClick = {
                 scope.launch {
                     isLoading = true
@@ -112,7 +112,7 @@ fun AuthScreen(
                         showEmailConfirmation = true
                         registeredEmail = unverifiedEmail
                     } else {
-                        generalError = "Fehler beim Senden der E-Mail"
+                        generalError = LanguageManager.tr("error_sending_email")
                     }
                 }
             }
@@ -125,7 +125,7 @@ fun AuthScreen(
             containerColor = IgBackground,
             title = {
                 Text(
-                    "Passwort zurücksetzen",
+                    LanguageManager.tr("reset_password"),
                     color = IgTextPrimary,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -133,7 +133,7 @@ fun AuthScreen(
             text = {
                 Column {
                     Text(
-                        "Gib deine E-Mail-Adresse ein. Wir senden dir einen Reset-Link.",
+                        LanguageManager.tr("reset_password_desc"),
                         color = IgTextSecondary,
                         fontSize = 14.sp
                     )
@@ -141,7 +141,7 @@ fun AuthScreen(
                     IgTextField(
                         value = resetEmail,
                         onValueChange = { resetEmail = it },
-                        placeholder = "E-Mail-Adresse",
+                        placeholder = LanguageManager.tr("enter_email"),
                         keyboardType = KeyboardType.Email
                     )
                     if (resetInfo.isNotEmpty()) {
@@ -156,22 +156,22 @@ fun AuthScreen(
                 TextButton(
                     onClick = {
                         scope.launch {
-                            if (resetEmail.isBlank()) { resetInfo = "Bitte E-Mail eingeben."; return@launch }
+                            if (resetEmail.isBlank()) { resetInfo = LanguageManager.tr("please_enter_email"); return@launch }
                             isLoading = true
                             val ok = userViewModel.requestPasswordReset(resetEmail.trim())
                             isLoading = false
                             resetInfo = if (ok)
-                                "Reset-Mail wurde gesendet (falls ein Account existiert)."
+                                LanguageManager.tr("reset_email_sent")
                             else
-                                "Senden fehlgeschlagen. Bitte versuche es später."
+                                LanguageManager.tr("send_failed")
                         }
                     },
                     enabled = !isLoading
-                ) { Text("Senden", color = IgBlue, fontWeight = FontWeight.SemiBold) }
+                ) { Text(LanguageManager.tr("send"), color = IgBlue, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { showResetPassword = false; resetInfo = "" }) {
-                    Text("Abbrechen", color = IgTextPrimary)
+                    Text(LanguageManager.tr("cancel"), color = IgTextPrimary)
                 }
             }
         )
@@ -210,7 +210,7 @@ fun AuthScreen(
                 IgTextField(
                     value    = username,
                     onValueChange = { username = it; usernameErrors = emptyList() },
-                    placeholder  = "Benutzername",
+                    placeholder  = LanguageManager.tr("username"),
                     isError      = usernameErrors.isNotEmpty(),
                     errorText    = usernameErrors.firstOrNull()
                 )
@@ -220,7 +220,7 @@ fun AuthScreen(
             IgTextField(
                 value         = email,
                 onValueChange = { email = it; emailErrors = emptyList() },
-                placeholder   = "E-Mail-Adresse",
+                placeholder   = LanguageManager.tr("enter_email"),
                 keyboardType  = KeyboardType.Email,
                 isError       = emailErrors.isNotEmpty(),
                 errorText     = emailErrors.firstOrNull()
@@ -230,7 +230,7 @@ fun AuthScreen(
             IgTextField(
                 value         = password,
                 onValueChange = { password = it; passwordErrors = emptyList() },
-                placeholder   = "Passwort",
+                placeholder   = LanguageManager.tr("password"),
                 isPassword    = true,
                 passwordVisible = passwordVisible,
                 onPasswordToggle = { passwordVisible = !passwordVisible },
@@ -242,7 +242,7 @@ fun AuthScreen(
             // Passwort-Hinweis bei Registrierung
             if (isRegister && passwordErrors.isEmpty()) {
                 Text(
-                    "Mind. 8 Zeichen, Groß-/Kleinbuchstaben, Zahl, Sonderzeichen",
+                    LanguageManager.tr("password_hint"),
                     fontSize   = 11.sp,
                     color      = IgTextSecondary,
                     modifier   = Modifier
@@ -259,7 +259,7 @@ fun AuthScreen(
                         enabled  = !isLoading,
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text("Passwort vergessen?", color = IgBlue, fontSize = 13.sp,
+                        Text(LanguageManager.tr("forgot_password"), color = IgBlue, fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -281,7 +281,7 @@ fun AuthScreen(
 
             // ── Haupt-Button ──────────────────────────────────────────────
             IgPrimaryButton(
-                text      = if (isRegister) "Registrieren" else "Anmelden",
+                text      = if (isRegister) LanguageManager.tr("register") else LanguageManager.tr("login"),
                 isLoading = isLoading,
                 enabled   = !isLoading
             ) {
@@ -308,7 +308,7 @@ fun AuthScreen(
                     } else {
                         when (val result = userViewModel.login(email, password)) {
                             is LoginResult.Success          -> { /* LaunchedEffect übernimmt */ }
-                            is LoginResult.InvalidCredentials -> generalError = "Falsche E-Mail oder Passwort"
+                            is LoginResult.InvalidCredentials -> generalError = LanguageManager.tr("wrong_credentials")
                             is LoginResult.EmailNotVerified -> {
                                 unverifiedEmail = result.email
                                 showEmailNotVerified = true
@@ -334,7 +334,7 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text     = if (isRegister) "Du hast bereits ein Konto?" else "Du hast noch kein Konto?",
+                    text     = if (isRegister) LanguageManager.tr("have_account") else LanguageManager.tr("no_account"),
                     color    = IgTextSecondary,
                     fontSize = 14.sp
                 )
@@ -344,7 +344,7 @@ fun AuthScreen(
                     contentPadding = PaddingValues(start = 4.dp)
                 ) {
                     Text(
-                        text       = if (isRegister) "Anmelden" else "Registrieren",
+                        text       = if (isRegister) LanguageManager.tr("login") else LanguageManager.tr("register"),
                         color      = IgBlue,
                         fontWeight = FontWeight.SemiBold,
                         fontSize   = 14.sp
@@ -441,7 +441,7 @@ private fun BasicIgField(
                     contentPadding = PaddingValues(end = 8.dp)
                 ) {
                     Text(
-                        text       = if (passwordVisible) "Ausblenden" else "Anzeigen",
+                        text       = if (passwordVisible) LanguageManager.tr("hide") else LanguageManager.tr("show"),
                         color      = IgTextPrimary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize   = 12.sp
@@ -502,7 +502,7 @@ private fun IgDividerRow() {
             thickness = 1.dp
         )
         Text(
-            text     = "  ODER  ",
+            text     = "  ${LanguageManager.tr("or")}  ",
             color    = IgTextSecondary,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium

@@ -41,6 +41,7 @@ import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.network.ApiClient
 import com.example.foundbuddy.network.FoundBuddyApi
 import kotlinx.coroutines.launch
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -60,8 +61,9 @@ fun UploadScreen(
 
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val username by userViewModel.username.collectAsState(initial = "Unbekannt")
+    val lang by userViewModel.language.collectAsState()
 
-    var selectedType by remember { mutableStateOf("Gefunden") }
+    var selectedType by remember { mutableStateOf(if (lang == "en") "Found" else "Gefunden") }
     var selectedItem by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -112,7 +114,10 @@ fun UploadScreen(
         }
     }
 
-    val itemOptions = listOf(
+    val itemOptions = if (lang == "en") listOf(
+        "Key", "Phone", "Wallet", "Jacket",
+        "Headphones", "Student ID", "Other"
+    ) else listOf(
         "Schlüssel", "Handy", "Geldbörse", "Jacke",
         "Kopfhörer", "Schülerausweis", "Sonstiges"
     )
@@ -124,7 +129,7 @@ fun UploadScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        "Beitrag erstellen", 
+                        LanguageManager.tr("create_post", lang), 
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     ) 
@@ -172,7 +177,7 @@ fun UploadScreen(
                             enabled = canUpload
                         ) {
                             Text(
-                                "Hochladen",
+                                LanguageManager.tr("upload", lang),
                                 color = if (canUpload) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium
@@ -223,7 +228,7 @@ fun UploadScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Beitrag erstellen",
+                            LanguageManager.tr("create_post", lang),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -231,7 +236,7 @@ fun UploadScreen(
                 } else {
                     AsyncImage(
                         model = imageUri,
-                        contentDescription = "Vorschau",
+                        contentDescription = LanguageManager.tr("preview", lang),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -243,7 +248,7 @@ fun UploadScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            "Ändern",
+                            LanguageManager.tr("change", lang),
                             color = Color.White,
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -268,7 +273,7 @@ fun UploadScreen(
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .padding(4.dp)
                 ) {
-                    listOf("Gefunden", "Verloren").forEach { type ->
+                    listOf(LanguageManager.tr("found", lang), LanguageManager.tr("lost", lang)).forEach { type ->
                         val isSel = selectedType == type
                         Box(
                             modifier = Modifier
@@ -300,7 +305,7 @@ fun UploadScreen(
                         value = selectedItem,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Was hast du ${if(selectedType=="Gefunden") "gefunden" else "verloren"}?") },
+                        label = { Text(String.format(LanguageManager.tr("what_found", lang), if(selectedType==LanguageManager.tr("found", lang)) LanguageManager.tr("found_verb", lang) else LanguageManager.tr("lost_verb", lang))) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
@@ -331,8 +336,8 @@ fun UploadScreen(
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("Schreibe eine Bildunterschrift...") },
-                    placeholder = { Text("Details wie Marke, Farbe oder Fundort...") },
+                    label = { Text(LanguageManager.tr("caption_placeholder", lang)) },
+                    placeholder = { Text(LanguageManager.tr("details_placeholder", lang)) },
                     minLines = 4,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -362,10 +367,10 @@ fun UploadScreen(
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
-            title = { Text("Bild auswählen") },
+            title = { Text(LanguageManager.tr("select_image", lang)) },
             text = {
                 Column {
-                    Text("Möchtest du ein Foto machen oder ein Bild aus der Galerie auswählen?")
+                    Text(LanguageManager.tr("select_image_source", lang))
                 }
             },
             confirmButton = {
@@ -381,7 +386,7 @@ fun UploadScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(20.dp).padding(end = 8.dp))
-                        Text("Galerie")
+                        Text(LanguageManager.tr("gallery", lang))
                     }
                     TextButton(
                         onClick = {
@@ -391,13 +396,13 @@ fun UploadScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp).padding(end = 8.dp))
-                        Text("Kamera")
+                        Text(LanguageManager.tr("camera", lang))
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showImageSourceDialog = false }) {
-                    Text("Abbrechen")
+                    Text(LanguageManager.tr("cancel", lang))
                 }
             }
         )

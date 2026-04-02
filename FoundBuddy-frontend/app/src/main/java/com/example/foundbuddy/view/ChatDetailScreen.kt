@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.Message
 import kotlinx.coroutines.delay
@@ -35,6 +36,7 @@ fun ChatDetailScreen(
 ) {
     val messages by vm.getMessages(recipientId).collectAsState()
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val lang by userViewModel.language.collectAsState()
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -62,7 +64,7 @@ fun ChatDetailScreen(
                 title = { Text(recipientName, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = LanguageManager.tr("back", lang))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -85,7 +87,7 @@ fun ChatDetailScreen(
                     OutlinedTextField(
                         value = messageText,
                         onValueChange = { messageText = it },
-                        placeholder = { Text("Nachricht schreiben…") },
+                        placeholder = { Text(LanguageManager.tr("write_message", lang)) },
                         modifier = Modifier.weight(1f),
                         maxLines = 4,
                         shape = RoundedCornerShape(24.dp),
@@ -116,7 +118,7 @@ fun ChatDetailScreen(
                         shape = CircleShape,
                         elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Senden")
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = LanguageManager.tr("send_message", lang))
                     }
                 }
             }

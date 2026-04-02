@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,11 +31,12 @@ fun ChatListScreen(
     val conversations by vm.conversations.collectAsState()
     val requests by vm.messageRequests.collectAsState()
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
+    val lang by userViewModel.language.collectAsState()
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Nachrichten", fontWeight = FontWeight.Bold) },
+                title = { Text(LanguageManager.tr("messages", lang), fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -49,13 +51,13 @@ fun ChatListScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Noch keine Nachrichten",
+                        LanguageManager.tr("no_messages", lang),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Schreibe jemandem über einen Beitrag!",
+                        LanguageManager.tr("write_to_someone", lang),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -71,7 +73,7 @@ fun ChatListScreen(
                 if (requests.isNotEmpty()) {
                     item {
                         Text(
-                            "Anfragen (${requests.size})",
+                            String.format(LanguageManager.tr("chat_requests", lang), requests.size),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -82,6 +84,7 @@ fun ChatListScreen(
                         RequestItem(
                             conversation = req,
                             vm = vm,
+                            lang = lang,
                             onAccept = {
                                 currentUser?.id?.let { userId ->
                                     vm.acceptRequestFromBackend(userId, req.participantId)
@@ -104,7 +107,7 @@ fun ChatListScreen(
                 if (conversations.isNotEmpty()) {
                     item {
                         Text(
-                            "Nachrichten",
+                            LanguageManager.tr("messages", lang),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -128,6 +131,7 @@ fun ChatListScreen(
 fun RequestItem(
     conversation: com.example.foundbuddy.model.Conversation,
     vm: HomeViewModel,
+    lang: String,
     onAccept: () -> Unit,
     onDecline: () -> Unit
 ) {
@@ -175,14 +179,14 @@ fun RequestItem(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Ablehnen")
+                    Text(LanguageManager.tr("decline", lang))
                 }
                 Button(
                     onClick = onAccept,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Annehmen")
+                    Text(LanguageManager.tr("accept", lang))
                 }
             }
         }

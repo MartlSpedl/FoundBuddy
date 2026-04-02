@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.SearchViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +25,7 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
     val isLoading by vm.isLoading.observeAsState(false)
     val error by vm.error.observeAsState(null)
 
-    Scaffold(topBar = { CenterAlignedTopAppBar(title = { Text("KI-Bildersuche") }) }) { inner ->
+    Scaffold(topBar = { CenterAlignedTopAppBar(title = { Text(LanguageManager.tr("ai_image_search")) }) }) { inner ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -34,7 +35,7 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
             OutlinedTextField(
                 value = q, 
                 onValueChange = { q = it }, 
-                label = { Text("Suche nach Bildinhalten (z.B. 'goldener Schlüssel')") },
+                label = { Text(LanguageManager.tr("search_by_content")) },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.padding(8.dp))
@@ -47,14 +48,14 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp))
                 } else {
-                    Text("Suchen") 
+                    Text(LanguageManager.tr("search_button")) 
                 }
             }
             
             if (isLoading) {
                 Spacer(Modifier.padding(4.dp))
                 Text(
-                    text = "KI-Suche läuft… (erster Start kann ~1–2 Min. dauern)",
+                    text = LanguageManager.tr("ai_search_running"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth()
@@ -87,7 +88,7 @@ fun SearchScreen(padding: PaddingValues, vm: SearchViewModel) {
                                 Text(item.description ?: "")
                                 if (item.imagePath != null) {
                                     Text(
-                                        "Bild verfügbar",
+                                        LanguageManager.tr("image_available"),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )

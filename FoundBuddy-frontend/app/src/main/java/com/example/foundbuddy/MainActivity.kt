@@ -29,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.data.FoundItemRepository
 import com.example.foundbuddy.network.ApiClient
@@ -60,6 +61,11 @@ class MainActivity : ComponentActivity() {
             val isDarkMode by userViewModel.isDarkMode.collectAsState(
                 initial = isSystemInDarkTheme()
             )
+            val lang by userViewModel.language.collectAsState()
+
+            LaunchedEffect(lang) {
+                LanguageManager.setLanguage(lang)
+            }
 
             FoundBuddyTheme(darkTheme = isDarkMode) {
 
@@ -137,11 +143,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Home,
-                                                    contentDescription = "Feed",
+                                                    contentDescription = LanguageManager.tr("discover"),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text("Entdecken") }
+                                            label = { Text(LanguageManager.tr("discover")) }
                                         )
 
                                         NavigationBarItem(
@@ -155,11 +161,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Star,
-                                                    contentDescription = "Favoriten",
+                                                    contentDescription = LanguageManager.tr("favorites"),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text("Gemerkt") }
+                                            label = { Text(LanguageManager.tr("favorites")) }
                                         )
 
                                         NavigationBarItem(
@@ -173,11 +179,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.AddCircle,
-                                                    contentDescription = "Upload",
+                                                    contentDescription = LanguageManager.tr("upload"),
                                                     modifier = Modifier.size(30.dp)
                                                 )
                                             },
-                                            label = { Text("Posten") }
+                                            label = { Text(LanguageManager.tr("upload")) }
                                         )
 
                                         NavigationBarItem(
@@ -192,7 +198,7 @@ class MainActivity : ComponentActivity() {
                                                 Box {
                                                     Icon(
                                                         painter = painterResource(R.drawable.ic_message),
-                                                        contentDescription = "Nachrichten",
+                                                        contentDescription = LanguageManager.tr("messages"),
                                                         modifier = Modifier.size(26.dp)
                                                     )
                                                     if (unreadCount > 0) {
@@ -208,7 +214,7 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
                                             },
-                                            label = { Text("Nachrichten") }
+                                            label = { Text(LanguageManager.tr("messages")) }
                                         )
 
                                         NavigationBarItem(
@@ -222,11 +228,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Person,
-                                                    contentDescription = "Profil",
+                                                    contentDescription = LanguageManager.tr("profile"),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text("Profil") }
+                                            label = { Text(LanguageManager.tr("profile")) }
                                         )
                                     }
                                 }
