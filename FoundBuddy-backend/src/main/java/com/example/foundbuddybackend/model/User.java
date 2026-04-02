@@ -11,6 +11,7 @@ public class User {
     private String verificationToken;
 
     private String profileImage;
+    private String bio;
 
     // Passwort Reset
     private String passwordResetToken;
@@ -88,5 +89,13 @@ public class User {
 
     public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 }

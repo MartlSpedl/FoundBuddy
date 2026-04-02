@@ -59,12 +59,15 @@ fun ProfileScreen(
 
     // Achtung: kann null/leer/kaputt sein
     val profileImageUri = currentUser?.profileImage
+    val userBio = currentUser?.bio
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
     val scope = rememberCoroutineScope()
+    val lang by userViewModel.language.collectAsState()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var editUsername by remember { mutableStateOf("") }
+    var editBio by remember { mutableStateOf("") }
     var editProfileImageUri by remember { mutableStateOf<String?>(null) }
     var showImagePicker by remember { mutableStateOf(false) }
 
@@ -129,7 +132,7 @@ fun ProfileScreen(
 
     // Register-State
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Gefunden", "Verloren")
+    val tabs = if (lang == "en") listOf("Found", "Lost") else listOf("Gefunden", "Verloren")
     
     val displayPosts = remember(userPosts, selectedTabIndex) {
         val status = if (selectedTabIndex == 0) "Gefunden" else "Verloren"
@@ -211,13 +214,21 @@ fun ProfileScreen(
 
         // --- Bio Section ---
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
+            if (!userBio.isNullOrBlank()) {
+                Text(
+                    text = userBio,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            } else {
+                Text(
+                    text = "Lost & Found Buddy",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
             Text(
-                text = "Lost & Found Buddy ✨",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Hilf anderen, ihre Schätze wiederzufinden.",
+                text = if (lang == "en") "Help others find their treasures." else "Hilf anderen, ihre Schätze wiederzufinden.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -236,9 +247,10 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ProfileActionButton(
-                text = "Profil bearbeiten",
+                text = if (lang == "en") "Edit Profile" else "Profil bearbeiten",
                 onClick = {
                     editUsername = username
+                    editBio = userBio ?: ""
                     editProfileImageUri = profileImageUri
                     showEditProfileDialog = true
                 },
@@ -246,7 +258,7 @@ fun ProfileScreen(
                 color = MaterialTheme.colorScheme.primary
             )
             ProfileActionButton(
-                text = "Teilen",
+                text = if (lang == "en") "Share" else "Teilen",
                 onClick = { /* TODO */ },
                 modifier = Modifier.weight(0.4f),
                 color = MaterialTheme.colorScheme.secondary
@@ -318,7 +330,7 @@ fun ProfileScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = "Keine Beiträge vorhanden",
+                        text = if (lang == "en") "No posts yet" else "Keine Beiträge vorhanden",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -382,7 +394,11 @@ fun ProfileScreen(
         ) {
             SettingsScreen(
                 userViewModel = userViewModel,
-                onClear = { /* TODO: Items löschen Logik */ }
+                onClear = { /* TODO: Items löschen Logik */ },
+                onLogout = {
+                    showSettingsSheet = false
+                    onLogout()
+                }
             )
         }
     }
@@ -390,12 +406,16 @@ fun ProfileScreen(
     if (showEditProfileDialog) {
         EditProfileDialog(
             username = editUsername,
+            bio = editBio,
             profileImageUri = editProfileImageUri ?: profileImageUri,
+            language = lang,
             onUsernameChange = { editUsername = it },
+            onBioChange = { editBio = it },
             onPickImage = { launcher.launch("image/*") },
-            onSave = { newUsername, newImageUri ->
+            onSave = { newUsername, newBio, newImageUri ->
                 scope.launch {
                     userViewModel.updateUsername(newUsername)
+                    userViewModel.updateBio(newBio)
                     newImageUri?.let { userViewModel.updateProfileImage(it) }
                 }
                 showEditProfileDialog = false
@@ -453,13 +473,17 @@ private fun StatBlock(value: Int, label: String) {
 @Composable
 private fun EditProfileDialog(
     username: String,
+    bio: String,
     profileImageUri: String?,
+    language: String,
     onUsernameChange: (String) -> Unit,
+    onBioChange: (String) -> Unit,
     onPickImage: () -> Unit,
-    onSave: (newUsername: String, newImageUri: String?) -> Unit,
+    onSave: (newUsername: String, newBio: String, newImageUri: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     var currentUsername by remember { mutableStateOf(username) }
+    var currentBio by remember { mutableStateOf(bio) }
     var currentImageUri by remember { mutableStateOf(profileImageUri) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -475,7 +499,7 @@ private fun EditProfileDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Profil bearbeiten",
+                    text = if (language == "en") "Edit Profile" else "Profil bearbeiten",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -529,8 +553,21 @@ private fun EditProfileDialog(
                         currentUsername = it
                         onUsernameChange(it)
                     },
-                    label = { Text("Benutzername") },
+                    label = { Text(if (language == "en") "Username" else "Benutzername") },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = currentBio,
+                    onValueChange = {
+                        currentBio = it
+                        onBioChange(it)
+                    },
+                    label = { Text(if (language == "en") "Bio" else "Bio") },
+                    placeholder = { Text(if (language == "en") "About you..." else "Über dich...") },
+                    singleLine = false,
+                    maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -544,21 +581,21 @@ private fun EditProfileDialog(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Abbrechen")
+                        Text(if (language == "en") "Cancel" else "Abbrechen")
                     }
                     Button(
                         onClick = {
-                            onSave(currentUsername, currentImageUri)
+                            onSave(currentUsername, currentBio, currentImageUri)
                         },
                         modifier = Modifier.weight(1f),
                         enabled = currentUsername.isNotBlank()
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Speichern")
-                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(if (language == "en") "Save" else "Speichern")
                 }
             }
         }
     }
+}
 }

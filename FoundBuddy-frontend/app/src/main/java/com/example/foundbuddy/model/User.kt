@@ -10,5 +10,6 @@ data class User(
     val password: String,
     val profileImage: String? = null,
     val emailVerified: Boolean = false,
-    val verificationToken: String? = null
+    val verificationToken: String? = null,
+    val bio: String? = null
 )

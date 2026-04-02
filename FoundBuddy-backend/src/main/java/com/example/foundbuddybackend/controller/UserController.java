@@ -42,6 +42,7 @@ public class UserController {
         u.setVerificationToken(str(m, "verificationToken"));
         u.setPasswordResetToken(str(m, "passwordResetToken"));
         u.setProfileImage(str(m, "profileImage"));
+        u.setBio(str(m, "bio"));
         Object ts = m.get("passwordResetRequestedAt");
         if (ts instanceof Number) u.setPasswordResetRequestedAt(((Number) ts).longValue());
         return u;
@@ -64,6 +65,7 @@ public class UserController {
         if (u.getPasswordResetToken() != null) m.put("passwordResetToken", u.getPasswordResetToken());
         if (u.getPasswordResetRequestedAt() != null) m.put("passwordResetRequestedAt", u.getPasswordResetRequestedAt());
         if (u.getProfileImage() != null) m.put("profileImage", u.getProfileImage());
+        if (u.getBio() != null) m.put("bio", u.getBio());
         return m;
     }
 
@@ -154,14 +156,44 @@ public class UserController {
             if (existing == null) return ResponseEntity.notFound().build();
             
             User u = mapToUser(existing);
-            if (user.getUsername() != null) u.setUsername(user.getUsername());
+            boolean usernameChanged = false;
+            String oldUsername = u.getUsername();
+            
+            if (user.getUsername() != null) {
+                usernameChanged = !user.getUsername().equals(u.getUsername());
+                u.setUsername(user.getUsername());
+            }
             if (user.getProfileImage() != null) u.setProfileImage(user.getProfileImage());
+            if (user.getBio() != null) u.setBio(user.getBio());
             
             db.setDocument(COLLECTION, id, userToMap(u));
+            
+            if (usernameChanged) {
+                syncUsernameInFoundItems(u.getId(), oldUsername, u.getUsername());
+            }
+            
             return ResponseEntity.ok(u);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    private void syncUsernameInFoundItems(String userId, String oldUsername, String newUsername) {
+        try {
+            List<Map<String, Object>> items = db.getCollection("found_items");
+            for (Map<String, Object> item : items) {
+                String uploaderId = str(item, "uploaderId");
+                String uploaderName = str(item, "uploaderName");
+                String itemId = str(item, "id");
+                if (itemId != null && oldUsername.equals(uploaderName)) {
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("uploaderName", newUsername);
+                    db.setDocument("found_items", itemId, updates);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Username sync error: " + e.getMessage());
         }
     }
 
@@ -293,6 +325,20 @@ public class UserController {
             db.setDocument(COLLECTION, u.getId(), userToMap(u));
 
             return ResponseEntity.ok("Passwort erfolgreich geändert.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAccount(@PathVariable String id) {
+        try {
+            Map<String, Object> existing = db.getDocument(COLLECTION, id);
+            if (existing == null) return ResponseEntity.notFound().build();
+            
+            db.deleteDocument(COLLECTION, id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Account erfolgreich gelöscht"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

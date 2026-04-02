@@ -227,6 +227,20 @@ class UserRepository {
             false
         }
     }
+
+    suspend fun deleteAccount(userId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val url = java.net.URL("$baseUrl/api/users/$userId")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "DELETE"
+            conn.connectTimeout = 12_000
+            conn.readTimeout = 12_000
+            conn.responseCode == HttpURLConnection.HTTP_OK
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
     /**
      * Startet den Passwort-Reset Flow.
      *

@@ -60,6 +60,9 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _language = MutableStateFlow("de")
+    val language: StateFlow<String> = _language.asStateFlow()
+
     init {
         // ✅ Beim App-Start Session wiederherstellen (wenn vorhanden)
         viewModelScope.launch {
@@ -288,5 +291,64 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearErrorMessage() {
         _errorMessage.value = null
+    }
+
+    suspend fun updateBio(newBio: String): Boolean {
+        _isLoading.value = true
+        _errorMessage.value = null
+
+        return try {
+            val user = _currentUserFlow.value ?: run {
+                _errorMessage.value = "Kein Benutzer angemeldet"
+                return false
+            }
+
+            val updated = user.copy(bio = newBio)
+            val success = api.update(updated)
+
+            if (success) {
+                _currentUserFlow.value = updated
+                true
+            } else {
+                _errorMessage.value = "Bio konnte nicht aktualisiert werden"
+                false
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Fehler beim Aktualisieren der Bio: ${e.message}"
+            false
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
+    suspend fun deleteAccount(): Boolean {
+        _isLoading.value = true
+        _errorMessage.value = null
+
+        return try {
+            val user = _currentUserFlow.value ?: run {
+                _errorMessage.value = "Kein Benutzer angemeldet"
+                return false
+            }
+
+            val success = api.deleteAccount(user.id)
+
+            if (success) {
+                logout()
+                true
+            } else {
+                _errorMessage.value = "Account konnte nicht gelöscht werden"
+                false
+            }
+        } catch (e: Exception) {
+            _errorMessage.value = "Fehler beim Löschen des Accounts: ${e.message}"
+            false
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
+    fun setLanguage(lang: String) {
+        _language.value = lang
     }
 }
