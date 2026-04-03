@@ -348,17 +348,30 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun getItemById(id: String): FoundItem? =
         _items.value.firstOrNull { it.id == id }
 
-    fun formatTimeAgo(timestamp: Long): String {
+    fun formatTimeAgo(timestamp: Long, lang: String = "de"): String {
         val diff = System.currentTimeMillis() - timestamp
         val seconds = diff / 1000
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-        return when {
-            seconds < 60 -> "vor ${seconds}s"
-            minutes < 60 -> "vor ${minutes}min"
-            hours < 24 -> "vor ${hours}h"
-            else -> "vor ${days}d"
+        
+        val value = when {
+            seconds < 60 -> "1${LanguageManager.tr("sec", lang)}"
+            minutes < 60 -> "${minutes}${LanguageManager.tr("min", lang)}"
+            hours < 24 -> "${hours}${LanguageManager.tr("h", lang)}"
+            else -> "${days}${LanguageManager.tr("d", lang)}"
+        }
+        return String.format(LanguageManager.tr("time_ago", lang), value)
+    }
+
+    fun translateStatus(status: String, lang: String): String {
+        return when (status.lowercase()) {
+            "gemeldet", "reported" -> LanguageManager.tr("gemeldet", lang)
+            "in kontakt", "in contact", "in_kontakt" -> LanguageManager.tr("in_kontakt", lang)
+            "abgeschlossen", "resolved" -> LanguageManager.tr("abgeschlossen", lang)
+            "gefunden", "found" -> LanguageManager.tr("found", lang)
+            "verloren", "lost" -> LanguageManager.tr("lost", lang)
+            else -> status
         }
     }
 

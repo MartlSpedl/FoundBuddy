@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
-import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.User
@@ -34,18 +33,8 @@ fun FoundItemCard(
     val lang by if (userViewModel != null) userViewModel.language.collectAsState(initial = "de") else remember { mutableStateOf("de") }
     val isOwner = currentUser?.id == item.uploaderId || (item.uploaderId.isBlank() && currentUser?.username == item.uploaderName)
 
-    val translatedStatus = when (item.status.lowercase()) {
-        "gefunden", "found" -> LanguageManager.tr("found", lang)
-        "verloren", "lost" -> LanguageManager.tr("lost", lang)
-        else -> item.status
-    }
-
-    val translatedWorkflowStatus = when (item.workflowStatus.lowercase()) {
-        "gemeldet", "reported" -> LanguageManager.tr("gemeldet", lang)
-        "in kontakt", "in contact", "in_kontakt" -> LanguageManager.tr("in_kontakt", lang)
-        "abgeschlossen", "resolved" -> LanguageManager.tr("abgeschlossen", lang)
-        else -> item.workflowStatus
-    }
+    val translatedStatus = vm.translateStatus(item.status, lang)
+    val translatedWorkflowStatus = vm.translateStatus(item.workflowStatus, lang)
 
     Card(
         onClick = onClick,
@@ -185,7 +174,7 @@ fun FoundItemCard(
                 }
 
                 Text(
-                    vm.formatTimeAgo(item.timestamp),
+                    vm.formatTimeAgo(item.timestamp, lang),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -1,6 +1,7 @@
 package com.example.foundbuddy.controller
 
 import android.app.Application
+import android.os.LocaleList
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foundbuddy.data.SessionStore
@@ -67,7 +68,16 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         // ✅ Beim App-Start Session wiederherstellen (wenn vorhanden)
         viewModelScope.launch {
             restoreSession()
+            loadLanguagePreference()
         }
+    }
+
+    private suspend fun loadLanguagePreference() {
+        val savedLang = sessionStore.loadLanguage()
+        val systemLang = LocaleList.getDefault().get(0)?.language ?: "de"
+        val defaultLang = if (savedLang != null) savedLang else systemLang
+        _language.value = defaultLang
+        LanguageManager.setLanguage(defaultLang)
     }
 
     private suspend fun restoreSession() {
@@ -200,6 +210,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         _currentUserFlow.value = null
         _username.value = ""
         _email.value = ""
+        // Language preference is preserved
     }
 
     suspend fun updateUsername(newName: String): Boolean {
@@ -349,6 +360,10 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setLanguage(lang: String) {
+        viewModelScope.launch {
+            sessionStore.saveLanguage(lang)
+        }
         _language.value = lang
+        LanguageManager.setLanguage(lang)
     }
 }

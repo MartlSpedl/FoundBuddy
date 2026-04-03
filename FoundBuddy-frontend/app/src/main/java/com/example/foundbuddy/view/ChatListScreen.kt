@@ -236,7 +236,7 @@ fun ConversationItem(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = vm.formatTimeAgo(conversation.lastMessage.timestamp),
+                        text = vm.formatTimeAgo(conversation.lastMessage.timestamp, lang),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

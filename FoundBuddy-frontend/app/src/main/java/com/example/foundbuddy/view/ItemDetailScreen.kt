@@ -198,7 +198,7 @@ fun ItemDetailScreen(
                     ) {
                         AssistChip(
                             onClick = { },
-                            label = { Text(item.status.uppercase()) },
+                            label = { Text(vm.translateStatus(item.status, lang)) },
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = when (item.status.lowercase()) {
                                     "verloren" -> MaterialTheme.colorScheme.errorContainer
@@ -210,7 +210,7 @@ fun ItemDetailScreen(
 
                         AssistChip(
                             onClick = { showStatusDialog = true },
-                            label = { Text(item.workflowStatus) },
+                            label = { Text(vm.translateStatus(item.workflowStatus, lang)) },
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
                             )
@@ -220,7 +220,7 @@ fun ItemDetailScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        String.format(LanguageManager.tr("uploaded_by", lang), item.uploaderName) + " • ${vm.formatTimeAgo(item.timestamp)}",
+                        String.format(LanguageManager.tr("uploaded_by", lang), item.uploaderName) + " • ${vm.formatTimeAgo(item.timestamp, lang)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -273,7 +273,7 @@ fun ItemDetailScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        String.format(LanguageManager.tr("current_status", lang), item.workflowStatus),
+                        String.format(LanguageManager.tr("current_status", lang), vm.translateStatus(item.workflowStatus, lang)),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -323,7 +323,7 @@ fun ItemDetailScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = vm.formatTimeAgo(comment.timestamp),
+                            text = vm.formatTimeAgo(comment.timestamp, lang),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -349,7 +349,7 @@ fun ItemDetailScreen(
             title = { Text(LanguageManager.tr("change_status", lang)) },
             text = {
                 Column {
-                    Text(String.format(LanguageManager.tr("current_status_label", lang), item.workflowStatus))
+                    Text(String.format(LanguageManager.tr("current_status_label", lang), vm.translateStatus(item.workflowStatus, lang)))
                     Spacer(Modifier.height(16.dp))
 
                     val possibleStatuses = vm.getNextPossibleStatus(item.workflowStatus)
@@ -375,7 +375,7 @@ fun ItemDetailScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    status,
+                                    vm.translateStatus(status, lang),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -491,7 +491,7 @@ fun StatusChangeItem(
                 )
             }
             Text(
-                vm.formatTimeAgo(change.timestamp),
+                vm.formatTimeAgo(change.timestamp, lang),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

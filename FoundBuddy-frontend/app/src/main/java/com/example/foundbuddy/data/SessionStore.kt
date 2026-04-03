@@ -12,6 +12,7 @@ private val Context.dataStore by preferencesDataStore(name = "session_store")
 class SessionStore(private val context: Context) {
 
     private val KEY_USER_ID = stringPreferencesKey("user_id")
+    private val KEY_LANGUAGE = stringPreferencesKey("language")
 
     suspend fun saveUserId(userId: String) {
         context.dataStore.edit { prefs ->
@@ -22,6 +23,18 @@ class SessionStore(private val context: Context) {
     suspend fun loadUserId(): String? {
         return context.dataStore.data.map { prefs ->
             prefs[KEY_USER_ID]
+        }.first()
+    }
+
+    suspend fun saveLanguage(lang: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_LANGUAGE] = lang
+        }
+    }
+
+    suspend fun loadLanguage(): String? {
+        return context.dataStore.data.map { prefs ->
+            prefs[KEY_LANGUAGE]
         }.first()
     }
 

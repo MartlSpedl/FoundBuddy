@@ -195,5 +195,12 @@ object LanguageManager {
         "message_to" to mapOf("de" to "Nachricht an %s", "en" to "Message to %s"),
         "write_message_to_contact" to mapOf("de" to "Schreibe eine Nachricht, um Kontakt aufzunehmen.", "en" to "Write a message to make contact."),
         "your_message" to mapOf("de" to "Deine Nachricht...", "en" to "Your message..."),
+
+        // Time units
+        "time_ago" to mapOf("de" to "vor %s", "en" to "%s ago"),
+        "sec" to mapOf("de" to "Sek.", "en" to "sec"),
+        "min" to mapOf("de" to "Min.", "en" to "min"),
+        "h" to mapOf("de" to "Std.", "en" to "h"),
+        "d" to mapOf("de" to "T.", "en" to "d"),
     )
 }
