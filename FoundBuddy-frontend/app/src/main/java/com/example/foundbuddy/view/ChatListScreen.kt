@@ -118,7 +118,8 @@ fun ChatListScreen(
                         ConversationItem(
                             conversation = conv,
                             onClick = { onConversationClick(conv.participantId, conv.participantName) },
-                            vm = vm
+                            vm = vm,
+                            lang = lang
                         )
                     }
                 }
@@ -197,7 +198,8 @@ fun RequestItem(
 fun ConversationItem(
     conversation: com.example.foundbuddy.model.Conversation,
     onClick: () -> Unit,
-    vm: HomeViewModel
+    vm: HomeViewModel,
+    lang: String
 ) {
     Card(
         onClick = onClick,

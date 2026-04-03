@@ -188,6 +188,8 @@ object LanguageManager {
         "gemeldet" to mapOf("de" to "Gemeldet", "en" to "Reported"),
         "in_kontakt" to mapOf("de" to "In Kontakt", "en" to "In contact"),
         "abgeschlossen" to mapOf("de" to "Abgeschlossen", "en" to "Resolved"),
+        "found" to mapOf("de" to "Gefunden", "en" to "Found"),
+        "lost" to mapOf("de" to "Verloren", "en" to "Lost"),
         "by_user" to mapOf("de" to "von %s", "en" to "by %s"),
         "comment_label" to mapOf("de" to "Kommentar: %s", "en" to "Comment: %s"),
 

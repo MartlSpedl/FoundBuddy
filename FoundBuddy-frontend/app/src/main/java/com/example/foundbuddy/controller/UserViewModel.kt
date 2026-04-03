@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * Ergebnis einer Registrierung für die UI
@@ -61,7 +62,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private val _language = MutableStateFlow("de")
+    private val _language = MutableStateFlow(Locale.getDefault().language)
     val language: StateFlow<String> = _language.asStateFlow()
 
     init {
@@ -82,6 +83,12 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun restoreSession() {
         try {
+            // Restore language preference
+            val savedLang = sessionStore.loadLanguage()
+            if (savedLang != null) {
+                _language.value = savedLang
+            }
+
             val userId = sessionStore.loadUserId() ?: return
             val user = api.getCurrentUser(userId)
             if (user != null) {
@@ -360,10 +367,10 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setLanguage(lang: String) {
+        _language.value = lang
         viewModelScope.launch {
             sessionStore.saveLanguage(lang)
         }
-        _language.value = lang
         LanguageManager.setLanguage(lang)
     }
 }

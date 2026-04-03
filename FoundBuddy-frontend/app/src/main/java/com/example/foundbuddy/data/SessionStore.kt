@@ -41,6 +41,7 @@ class SessionStore(private val context: Context) {
     suspend fun clear() {
         context.dataStore.edit { prefs ->
             prefs.remove(KEY_USER_ID)
+            // We do NOT clear the language here so it survives logout
         }
     }
 }

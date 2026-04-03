@@ -356,7 +356,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val days = hours / 24
         
         val value = when {
-            seconds < 60 -> "1${LanguageManager.tr("sec", lang)}"
+            seconds < 60 -> "${seconds}${LanguageManager.tr("sec", lang)}"
             minutes < 60 -> "${minutes}${LanguageManager.tr("min", lang)}"
             hours < 24 -> "${hours}${LanguageManager.tr("h", lang)}"
             else -> "${days}${LanguageManager.tr("d", lang)}"
@@ -364,6 +364,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         return String.format(LanguageManager.tr("time_ago", lang), value)
     }
 
+    // Status translation helper
     fun translateStatus(status: String, lang: String): String {
         return when (status.lowercase()) {
             "gemeldet", "reported" -> LanguageManager.tr("gemeldet", lang)
