@@ -179,16 +179,44 @@ public class UserController {
         }
     }
     
+    @SuppressWarnings("unchecked")
     private void syncUsernameInFoundItems(String userId, String oldUsername, String newUsername) {
         try {
             List<Map<String, Object>> items = db.getCollection("found_items");
             for (Map<String, Object> item : items) {
                 String uploaderId = str(item, "uploaderId");
-                String uploaderName = str(item, "uploaderName");
                 String itemId = str(item, "id");
-                if (itemId != null && oldUsername.equals(uploaderName)) {
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("uploaderName", newUsername);
+                
+                if (itemId == null || !userId.equals(uploaderId)) {
+                    continue;
+                }
+                
+                boolean needsUpdate = false;
+                Map<String, Object> updates = new HashMap<>();
+                
+                updates.put("uploaderName", newUsername);
+                needsUpdate = true;
+                
+                List<Map<String, Object>> statusHistory = (List<Map<String, Object>>) item.get("statusHistory");
+                if (statusHistory != null) {
+                    List<Map<String, Object>> updatedHistory = new ArrayList<>();
+                    for (Map<String, Object> statusEntry : statusHistory) {
+                        String entryUsername = str(statusEntry, "username");
+                        if (oldUsername.equals(entryUsername)) {
+                            Map<String, Object> updatedEntry = new HashMap<>(statusEntry);
+                            updatedEntry.put("username", newUsername);
+                            updatedHistory.add(updatedEntry);
+                            needsUpdate = true;
+                        } else {
+                            updatedHistory.add(statusEntry);
+                        }
+                    }
+                    if (needsUpdate) {
+                        updates.put("statusHistory", updatedHistory);
+                    }
+                }
+                
+                if (needsUpdate) {
                     db.setDocument("found_items", itemId, updates);
                 }
             }
@@ -337,11 +365,28 @@ public class UserController {
             Map<String, Object> existing = db.getDocument(COLLECTION, id);
             if (existing == null) return ResponseEntity.notFound().build();
             
+            deleteUserItems(id);
+            
             db.deleteDocument(COLLECTION, id);
             return ResponseEntity.ok(Map.of("success", true, "message", "Account erfolgreich gelöscht"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    private void deleteUserItems(String userId) {
+        try {
+            List<Map<String, Object>> items = db.getCollection("found_items");
+            for (Map<String, Object> item : items) {
+                String uploaderId = str(item, "uploaderId");
+                String itemId = str(item, "id");
+                if (itemId != null && userId.equals(uploaderId)) {
+                    db.deleteDocument("found_items", itemId);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting user items: " + e.getMessage());
         }
     }
 }

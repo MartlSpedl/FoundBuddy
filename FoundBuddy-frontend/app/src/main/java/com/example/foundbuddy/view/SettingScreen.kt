@@ -24,7 +24,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     var username by remember { mutableStateOf(userViewModel.username.value) }
-    var email by remember { mutableStateOf(userViewModel.email.value) }
     val scope = rememberCoroutineScope()
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
     val lang by userViewModel.language.collectAsState()
@@ -51,14 +50,6 @@ fun SettingsScreen(
 
             },
             label = { Text(LanguageManager.tr("username", lmLang)) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = {},
-            label = { Text(LanguageManager.tr("email", lmLang)) },
-            enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
 

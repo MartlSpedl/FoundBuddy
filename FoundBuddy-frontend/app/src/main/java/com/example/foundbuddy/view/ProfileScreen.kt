@@ -54,14 +54,12 @@ fun ProfileScreen(
 ) {
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val username by userViewModel.username.collectAsState(initial = "Gast")
-    val email by userViewModel.email.collectAsState(initial = "nicht angemeldet")
     val isLoading by userViewModel.isLoading.collectAsState()
     val errorMessage by userViewModel.errorMessage.collectAsState()
     val lang by userViewModel.language.collectAsState()
 
     // Achtung: kann null/leer/kaputt sein
     val profileImageUri = currentUser?.profileImage
-    val userBio = currentUser?.bio
     val isDarkMode by userViewModel.isDarkMode.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -215,31 +213,16 @@ fun ProfileScreen(
 
         // --- Bio Section ---
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
-            if (!userBio.isNullOrBlank()) {
-                Text(
-                    text = userBio,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            } else {
-                Text(
-                    text = LanguageManager.tr("bio_default", lang),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
             Text(
-                text = LanguageManager.tr("bio_tagline", lang),
+                text = LanguageManager.tr("bio_default", lang),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = currentUser?.bio ?: LanguageManager.tr("bio_tagline", lang),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (email.isNotBlank()) {
-                Text(
-                    text = email,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
 
         // --- Action Buttons (Rounded & Clean) ---
@@ -251,7 +234,7 @@ fun ProfileScreen(
                 text = LanguageManager.tr("edit_profile", lang),
                 onClick = {
                     editUsername = username
-                    editBio = userBio ?: ""
+                    editBio = currentUser?.bio ?: ""
                     editProfileImageUri = profileImageUri
                     showEditProfileDialog = true
                 },
