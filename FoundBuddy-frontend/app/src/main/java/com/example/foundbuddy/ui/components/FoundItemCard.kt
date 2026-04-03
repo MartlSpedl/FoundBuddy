@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.FoundItem
-import com.example.foundbuddy.model.User
 import com.example.foundbuddy.view.ZoomImage
 
 @Composable
