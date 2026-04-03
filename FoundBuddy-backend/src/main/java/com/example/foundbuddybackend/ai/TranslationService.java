@@ -1,17 +1,15 @@
 package com.example.foundbuddybackend.ai;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class TranslationService {
+
+    private static final int CONNECT_TIMEOUT = 5_000;
+    private static final int READ_TIMEOUT = 10_000;
 
     @Value("${ai.translate.url}")
     private String url;
@@ -20,8 +18,8 @@ public class TranslationService {
 
     public TranslationService() {
         SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
-        f.setConnectTimeout(5_000);
-        f.setReadTimeout(60_000);
+        f.setConnectTimeout(CONNECT_TIMEOUT);
+        f.setReadTimeout(READ_TIMEOUT);
         this.rest = new RestTemplate(f);
     }
 
@@ -29,29 +27,28 @@ public class TranslationService {
         if (text == null || text.isBlank()) return text;
 
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            String fullUrl = url + "?q=" + encode(text) + "&langpair=de|en";
+            String response = rest.getForObject(fullUrl, String.class);
 
-            Map<String, Object> body = Map.of(
-                    "q", text,
-                    "source", "de",
-                    "target", "en",
-                    "format", "text"
-            );
+            if (response != null && response.contains("\"responseData\":")) {
+                int start = response.indexOf("\"translatedText\":\"") + 18;
+                int end = response.indexOf("\"", start);
+                if (start > 17 && end > start) {
+                    return response.substring(start, end);
+                }
+            }
+            return text;
+        } catch (Exception e) {
+            System.err.println("Translation failed: " + e.getMessage());
+            return text;
+        }
+    }
 
-            ResponseEntity<Map> resp = rest.exchange(
-                    url,
-                    HttpMethod.POST,
-                    new HttpEntity<>(body, headers),
-                    Map.class
-            );
-
-            Object translated = resp.getBody() == null ? null : resp.getBody().get("translatedText");
-            return translated == null ? text : translated.toString();
-
-        } catch (RestClientException ex) {
-            return text; // fallback
+    private String encode(String text) {
+        try {
+            return java.net.URLEncoder.encode(text, "UTF-8");
+        } catch (Exception e) {
+            return text;
         }
     }
 }
