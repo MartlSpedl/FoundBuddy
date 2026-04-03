@@ -19,7 +19,7 @@ public class ImageSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(ImageSearchService.class);
     private static final String COLLECTION = "found_items";
-    private static final double MIN_SCORE = 0.0;
+    private static final double MIN_SCORE = 0.15;
     private static final int MAX_RESULTS = 10;
 
     @Autowired private FirestoreRestService db;
@@ -63,13 +63,7 @@ public class ImageSearchService {
         String englishQuery = translationService.deToEn(description);
         log.info("CLIP search: '{}' -> '{}'", description, englishQuery);
 
-        if (englishQuery == null || englishQuery.equals(description)) {
-            log.warn("Translation returned same text - translation may have failed");
-        }
-
         List<Double> queryEmbedding = embeddingService.embedText(englishQuery);
-        log.info("Got query embedding, size: {}", queryEmbedding.size());
-
         List<AiSearchResult> results = new ArrayList<>();
 
         for (FoundItem item : items) {
@@ -91,9 +85,6 @@ public class ImageSearchService {
             double textScore = calculateTextScore(description.toLowerCase(), item);
             double recency   = calculateRecencyScore(item);
             double finalScore = 0.60 * clipScore + 0.25 * textScore + 0.15 * recency;
-
-            log.debug("Item {}: clip={}, text={}, recency={}, final={}", 
-                item.getId(), clipScore, textScore, recency, finalScore);
 
             if (finalScore > MIN_SCORE) {
                 results.add(new AiSearchResult(item, finalScore, clipScore, textScore, recency));

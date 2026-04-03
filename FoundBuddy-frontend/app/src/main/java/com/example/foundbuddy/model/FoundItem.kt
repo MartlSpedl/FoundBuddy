@@ -1,5 +1,6 @@
 package com.example.foundbuddy.model
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
@@ -7,28 +8,27 @@ data class FoundItem(
     val id: String,
     val title: String,
     val description: String?,
-    val imagePath: String?,
-    val status: String,          // "Gefunden" oder "Verloren"
-    val isResolved: Boolean,
+    @Json(name = "imageUri") val imagePath: String?,
+    val status: String,
+    @Json(name = "isResolved") val isResolved: Boolean,
     val uploaderName: String = "Unbekannt",
-    val uploaderId: String = "", // ✅ Wer hat das Item hochgeladen?
+    val uploaderId: String = "",
     val likes: Int = 0,
-    val likedByUser: Boolean = false,
-    val timestamp: Long = System.currentTimeMillis(),
-    // Sprint 5: Neue Felder
-    val workflowStatus: String = "Gemeldet", // Gemeldet, In Kontakt, Abgeschlossen
+    @Json(name = "likedByUser") val likedByUser: Boolean = false,
+    @Json(name = "createdAt") val timestamp: Long = System.currentTimeMillis(),
+    val workflowStatus: String = "Gemeldet",
     val isFavorite: Boolean = false,
     val statusHistory: List<StatusChange> = emptyList(),
-    val allowedEditors: List<String> = emptyList() // User-IDs die Status ändern dürfen
+    val allowedEditors: List<String> = emptyList()
 )
 
 // Neues Modell für Statusverlauf
 @JsonClass(generateAdapter = true)
 data class StatusChange(
-    val userId: String,
-    val username: String,
-    val oldStatus: String,
-    val newStatus: String,
+    @Json(name = "userId") val userId: String,
+    @Json(name = "username") val username: String,
+    @Json(name = "oldStatus") val oldStatus: String,
+    @Json(name = "newStatus") val newStatus: String,
     val timestamp: Long = System.currentTimeMillis(),
     val comment: String? = null
 )

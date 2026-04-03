@@ -31,24 +31,18 @@ public class TranslationService {
 
         try {
             String fullUrl = url + "?q=" + encode(text) + "&langpair=de|en";
-            log.debug("Translating: {} -> URL: {}", text, fullUrl);
-            
             String response = rest.getForObject(fullUrl, String.class);
-            log.debug("Translation response: {}", response);
 
             if (response != null && response.contains("\"responseData\":")) {
                 int start = response.indexOf("\"translatedText\":\"") + 18;
                 int end = response.indexOf("\"", start);
                 if (start > 17 && end > start) {
-                    String translated = response.substring(start, end);
-                    log.info("Translated '{}' -> '{}'", text, translated);
-                    return translated;
+                    return response.substring(start, end);
                 }
             }
-            log.warn("Could not parse translation response, returning original");
             return text;
         } catch (Exception e) {
-            log.error("Translation failed: {}", e.getMessage());
+            log.warn("Translation failed: {}", e.getMessage());
             return text;
         }
     }
