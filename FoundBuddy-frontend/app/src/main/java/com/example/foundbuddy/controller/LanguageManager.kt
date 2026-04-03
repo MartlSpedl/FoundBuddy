@@ -44,8 +44,6 @@ object LanguageManager {
         "logout" to mapOf("de" to "Abmelden", "en" to "Logout"),
         "share" to mapOf("de" to "Teilen", "en" to "Share"),
         "posts" to mapOf("de" to "Beiträge", "en" to "Posts"),
-        "followers" to mapOf("de" to "Follower", "en" to "Followers"),
-        "following" to mapOf("de" to "Gefolgt", "en" to "Following"),
         "found" to mapOf("de" to "Gefunden", "en" to "Found"),
         "lost" to mapOf("de" to "Verloren", "en" to "Lost"),
         "no_posts" to mapOf("de" to "Keine Beiträge vorhanden", "en" to "No posts yet"),

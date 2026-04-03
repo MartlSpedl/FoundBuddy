@@ -126,8 +126,6 @@ fun ProfileScreen(
     }
     
     val postsCount = userPosts.size
-    val followersCount = 0
-    val followingCount = 0
 
                     // Register-State
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -203,11 +201,9 @@ fun ProfileScreen(
             // Stats Block
             Row(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Center
             ) {
                 StatBlock(value = postsCount, label = LanguageManager.tr("posts", lang))
-                StatBlock(value = followersCount, label = LanguageManager.tr("followers", lang))
-                StatBlock(value = followingCount, label = LanguageManager.tr("following", lang))
             }
         }
 
