@@ -3,7 +3,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.0-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Render](https://img.shields.io/badge/Deployed_on-Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97_Deployed_on-Hugging_Face-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/spaces)
 
 **FoundBuddy** is a modern Lost & Found platform that leverages AI to help people find their lost items faster. By using visual similarity search (CLIP), users can find lost pets or belongings just by uploading a photo.
 
@@ -34,7 +34,7 @@
 - **Database**: PostgreSQL / H2
 - **Storage**: Firebase Storage (for images)
 - **Email**: Brevo (formerly Sendinblue)
-- **Deployment**: Render
+- **Deployment**: HuggingFace
 
 ### AI Service
 - **Model**: OpenAI CLIP (hosted on Hugging Face Spaces)
@@ -49,7 +49,6 @@ FoundBuddy/
 ├── FoundBuddy-frontend/   # Android App (Kotlin/Compose)
 ├── FoundBuddy-backend/    # Spring Boot Service (Java)
 ├── foundbuddy-clip/       # AI Service (CLIP Integration)
-└── render.yaml            # Infrastructure as Code (Render)
 ```
 
 ---
