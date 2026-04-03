@@ -1,8 +1,11 @@
 package com.example.foundbuddybackend.ai;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -11,13 +14,14 @@ import java.util.Map;
 @Service
 public class EmbeddingService {
 
-    // Longer timeouts: HF Space lazy-loads the CLIP model on first request (~60-90s)
+    private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);
+
     private final RestTemplate rest;
 
     public EmbeddingService() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(30_000);   // 30s connect
-        factory.setReadTimeout(120_000);     // 120s read (model loading)
+        factory.setConnectTimeout(30_000);
+        factory.setReadTimeout(120_000);
         this.rest = new RestTemplate(factory);
     }
 
@@ -25,19 +29,37 @@ public class EmbeddingService {
     private String clipUrl;
 
     public List<Double> embedText(String text) {
-        return rest.postForObject(
-                clipUrl + "/embed/text",
-                Map.of("text", text),
-                List.class
-        );
+        try {
+            log.debug("Embedding text: {}", text);
+            return rest.postForObject(
+                    clipUrl + "/embed/text",
+                    Map.of("text", text),
+                    List.class
+            );
+        } catch (ResourceAccessException e) {
+            log.error("Failed to connect to CLIP service for text embedding: {}", e.getMessage());
+            throw new RuntimeException("CLIP service unavailable", e);
+        } catch (Exception e) {
+            log.error("Failed to embed text '{}': {}", text, e.getMessage());
+            throw new RuntimeException("Text embedding failed", e);
+        }
     }
 
     public List<Double> embedImage(String imageUri) {
-        return rest.postForObject(
-                clipUrl + "/embed/image",
-                Map.of("image_uri", imageUri),
-                List.class
-        );
+        try {
+            log.debug("Embedding image: {}", imageUri);
+            return rest.postForObject(
+                    clipUrl + "/embed/image",
+                    Map.of("image_uri", imageUri),
+                    List.class
+            );
+        } catch (ResourceAccessException e) {
+            log.error("Failed to connect to CLIP service for image embedding: {}", e.getMessage());
+            throw new RuntimeException("CLIP service unavailable", e);
+        } catch (Exception e) {
+            log.error("Failed to embed image '{}': {}", imageUri, e.getMessage());
+            throw new RuntimeException("Image embedding failed", e);
+        }
     }
 
     public double cosineSimilarity(List<Double> a, List<Double> b) {

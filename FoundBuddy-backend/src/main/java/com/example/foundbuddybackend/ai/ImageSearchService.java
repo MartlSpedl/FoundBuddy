@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,24 +14,15 @@ import com.example.foundbuddybackend.dto.AiSearchResult;
 import com.example.foundbuddybackend.model.FoundItem;
 import com.example.foundbuddybackend.service.FirestoreRestService;
 
-/**
- * Searches found items by natural language query.
- *
- * Uses CLIP embeddings for semantic similarity when available,
- * falls back to keyword text search.
- *
- * Uses FirestoreRestService (HTTPS) instead of gRPC FirestoreClient —
- * Render Free Tier blocks outgoing gRPC connections to Google APIs.
- */
 @Service
 public class ImageSearchService {
 
+    private static final Logger log = LoggerFactory.getLogger(ImageSearchService.class);
     private static final String COLLECTION = "found_items";
     private static final double MIN_SCORE = 0.15;
     private static final int MAX_RESULTS = 10;
 
     @Autowired private FirestoreRestService db;
-
     private final EmbeddingService embeddingService;
     private final TranslationService translationService;
 
@@ -41,30 +34,34 @@ public class ImageSearchService {
     public List<AiSearchResult> searchByDescription(String description) throws Exception {
         if (description == null || description.isBlank()) return Collections.emptyList();
 
-        // Load all items via REST API
         List<Map<String, Object>> docs = db.getCollection(COLLECTION);
         if (docs.isEmpty()) return Collections.emptyList();
 
         List<FoundItem> items = new ArrayList<>();
+        int skippedNoEmbedding = 0;
         for (Map<String, Object> doc : docs) {
             FoundItem item = mapToItem(doc);
-            if (item != null) items.add(item);
+            if (item == null) continue;
+            if (item.getImageUri() != null && (item.getImageEmbedding() == null || item.getImageEmbedding().isEmpty())) {
+                skippedNoEmbedding++;
+            }
+            items.add(item);
+        }
+        if (skippedNoEmbedding > 0) {
+            log.info("Skipped {} items without embeddings during search", skippedNoEmbedding);
         }
 
-        // Try CLIP-based semantic search first, fall back to text-only
         try {
             return searchWithClip(description, items);
         } catch (Exception e) {
-            System.err.println("⚠️ CLIP unavailable, falling back to text search: " + e.getMessage());
+            log.warn("CLIP unavailable, falling back to text search: {}", e.getMessage());
             return searchWithTextOnly(description, items);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-
     private List<AiSearchResult> searchWithClip(String description, List<FoundItem> items) throws Exception {
         String englishQuery = translationService.deToEn(description);
-        System.out.println("🔍 CLIP search: '" + description + "' → '" + englishQuery + "'");
+        log.info("CLIP search: '{}' -> '{}'", description, englishQuery);
 
         List<Double> queryEmbedding = embeddingService.embedText(englishQuery);
         List<AiSearchResult> results = new ArrayList<>();
@@ -74,8 +71,13 @@ public class ImageSearchService {
 
             if (item.getImageEmbedding() != null && !item.getImageEmbedding().isEmpty()) {
                 clipScore = embeddingService.cosineSimilarity(queryEmbedding, item.getImageEmbedding());
+            } else if (item.getImageUri() != null) {
+                log.debug("Item {} has no embedding, skipping CLIP score", item.getId());
+                continue;
             } else {
-                String itemTextEn = translationService.deToEn(buildItemText(item));
+                String itemText = buildItemText(item);
+                if (itemText.isBlank()) continue;
+                String itemTextEn = translationService.deToEn(itemText);
                 List<Double> itemEmbedding = embeddingService.embedText(itemTextEn);
                 clipScore = embeddingService.cosineSimilarity(queryEmbedding, itemEmbedding);
             }
@@ -94,7 +96,7 @@ public class ImageSearchService {
     }
 
     private List<AiSearchResult> searchWithTextOnly(String description, List<FoundItem> items) {
-        System.out.println("📝 Text-only search for: '" + description + "'");
+        log.info("Text-only search for: '{}'", description);
         List<AiSearchResult> results = new ArrayList<>();
 
         for (FoundItem item : items) {
@@ -110,8 +112,6 @@ public class ImageSearchService {
         results.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
         return results.stream().limit(MAX_RESULTS).toList();
     }
-
-    // ─── helpers ────────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
     private FoundItem mapToItem(Map<String, Object> m) {
