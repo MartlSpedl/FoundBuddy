@@ -123,7 +123,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     suspend fun toggleFavorite(itemId: String, userId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
-            val url = java.net.URL("$baseUrl/api/items/$itemId/favorite?userId=$encodedUserId")
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/favorite?userId=$encodedUserId")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "PUT"
             connection.connectTimeout = 5000
@@ -149,7 +149,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
         comment: String? = null
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items/$itemId/status")
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/status")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.doOutput = true
             connection.requestMethod = "PUT"
@@ -207,7 +207,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getStatusHistory(itemId: String): List<StatusChange> = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/items/$itemId/status-history")
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/status-history")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000

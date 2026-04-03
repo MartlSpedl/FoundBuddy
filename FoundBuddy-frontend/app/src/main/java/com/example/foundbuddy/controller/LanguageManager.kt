@@ -171,7 +171,7 @@ object LanguageManager {
         "add_to_favorites" to mapOf("de" to "Zu Favoriten hinzufügen", "en" to "Add to favorites"),
         "add_comment" to mapOf("de" to "Kommentar hinzufügen…", "en" to "Add comment..."),
         "item_not_found" to mapOf("de" to "Item nicht gefunden", "en" to "Item not found"),
-        "uploaded_by" to mapOf("de" to "Hochgeladen von %s • %s", "en" to "Uploaded by %s • %s"),
+        "uploaded_by" to mapOf("de" to "Hochgeladen von %s", "en" to "Uploaded by %s"),
         "send_message_button" to mapOf("de" to "Nachricht schreiben", "en" to "Send message"),
         "status_history" to mapOf("de" to "Status-Verlauf", "en" to "Status history"),
         "current_status" to mapOf("de" to "Aktuell: %s", "en" to "Current: %s"),

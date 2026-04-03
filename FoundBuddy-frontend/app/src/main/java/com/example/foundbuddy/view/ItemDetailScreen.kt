@@ -70,7 +70,7 @@ fun ItemDetailScreen(
                             val shareIntent = android.content.Intent().apply {
                                 action = android.content.Intent.ACTION_SEND
                                 type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, String.format(LanguageManager.tr("uploaded_by", lang), currentItem.title) + "\n\n${currentItem.description ?: ""}")
+                                putExtra(android.content.Intent.EXTRA_TEXT, String.format(LanguageManager.tr("uploaded_by", lang), currentItem.uploaderName) + "\n\n${currentItem.description ?: ""}")
                                 if (currentItem.imagePath?.isNotBlank() == true) {
                                     // In a real app, you might want to share the image URI too
                                     // putExtra(android.content.Intent.EXTRA_STREAM, Uri.parse(currentItem.imagePath))

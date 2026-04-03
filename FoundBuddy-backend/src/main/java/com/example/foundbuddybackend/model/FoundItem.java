@@ -18,6 +18,7 @@ public class FoundItem {
     private String status = "Gefunden";        // "Gefunden" | "Verloren"
     private boolean isResolved = false;
     private String uploaderName = "Unbekannt";
+    private String uploaderId = "";
     private int likes = 0;
     private boolean likedByUser = false;
     private String workflowStatus = "Gemeldet"; // Gemeldet | In Kontakt | Abgeschlossen
@@ -79,6 +80,10 @@ public class FoundItem {
     // ── uploaderName ─────────────────────────────────────────────────────────
     public String getUploaderName() { return uploaderName; }
     public void setUploaderName(String uploaderName) { this.uploaderName = uploaderName; }
+
+    // ── uploaderId ──────────────────────────────────────────────────────────
+    public String getUploaderId() { return uploaderId; }
+    public void setUploaderId(String uploaderId) { this.uploaderId = uploaderId; }
 
     // ── likes ─────────────────────────────────────────────────────────────────
     public int getLikes() { return likes; }
