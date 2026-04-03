@@ -183,6 +183,11 @@ object LanguageManager {
         "comment_optional" to mapOf("de" to "Kommentar (optional)", "en" to "Comment (optional)"),
         "update_status" to mapOf("de" to "Status aktualisieren", "en" to "Update status"),
         "status_change" to mapOf("de" to "%s → %s", "en" to "%s → %s"),
+
+        // Workflow Statuses
+        "gemeldet" to mapOf("de" to "Gemeldet", "en" to "Reported"),
+        "in_kontakt" to mapOf("de" to "In Kontakt", "en" to "In contact"),
+        "abgeschlossen" to mapOf("de" to "Abgeschlossen", "en" to "Resolved"),
         "by_user" to mapOf("de" to "von %s", "en" to "by %s"),
         "comment_label" to mapOf("de" to "Kommentar: %s", "en" to "Comment: %s"),
 

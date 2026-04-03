@@ -110,7 +110,7 @@ fun FeedScreen(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     placeholder = { 
                         Text(
-                            LanguageManager.tr("search_placeholder"), 
+                            LanguageManager.tr("search_placeholder", lang), 
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         ) 
@@ -118,7 +118,7 @@ fun FeedScreen(
                     leadingIcon = { 
                         Icon(
                             Icons.Filled.Search, 
-                            contentDescription = LanguageManager.tr("search"),
+                            contentDescription = LanguageManager.tr("search", lang),
                             tint = MaterialTheme.colorScheme.primary
                         ) 
                     },
@@ -151,7 +151,7 @@ fun FeedScreen(
                 if (foundItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = String.format(LanguageManager.tr("found_items_count"), foundItems.size),
+                            text = String.format(LanguageManager.tr("found_items_count", lang), foundItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -180,7 +180,7 @@ fun FeedScreen(
                 if (lostItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = String.format(LanguageManager.tr("lost_items_count"), lostItems.size),
+                            text = String.format(LanguageManager.tr("lost_items_count", lang), lostItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -209,7 +209,7 @@ fun FeedScreen(
                 if (otherItems.isNotEmpty()) {
                     item {
                         Text(
-                            text = String.format(LanguageManager.tr("other_items_count"), otherItems.size),
+                            text = String.format(LanguageManager.tr("other_items_count", lang), otherItems.size),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp)
@@ -244,7 +244,7 @@ fun FeedScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (searchQuery.isBlank()) LanguageManager.tr("no_posts_yet") else LanguageManager.tr("no_results"),
+                                text = if (searchQuery.isBlank()) LanguageManager.tr("no_posts_yet", lang) else LanguageManager.tr("no_results", lang),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

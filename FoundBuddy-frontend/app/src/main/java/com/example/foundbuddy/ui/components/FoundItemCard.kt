@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foundbuddy.R
 import com.example.foundbuddy.controller.HomeViewModel
+import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.User
@@ -30,7 +31,21 @@ fun FoundItemCard(
     vm: HomeViewModel
 ) {
     val currentUser by if (userViewModel != null) userViewModel.currentUserFlow.collectAsState(initial = null) else remember { mutableStateOf(null) }
+    val lang by if (userViewModel != null) userViewModel.language.collectAsState(initial = "de") else remember { mutableStateOf("de") }
     val isOwner = currentUser?.id == item.uploaderId || (item.uploaderId.isBlank() && currentUser?.username == item.uploaderName)
+
+    val translatedStatus = when (item.status.lowercase()) {
+        "gefunden", "found" -> LanguageManager.tr("found", lang)
+        "verloren", "lost" -> LanguageManager.tr("lost", lang)
+        else -> item.status
+    }
+
+    val translatedWorkflowStatus = when (item.workflowStatus.lowercase()) {
+        "gemeldet", "reported" -> LanguageManager.tr("gemeldet", lang)
+        "in kontakt", "in contact", "in_kontakt" -> LanguageManager.tr("in_kontakt", lang)
+        "abgeschlossen", "resolved" -> LanguageManager.tr("abgeschlossen", lang)
+        else -> item.workflowStatus
+    }
 
     Card(
         onClick = onClick,
@@ -61,7 +76,7 @@ fun FoundItemCard(
                         onClick = { },
                         label = {
                             Text(
-                                if (item.status == "Gefunden") "Gefunden" else "Verloren",
+                                translatedStatus,
                                 fontSize = 10.sp
                             )
                         },
@@ -69,7 +84,7 @@ fun FoundItemCard(
                     )
                     AssistChip(
                         onClick = { },
-                        label = { Text(item.workflowStatus, fontSize = 10.sp) },
+                        label = { Text(translatedWorkflowStatus, fontSize = 10.sp) },
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
                         ),
@@ -164,7 +179,7 @@ fun FoundItemCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Nachricht", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(LanguageManager.tr("messages", lang), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(8.dp))
                 }

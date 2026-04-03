@@ -143,11 +143,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Home,
-                                                    contentDescription = LanguageManager.tr("discover"),
+                                                    contentDescription = LanguageManager.tr("discover", lang),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text(LanguageManager.tr("discover")) }
+                                            label = { Text(LanguageManager.tr("discover", lang)) }
                                         )
 
                                         NavigationBarItem(
@@ -161,11 +161,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Star,
-                                                    contentDescription = LanguageManager.tr("favorites"),
+                                                    contentDescription = LanguageManager.tr("favorites", lang),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text(LanguageManager.tr("favorites")) }
+                                            label = { Text(LanguageManager.tr("favorites", lang)) }
                                         )
 
                                         NavigationBarItem(
@@ -179,11 +179,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.AddCircle,
-                                                    contentDescription = LanguageManager.tr("upload"),
+                                                    contentDescription = LanguageManager.tr("upload", lang),
                                                     modifier = Modifier.size(30.dp)
                                                 )
                                             },
-                                            label = { Text(LanguageManager.tr("upload")) }
+                                            label = { Text(LanguageManager.tr("upload", lang)) }
                                         )
 
                                         NavigationBarItem(
@@ -198,7 +198,7 @@ class MainActivity : ComponentActivity() {
                                                 Box {
                                                     Icon(
                                                         painter = painterResource(R.drawable.ic_message),
-                                                        contentDescription = LanguageManager.tr("messages"),
+                                                        contentDescription = LanguageManager.tr("messages", lang),
                                                         modifier = Modifier.size(26.dp)
                                                     )
                                                     if (unreadCount > 0) {
@@ -214,7 +214,7 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
                                             },
-                                            label = { Text(LanguageManager.tr("messages")) }
+                                            label = { Text(LanguageManager.tr("messages", lang)) }
                                         )
 
                                         NavigationBarItem(
@@ -228,11 +228,11 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = Icons.Default.Person,
-                                                    contentDescription = LanguageManager.tr("profile"),
+                                                    contentDescription = LanguageManager.tr("profile", lang),
                                                     modifier = Modifier.size(26.dp)
                                                 )
                                             },
-                                            label = { Text(LanguageManager.tr("profile")) }
+                                            label = { Text(LanguageManager.tr("profile", lang)) }
                                         )
                                     }
                                 }
