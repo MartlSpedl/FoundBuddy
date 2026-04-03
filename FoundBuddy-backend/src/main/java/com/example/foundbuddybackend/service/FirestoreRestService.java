@@ -16,12 +16,9 @@ import java.util.*;
 /**
  * Firestore via HTTPS REST API — completely bypasses the gRPC SDK.
  *
- * Render Free Tier blocks gRPC connections to Google APIs.
- * The standard Firebase Admin SDK for Java uses gRPC for Firestore,
- * causing all queries to time out on Render Free Tier.
- *
+ * The standard Firebase Admin SDK for Java uses gRPC for Firestore.
  * This service uses the Firestore REST API v1 over plain HTTPS (port 443),
- * which is always reachable.
+ * which works reliably across different hosting environments.
  */
 @Service
 public class FirestoreRestService {
@@ -38,7 +35,7 @@ public class FirestoreRestService {
         rest = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
 
         // 1. Try classpath (firebase-key.json in src/main/resources — works locally and when bundled)
-        // 2. Fall back to FIREBASE_CREDENTIALS_JSON env var (set this on Render if the file is gitignored)
+        // 2. Fall back to FIREBASE_CREDENTIALS_JSON env var (set this on HuggingFace if the file is gitignored)
         String json = loadJson();
         String pid = null;
 
@@ -264,7 +261,7 @@ public class FirestoreRestService {
      * Load Firebase service-account JSON.
      * Priority:
      *   1. firebase-key.json on the classpath (src/main/resources — bundled with the JAR)
-     *   2. FIREBASE_CREDENTIALS_JSON environment variable (set this on Render)
+     *   2. FIREBASE_CREDENTIALS_JSON environment variable (set this on HuggingFace)
      */
     private static String loadJson() {
         // 1. Classpath
@@ -279,9 +276,9 @@ public class FirestoreRestService {
             System.err.println("⚠️ FirestoreRestService: could not read classpath firebase-key.json: " + e.getMessage());
         }
 
-        // 2. Environment variable (FIREBASE_CREDENTIALS_JSON on Render)
+        // 2. Environment variable (FIREBASE_CREDENTIALS_JSON on HuggingFace)
         // IMPORTANT: paste the COMPACT (single-line) JSON from firebase-key.json.
-        // Do NOT paste multiline JSON — Render may truncate it.
+        // Do NOT paste multiline JSON — some platforms may truncate it.
         String env = System.getenv("FIREBASE_CREDENTIALS_JSON");
         if (env != null && !env.isBlank()) {
             System.out.println("✅ FirestoreRestService: loaded credentials from FIREBASE_CREDENTIALS_JSON env var (" + env.length() + " chars)");

@@ -14,8 +14,8 @@ import java.util.*;
 
 /**
  * User management endpoints.
- * Uses FirestoreRestService (HTTPS) instead of the gRPC Firebase Admin SDK,
- * because Render Free Tier blocks outgoing gRPC connections to Google APIs.
+ * Uses FirestoreRestService (HTTPS) instead of the gRPC Firebase Admin SDK
+ * for reliable cross-platform compatibility.
  */
 @RestController
 @RequestMapping("/api/users")

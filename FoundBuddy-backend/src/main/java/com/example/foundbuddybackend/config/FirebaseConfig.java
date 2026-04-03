@@ -25,7 +25,7 @@ public class FirebaseConfig {
             InputStream serviceAccount;
 
             // Service-Account aus Umgebungsvariable lesen (kompletter JSON-Inhalt)
-            // Wir prüfen zuerst FIREBASE_CREDENTIALS_JSON (HuggingFace/Render Standard)
+            // Wir prüfen zuerst FIREBASE_CREDENTIALS_JSON (HuggingFace Standard)
             String firebaseJson = System.getenv("FIREBASE_CREDENTIALS_JSON");
             if (firebaseJson == null || firebaseJson.isBlank()) {
                 firebaseJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -34,7 +34,7 @@ public class FirebaseConfig {
             if (firebaseJson != null && !firebaseJson.isBlank()) {
                 System.out.println("🔑 Firebase-JSON aus Umgebungsvariable gefunden, Länge: " + firebaseJson.length());
 
-                // ⚠️ Render encodes newlines in env vars as literal \n (two chars) instead of real newlines.
+                // Some hosting platforms encode newlines in env vars as literal \n (two chars) instead of real newlines.
                 // RSA private keys NEED real newlines — fix them before parsing.
                 // This replaces \\n (escaped) → real newline only inside the "private_key" value.
                 firebaseJson = fixPrivateKeyNewlines(firebaseJson);
@@ -49,7 +49,7 @@ public class FirebaseConfig {
                 System.out.println("🔑 Firebase Key aus Resource geladen");
             }
 
-            // Storage Bucket: ueber Env Var setzen (Render)
+            // Storage Bucket: ueber Env Var setzen
             // Beispiel: FIREBASE_STORAGE_BUCKET="<project-id>.appspot.com"
             String storageBucket = System.getenv("FIREBASE_STORAGE_BUCKET");
 
@@ -75,7 +75,7 @@ public class FirebaseConfig {
                 builder.setProjectId(projectId);
             }
 
-            // ⚡ Force gRPC to use Java DNS resolver instead of native (fixes Render networking)
+            // Force gRPC to use Java DNS resolver instead of native (fixes networking issues on some platforms)
             System.setProperty("io.grpc.netty.shaded.io.netty.resolver.dns.defaultSearchDomains", "");
             System.setProperty("io.grpc.netty.useCustomNameResolver", "false");
             System.out.println("✅ gRPC DNS resolver override set");
@@ -101,7 +101,7 @@ public class FirebaseConfig {
     }
 
     /**
-     * Render pastes env var JSON with literal \n (two chars) instead of real newlines.
+     * Some platforms paste env var JSON with literal \n (two chars) instead of real newlines.
      * RSA private keys need REAL newlines inside the PEM block.
      * This method finds the private_key value and converts \\n → \n.
      */

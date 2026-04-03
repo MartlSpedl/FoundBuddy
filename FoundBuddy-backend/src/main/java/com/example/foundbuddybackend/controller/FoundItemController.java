@@ -12,8 +12,8 @@ import java.util.*;
 /**
  * REST controller for {@link FoundItem} entities.
  *
- * Uses FirestoreRestService (HTTPS) instead of gRPC FirestoreClient —
- * Render Free Tier blocks outgoing gRPC connections to Google APIs.
+ * Uses FirestoreRestService (HTTPS) instead of gRPC FirestoreClient
+ * for reliable cross-platform compatibility.
  */
 @RestController
 @RequestMapping("/api/found-items")

@@ -279,8 +279,8 @@ class UserRepository {
     suspend fun warmUpServer(): WarmUpResult {
         val url = java.net.URL("$baseUrl/api/health")
 
-        // Hugging Face hält eingehende Requests oft in der Warteschlange, während der Space bootet.
-        // Daher kein Loop mehr (das war Render-spezifisch), sondern einfach ein langes Timeout.
+        // HuggingFace hält eingehende Requests oft in der Warteschlange, während der Space bootet.
+        // Daher kein Loop mehr, sondern einfach ein langes Timeout.
         try {
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
