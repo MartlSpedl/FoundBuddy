@@ -120,6 +120,14 @@ public class FoundItemController {
         return v != null ? v.toString() : null;
     }
 
+    private Map<String, Object> commentToMap(Comment c) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("author", c.getAuthor() != null ? c.getAuthor() : "Unbekannt");
+        m.put("text", c.getText() != null ? c.getText() : "");
+        m.put("timestamp", c.getTimestamp() != null ? c.getTimestamp() : System.currentTimeMillis());
+        return m;
+    }
+
     private Map<String, Object> itemToMap(FoundItem item) {
         Map<String, Object> m = new LinkedHashMap<>();
         if (item.getId() != null)           m.put("id", item.getId());
@@ -136,7 +144,13 @@ public class FoundItemController {
         m.put("isFavorite", item.isFavorite());
         if (item.getStatusHistory() != null) m.put("statusHistory", item.getStatusHistory());
         if (item.getAllowedEditors() != null) m.put("allowedEditors", item.getAllowedEditors());
-        if (item.getComments() != null) m.put("comments", item.getComments());
+        if (item.getComments() != null) {
+            List<Map<String, Object>> commentsList = new ArrayList<>();
+            for (Comment c : item.getComments()) {
+                commentsList.add(commentToMap(c));
+            }
+            m.put("comments", commentsList);
+        }
         if (item.getImageEmbedding() != null) m.put("imageEmbedding", item.getImageEmbedding());
         return m;
     }
