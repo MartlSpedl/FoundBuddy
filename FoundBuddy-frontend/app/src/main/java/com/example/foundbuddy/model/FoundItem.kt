@@ -19,7 +19,8 @@ data class FoundItem(
     val workflowStatus: String = "Gemeldet",
     val isFavorite: Boolean = false,
     val statusHistory: List<StatusChange> = emptyList(),
-    val allowedEditors: List<String> = emptyList()
+    val allowedEditors: List<String> = emptyList(),
+    val comments: List<Comment> = emptyList()
 )
 
 // Neues Modell für Statusverlauf

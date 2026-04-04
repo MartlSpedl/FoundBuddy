@@ -2,6 +2,7 @@ package com.example.foundbuddybackend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FoundItem {
@@ -25,6 +26,7 @@ public class FoundItem {
     private boolean isFavorite = false;
     private List<Object> statusHistory = List.of();
     private List<String> allowedEditors = List.of();
+    private List<Comment> comments = new ArrayList<>();
 
     /**
      * KI-Embedding des Bildes (z. B. 512 Dimensionen)
@@ -109,6 +111,10 @@ public class FoundItem {
     // ── allowedEditors ────────────────────────────────────────────────────────
     public List<String> getAllowedEditors() { return allowedEditors; }
     public void setAllowedEditors(List<String> allowedEditors) { this.allowedEditors = allowedEditors; }
+
+    // ── comments ───────────────────────────────────────────────────────────────
+    public List<Comment> getComments() { return comments; }
+    public void setComments(List<Comment> comments) { this.comments = comments; }
 
     // ── embeddings ────────────────────────────────────────────────────────────
     @JsonIgnore

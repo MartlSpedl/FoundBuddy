@@ -153,7 +153,8 @@ fun ItemDetailScreen(
                 Button(
                     onClick = {
                         if (commentText.isNotBlank()) {
-                            vm.addComment(itemId, commentText.trim())
+                            val authorName = currentUser?.username ?: "Gast"
+                            vm.addComment(itemId, commentText.trim(), authorName)
                             commentText = ""
                         }
                     },

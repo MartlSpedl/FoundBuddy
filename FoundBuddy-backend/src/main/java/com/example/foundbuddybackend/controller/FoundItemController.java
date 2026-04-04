@@ -1,6 +1,7 @@
 package com.example.foundbuddybackend.controller;
 
 import com.example.foundbuddybackend.ai.EmbeddingService;
+import com.example.foundbuddybackend.model.Comment;
 import com.example.foundbuddybackend.model.FoundItem;
 import com.example.foundbuddybackend.service.FirestoreRestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,27 @@ public class FoundItemController {
             item.setAllowedEditors(editors);
         }
 
+        // comments (List<Map>)
+        @SuppressWarnings("unchecked")
+        List<Object> rawComments = (List<Object>) m.get("comments");
+        if (rawComments != null) {
+            List<Comment> comments = new ArrayList<>();
+            for (Object c : rawComments) {
+                if (c instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> commentMap = (Map<String, Object>) c;
+                    Comment comment = new Comment();
+                    comment.setAuthor(commentMap.get("author") != null ? commentMap.get("author").toString() : "Unbekannt");
+                    comment.setText(commentMap.get("text") != null ? commentMap.get("text").toString() : "");
+                    Object commentTs = commentMap.get("timestamp");
+                    if (commentTs instanceof Number) comment.setTimestamp(((Number) commentTs).longValue());
+                    else comment.setTimestamp(System.currentTimeMillis());
+                    comments.add(comment);
+                }
+            }
+            item.setComments(comments);
+        }
+
         // imageEmbedding (List<Double>) — stored in Firestore for search
         @SuppressWarnings("unchecked")
         List<Object> rawEmb = (List<Object>) m.get("imageEmbedding");
@@ -114,6 +136,7 @@ public class FoundItemController {
         m.put("isFavorite", item.isFavorite());
         if (item.getStatusHistory() != null) m.put("statusHistory", item.getStatusHistory());
         if (item.getAllowedEditors() != null) m.put("allowedEditors", item.getAllowedEditors());
+        if (item.getComments() != null) m.put("comments", item.getComments());
         if (item.getImageEmbedding() != null) m.put("imageEmbedding", item.getImageEmbedding());
         return m;
     }
@@ -337,6 +360,40 @@ public class FoundItemController {
         try {
             db.deleteDocument(COLLECTION, id);
             return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Appends a comment to an item. */
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<?> addComment(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        try {
+            Map<String, Object> doc = db.getDocument(COLLECTION, id);
+            if (doc == null) return ResponseEntity.notFound().build();
+
+            FoundItem item = mapToItem(doc);
+            String author = str(body, "author");
+            String text = str(body, "text");
+
+            if (text == null || text.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "text is required"));
+            }
+
+            Comment newComment = new Comment(
+                author != null ? author : "Unbekannt",
+                text,
+                System.currentTimeMillis()
+            );
+
+            List<Comment> comments = item.getComments();
+            if (comments == null) comments = new ArrayList<>();
+            comments.add(newComment);
+            item.setComments(comments);
+
+            db.setDocument(COLLECTION, id, itemToMap(item));
+            return ResponseEntity.ok(Map.of("success", true, "comment", newComment));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

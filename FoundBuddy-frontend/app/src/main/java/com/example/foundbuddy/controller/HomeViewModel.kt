@@ -244,15 +244,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val commentMap = mutableMapOf<String, MutableStateFlow<List<Comment>>>()
-
-    fun getComments(itemId: String): StateFlow<List<Comment>> =
-        commentMap.getOrPut(itemId) { MutableStateFlow(emptyList()) }
+    fun getComments(itemId: String): StateFlow<List<Comment>> {
+        val item = _items.value.find { it.id == itemId }
+        return MutableStateFlow(item?.comments ?: emptyList())
+    }
 
     fun addComment(itemId: String, text: String, author: String = "User") {
-        val flow = commentMap.getOrPut(itemId) { MutableStateFlow(emptyList()) }
-        val newList = flow.value + Comment(author, text, System.currentTimeMillis())
-        flow.value = newList
+        viewModelScope.launch {
+            val success = repo?.addComment(itemId, author, text) ?: false
+            if (success) {
+                refreshItem(itemId)
+            }
+        }
     }
 
     fun toggleLike(itemId: String) {

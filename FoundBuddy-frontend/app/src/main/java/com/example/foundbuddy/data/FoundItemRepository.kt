@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.foundbuddy.network.FoundBuddyApi
 import com.example.foundbuddy.model.AiSearchResult
+import com.example.foundbuddy.model.Comment
 import com.example.foundbuddy.model.FoundItem
 import com.example.foundbuddy.model.StatusChange
 import com.example.foundbuddy.model.Message
@@ -253,6 +254,39 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     }
 
     /**
+     * Fügt einen Kommentar zu einem Item hinzu
+     */
+    suspend fun addComment(itemId: String, author: String, text: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId/comments")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.doOutput = true
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+
+            val requestBody = """
+                {
+                    "author": "$author",
+                    "text": "$text"
+                }
+            """.trimIndent()
+
+            connection.outputStream.use { os ->
+                os.write(requestBody.toByteArray(Charsets.UTF_8))
+            }
+
+            val responseCode = connection.responseCode
+            connection.inputStream.use { it.readBytes() }
+            responseCode == HttpURLConnection.HTTP_OK
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    /**
      * Mapping Backend -> UI-Modell.
      */
     private fun ItemDto.toFoundItem(): FoundItem {
@@ -290,7 +324,14 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             workflowStatus = workflowStatus ?: "Gemeldet",
             isFavorite = isFavorite ?: false,
             statusHistory = history,
-            allowedEditors = allowedEditors ?: emptyList()
+            allowedEditors = allowedEditors ?: emptyList(),
+            comments = comments?.map { dto ->
+                Comment(
+                    author = dto.author ?: "Unbekannt",
+                    text = dto.text ?: "",
+                    timestamp = dto.timestamp ?: System.currentTimeMillis()
+                )
+            } ?: emptyList()
         )
     }
 
@@ -323,7 +364,14 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             workflowStatus = workflowStatus,
             isFavorite = isFavorite,
             statusHistory = historyDto,
-            allowedEditors = allowedEditors
+            allowedEditors = allowedEditors,
+            comments = comments.map { comment ->
+                CommentDto(
+                    author = comment.author,
+                    text = comment.text,
+                    timestamp = comment.timestamp
+                )
+            }
         )
     }
 
@@ -649,7 +697,8 @@ data class ItemDto(
     val workflowStatus: String? = "Gemeldet",
     val isFavorite: Boolean? = false,
     val statusHistory: List<StatusChangeDto>? = emptyList(),
-    val allowedEditors: List<String>? = emptyList()
+    val allowedEditors: List<String>? = emptyList(),
+    val comments: List<CommentDto>? = emptyList()
 )
 
 // DTO für Statusänderungen
@@ -661,4 +710,12 @@ data class StatusChangeDto(
     val newStatus: String? = null,
     val timestamp: Long? = null,
     val comment: String? = null
+)
+
+// DTO für Kommentare
+@JsonClass(generateAdapter = true)
+data class CommentDto(
+    val author: String? = null,
+    val text: String? = null,
+    val timestamp: Long? = null
 )
