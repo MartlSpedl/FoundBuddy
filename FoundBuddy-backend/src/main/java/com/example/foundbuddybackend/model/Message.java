@@ -23,6 +23,15 @@ public class Message {
         this.timestamp = timestamp;
     }
 
+    public Message(String senderId, String senderName, String recipientId, String content, String referencedItemId, Long timestamp) {
+        this.senderId = senderId;
+        this.senderName = senderName;
+        this.recipientId = recipientId;
+        this.content = content;
+        this.referencedItemId = referencedItemId;
+        this.timestamp = timestamp;
+    }
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

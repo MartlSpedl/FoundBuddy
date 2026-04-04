@@ -289,7 +289,7 @@ class MainActivity : ComponentActivity() {
                                         vm = homeViewModel,
                                         userViewModel = userViewModel,
                                         onConversationClick = { id, name ->
-                                            navController.navigate("chat_detail/$id/$name/")
+                                            navController.navigate("chat_detail/$id/$name")
                                         },
                                         modifier = Modifier.padding(padding)
                                     )
@@ -335,7 +335,18 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable("chat_detail/{recipientId}/{recipientName}/{referencedItemId}") { backStackEntry ->
+                    composable(
+                        route = "chat_detail/{recipientId}/{recipientName}?referencedItemId={referencedItemId}",
+                        arguments = listOf(
+                            androidx.navigation.navArgument("recipientId") { type = androidx.navigation.NavType.StringType },
+                            androidx.navigation.navArgument("recipientName") { type = androidx.navigation.NavType.StringType },
+                            androidx.navigation.navArgument("referencedItemId") { 
+                                type = androidx.navigation.NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }
+                        )
+                    ) { backStackEntry ->
                         val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
                         val recipientName = backStackEntry.arguments?.getString("recipientName") ?: ""
                         val referencedItemId = backStackEntry.arguments?.getString("referencedItemId")

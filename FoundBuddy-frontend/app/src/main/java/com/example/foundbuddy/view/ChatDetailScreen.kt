@@ -201,9 +201,8 @@ fun ReferencedPostCard(
     vm: HomeViewModel,
     onClick: () -> Unit
 ) {
-    val item by remember(itemId) {
-        mutableStateOf(vm.getItemById(itemId))
-    }
+    val items by vm.items.collectAsState()
+    val item = remember(itemId, items) { items.find { it.id == itemId } }
 
     LaunchedEffect(itemId) {
         if (item == null) {

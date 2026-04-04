@@ -164,7 +164,7 @@ fun FeedScreen(
                             onLike = { vm.toggleLike(item.id) },
                             onMessageClick = {
                                 val id = item.uploaderId.ifBlank { item.uploaderName }
-                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                                navController.navigate("chat_detail/$id/${item.uploaderName}?referencedItemId=${item.id}")
                             },
                             userViewModel = userViewModel,
                             onFavorite = {
@@ -193,7 +193,7 @@ fun FeedScreen(
                             onLike = { vm.toggleLike(item.id) },
                             onMessageClick = {
                                 val id = item.uploaderId.ifBlank { item.uploaderName }
-                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                                navController.navigate("chat_detail/$id/${item.uploaderName}?referencedItemId=${item.id}")
                             },
                             userViewModel = userViewModel,
                             onFavorite = {
@@ -222,7 +222,7 @@ fun FeedScreen(
                             onLike = { vm.toggleLike(item.id) },
                             onMessageClick = {
                                 val id = item.uploaderId.ifBlank { item.uploaderName }
-                                navController.navigate("chat_detail/$id/${item.uploaderName}")
+                                navController.navigate("chat_detail/$id/${item.uploaderName}?referencedItemId=${item.id}")
                             },
                             userViewModel = userViewModel,
                             onFavorite = {

@@ -250,7 +250,7 @@ fun ItemDetailScreen(
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { 
-                                navController.navigate("chat_detail/${item.uploaderId}/${item.uploaderName}/${item.id}")
+                                navController.navigate("chat_detail/${item.uploaderId}/${item.uploaderName}?referencedItemId=${item.id}")
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
