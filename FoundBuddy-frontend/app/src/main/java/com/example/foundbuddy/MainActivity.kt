@@ -247,6 +247,7 @@ class MainActivity : ComponentActivity() {
                                         homeViewModel.loadStatusHistory(id)
                                         navController.navigate("detail/$id")
                                     },
+                                    onProfileClick = { selectedTab = "profile" },
                                     modifier = Modifier.padding(padding)
                                 )
 

@@ -1,5 +1,6 @@
 package com.example.foundbuddy.view
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,7 @@ fun FeedScreen(
     vm: HomeViewModel,
     userViewModel: UserViewModel,
     onItemClick: (String) -> Unit,
+    onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
@@ -95,7 +97,8 @@ fun FeedScreen(
                 GreetingHeader(
                     username = username,
                     profileImageUri = currentUser?.profileImage,
-                    lang = lang
+                    lang = lang,
+                    onProfileClick = onProfileClick
                 )
             }
 
@@ -260,7 +263,8 @@ fun FeedScreen(
 private fun GreetingHeader(
     username: String,
     profileImageUri: String?,
-    lang: String
+    lang: String,
+    onProfileClick: () -> Unit
 ) {
     val currentTime = remember { Calendar.getInstance() }
     val hour = currentTime.get(Calendar.HOUR_OF_DAY)
@@ -303,7 +307,9 @@ private fun GreetingHeader(
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-            modifier = Modifier.size(52.dp)
+            modifier = Modifier
+                .size(52.dp)
+                .clickable { onProfileClick() }
         ) {
             if (profileImageUri.isNullOrBlank()) {
                 Icon(
