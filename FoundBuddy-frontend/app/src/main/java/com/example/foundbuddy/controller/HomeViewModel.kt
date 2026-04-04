@@ -114,7 +114,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                                 senderName = backendConv.lastMessage?.senderName ?: "",
                                 recipientId = backendConv.lastMessage?.recipientId ?: "",
                                 content = backendConv.lastMessage?.content ?: "",
-                                timestamp = backendConv.lastMessage?.timestamp ?: System.currentTimeMillis()
+                                timestamp = backendConv.lastMessage?.timestamp ?: System.currentTimeMillis(),
+                                referencedItemId = backendConv.lastMessage?.referencedItemId
                             ),
                             isAccepted = backendConv.isAccepted
                         )
@@ -147,7 +148,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             senderName = backendMsg.senderName ?: "",
                             recipientId = backendMsg.recipientId ?: "",
                             content = backendMsg.content ?: "",
-                            timestamp = backendMsg.timestamp ?: System.currentTimeMillis()
+                            timestamp = backendMsg.timestamp ?: System.currentTimeMillis(),
+                            referencedItemId = backendMsg.referencedItemId
                         )
                     }
                     
@@ -446,13 +448,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         recipientName: String,
         senderId: String,
         senderName: String,
-        content: String
+        content: String,
+        referencedItemId: String? = null
     ) {
         val newMessage = com.example.foundbuddy.model.Message(
             senderId = senderId,
             senderName = senderName,
             recipientId = recipientId,
-            content = content
+            content = content,
+            referencedItemId = referencedItemId
         )
         
         // Store messages for BOTH sender and recipient locally

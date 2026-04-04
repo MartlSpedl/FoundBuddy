@@ -11,6 +11,7 @@ public class Message {
     private String recipientId;
     private String content;
     private Long timestamp;
+    private String referencedItemId;
 
     public Message() {}
 
@@ -39,4 +40,7 @@ public class Message {
 
     public Long getTimestamp() { return timestamp; }
     public void setTimestamp(Long timestamp) { this.timestamp = timestamp; }
+
+    public String getReferencedItemId() { return referencedItemId; }
+    public void setReferencedItemId(String referencedItemId) { this.referencedItemId = referencedItemId; }
 }

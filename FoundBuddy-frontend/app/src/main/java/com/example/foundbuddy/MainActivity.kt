@@ -289,7 +289,7 @@ class MainActivity : ComponentActivity() {
                                         vm = homeViewModel,
                                         userViewModel = userViewModel,
                                         onConversationClick = { id, name ->
-                                            navController.navigate("chat_detail/$id/$name")
+                                            navController.navigate("chat_detail/$id/$name/")
                                         },
                                         modifier = Modifier.padding(padding)
                                     )
@@ -335,15 +335,21 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable("chat_detail/{recipientId}/{recipientName}") { backStackEntry ->
+                    composable("chat_detail/{recipientId}/{recipientName}/{referencedItemId}") { backStackEntry ->
                         val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
                         val recipientName = backStackEntry.arguments?.getString("recipientName") ?: ""
+                        val referencedItemId = backStackEntry.arguments?.getString("referencedItemId")
                         ChatDetailScreen(
                             recipientId = recipientId,
                             recipientName = recipientName,
+                            initialItemId = referencedItemId,
                             vm = homeViewModel,
                             userViewModel = userViewModel,
-                            onBack = { navController.popBackStack() }
+                            onBack = { navController.popBackStack() },
+                            onNavigateToItem = { itemId ->
+                                homeViewModel.loadStatusHistory(itemId)
+                                navController.navigate("detail/$itemId")
+                            }
                         )
                     }
                 }

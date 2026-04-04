@@ -30,14 +30,17 @@ import kotlinx.coroutines.delay
 fun ChatDetailScreen(
     recipientId: String,
     recipientName: String,
+    initialItemId: String? = null,
     vm: HomeViewModel,
     userViewModel: UserViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToItem: (String) -> Unit = {}
 ) {
     val messages by vm.getMessages(recipientId).collectAsState()
     val currentUser by userViewModel.currentUserFlow.collectAsState(initial = null)
     val lang by userViewModel.language.collectAsState()
     var messageText by remember { mutableStateOf("") }
+    var itemIdToAttach by remember { mutableStateOf(initialItemId) }
     val listState = rememberLazyListState()
 
     // Scroll to bottom when new messages arrive
@@ -107,9 +110,11 @@ fun ChatDetailScreen(
                                     recipientName = recipientName,
                                     senderId = currentUser!!.id,
                                     senderName = currentUser!!.username,
-                                    content = messageText.trim()
+                                    content = messageText.trim(),
+                                    referencedItemId = itemIdToAttach
                                 )
                                 messageText = ""
+                                itemIdToAttach = null
                             }
                         },
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -134,18 +139,36 @@ fun ChatDetailScreen(
         ) {
             items(messages) { message ->
                 val isFromMe = message.senderId == currentUser?.id
-                MessageBubble(message = message, isFromMe = isFromMe)
+                MessageBubble(
+                    message = message,
+                    isFromMe = isFromMe,
+                    vm = vm,
+                    onNavigateToItem = onNavigateToItem
+                )
             }
         }
     }
 }
 
 @Composable
-fun MessageBubble(message: Message, isFromMe: Boolean) {
+fun MessageBubble(
+    message: Message,
+    isFromMe: Boolean,
+    vm: HomeViewModel,
+    onNavigateToItem: (String) -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isFromMe) Alignment.End else Alignment.Start
     ) {
+        if (message.referencedItemId != null) {
+            ReferencedPostCard(
+                itemId = message.referencedItemId,
+                vm = vm,
+                onClick = { onNavigateToItem(message.referencedItemId) }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
         Box(
             modifier = Modifier
                 .clip(
@@ -168,6 +191,56 @@ fun MessageBubble(message: Message, isFromMe: Boolean) {
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 15.sp
             )
+        }
+    }
+}
+
+@Composable
+fun ReferencedPostCard(
+    itemId: String,
+    vm: HomeViewModel,
+    onClick: () -> Unit
+) {
+    val item by remember(itemId) {
+        mutableStateOf(vm.getItemById(itemId))
+    }
+
+    LaunchedEffect(itemId) {
+        if (item == null) {
+            vm.refreshItem(itemId)
+        }
+    }
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.width(200.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ZoomImage(
+                url = item?.imagePath,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item?.title ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+                Text(
+                    text = LanguageManager.tr("referenced_post", vm.getItemById(itemId)?.let { "de" } ?: "de"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

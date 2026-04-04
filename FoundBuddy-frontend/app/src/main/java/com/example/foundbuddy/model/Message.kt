@@ -10,7 +10,8 @@ data class Message(
     val senderName: String,
     val recipientId: String,
     val content: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val referencedItemId: String? = null
 )
 
 @JsonClass(generateAdapter = true)

@@ -170,6 +170,7 @@ object LanguageManager {
         // Chat Detail Screen
         "write_message" to mapOf("de" to "Nachricht schreiben…", "en" to "Write a message..."),
         "send_message" to mapOf("de" to "Senden", "en" to "Send"),
+        "referenced_post" to mapOf("de" to "Verweis auf Beitrag", "en" to "Referenced post"),
 
         // Item Detail Screen
         "details" to mapOf("de" to "Details", "en" to "Details"),
