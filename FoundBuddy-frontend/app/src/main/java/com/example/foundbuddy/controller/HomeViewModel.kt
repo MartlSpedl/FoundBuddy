@@ -348,6 +348,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun getItemById(id: String): FoundItem? =
         _items.value.firstOrNull { it.id == id }
 
+    fun refreshItem(itemId: String) {
+        viewModelScope.launch {
+            try {
+                repo?.getById(itemId)?.let { updatedItem ->
+                    val list = _items.value.toMutableList()
+                    val index = list.indexOfFirst { it.id == itemId }
+                    if (index != -1) {
+                        list[index] = updatedItem
+                    } else {
+                        list.add(0, updatedItem)
+                    }
+                    _items.value = list
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Fehler beim Aktualisieren: ${e.message}"
+            }
+        }
+    }
+
     fun formatTimeAgo(timestamp: Long, lang: String = "de"): String {
         val diff = System.currentTimeMillis() - timestamp
         val seconds = diff / 1000

@@ -244,6 +244,14 @@ public class FoundItemController {
                 return ResponseEntity.badRequest().body(Map.of("error", "newStatus is required"));
             }
 
+            String uploaderId = item.getUploaderId();
+            List<String> allowedEditors = item.getAllowedEditors();
+            boolean isOwner = uploaderId != null && uploaderId.equals(userId);
+            boolean isAllowedEditor = allowedEditors != null && allowedEditors.contains(userId);
+            if (!isOwner && !isAllowedEditor) {
+                return ResponseEntity.status(403).body(Map.of("error", "Only the owner or allowed editors can update the status"));
+            }
+
             String oldStatus = item.getWorkflowStatus();
 
             // Append to status history
@@ -298,14 +306,6 @@ public class FoundItemController {
             FoundItem item = mapToItem(doc);
             boolean newValue = !item.isFavorite();
             item.setFavorite(newValue);
-
-            // Add user to allowedEditors when favoriting
-            List<String> editors = item.getAllowedEditors();
-            if (editors == null) editors = new ArrayList<>();
-            if (newValue && !editors.contains(userId)) {
-                editors.add(userId);
-                item.setAllowedEditors(editors);
-            }
 
             db.setDocument(COLLECTION, id, itemToMap(item));
             return ResponseEntity.ok(Map.of("success", true, "isFavorite", newValue));

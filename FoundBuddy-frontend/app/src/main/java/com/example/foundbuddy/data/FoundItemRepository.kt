@@ -36,6 +36,34 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     private val conversationListAdapter = moshi.adapter<List<Conversation>>(conversationListType)
 
     /**
+     * Holt ein einzelnes Item vom Backend anhand seiner ID.
+     */
+    suspend fun getById(itemId: String): FoundItem? = withContext(Dispatchers.IO) {
+        try {
+            val url = java.net.URL("$baseUrl/api/found-items/$itemId")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 5_000
+
+            val responseCode = connection.responseCode
+            if (responseCode != java.net.HttpURLConnection.HTTP_OK) {
+                Log.w("FoundItemRepository", "getById() HTTP $responseCode")
+                return@withContext null
+            }
+
+            connection.inputStream.use { input ->
+                val body = input.bufferedReader().use { it.readText() }
+                val dto = itemAdapter.fromJson(body)
+                dto?.toFoundItem()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
      * Holt alle Items vom Backend und mappt sie auf das FoundItem-Modell fürs UI.
      */
     suspend fun getAll(): List<FoundItem> = withContext(Dispatchers.IO) {

@@ -53,6 +53,17 @@ fun ItemDetailScreen(
     // Chat-Dialog State
     var showChatDialog by remember { mutableStateOf(false) }
 
+    // Refresh item on screen open
+    LaunchedEffect(itemId) {
+        vm.refreshItem(itemId)
+    }
+
+    val isOwner = currentUser?.let { user ->
+        item?.let { currentItem ->
+            currentItem.uploaderId == user.id || (currentItem.uploaderId.isBlank() && currentItem.uploaderName == user.username)
+        }
+    } ?: false
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -208,13 +219,23 @@ fun ItemDetailScreen(
                             )
                         )
 
-                        AssistChip(
-                            onClick = { showStatusDialog = true },
-                            label = { Text(vm.translateStatus(item.workflowStatus, lang)) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
+                        if (isOwner) {
+                            AssistChip(
+                                onClick = { showStatusDialog = true },
+                                label = { Text(vm.translateStatus(item.workflowStatus, lang)) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
+                                )
                             )
-                        )
+                        } else {
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(vm.translateStatus(item.workflowStatus, lang)) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = Color(vm.getStatusColor(item.workflowStatus)).copy(alpha = 0.2f)
+                                )
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -225,7 +246,6 @@ fun ItemDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    val isOwner = item.uploaderId == currentUser?.id || (item.uploaderId.isBlank() && item.uploaderName == currentUser?.username)
                     if (!isOwner && item.uploaderId.isNotBlank()) {
                         Spacer(Modifier.height(16.dp))
                         Button(
