@@ -58,6 +58,15 @@ object LanguageManager {
         "select_profile_image" to mapOf("de" to "Profilbild auswählen", "en" to "Select profile image"),
         "edit" to mapOf("de" to "Bearbeiten", "en" to "Edit"),
         "app_management" to mapOf("de" to "App-Verwaltung", "en" to "App Management"),
+        "about" to mapOf("de" to "Über", "en" to "About"),
+        "copyright" to mapOf("de" to "Copyright & Impressum", "en" to "Copyright & Imprint"),
+        "dsgvo" to mapOf("de" to "Datenschutzerklärung", "en" to "Privacy Policy"),
+        "version" to mapOf("de" to "Version", "en" to "Version"),
+        "appearance" to mapOf("de" to "Erscheinungsbild", "en" to "Appearance"),
+        "account_settings" to mapOf("de" to "Konto-Einstellungen", "en" to "Account Settings"),
+        "legal" to mapOf("de" to "Rechtliches", "en" to "Legal"),
+        "close" to mapOf("de" to "Schließen", "en" to "Close"),
+        "privacy_policy_title" to mapOf("de" to "Datenschutzerklärung", "en" to "Privacy Policy"),
 
         // Navigation
         "discover" to mapOf("de" to "Entdecken", "en" to "Discover"),
