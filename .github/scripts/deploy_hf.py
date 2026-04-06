@@ -28,12 +28,7 @@ api.upload_folder(
         ".idea/**",
         ".gradle/**",
     ],
-    delete_patterns=[
-        "src/**",
-        "Dockerfile",
-        "build.gradle.kts",
-        "settings.gradle.kts",
-    ],
+    delete_patterns=["**"],
     commit_message=f"Auto-deploy from GitHub commit {commit_sha[:8]}",
 )
 
