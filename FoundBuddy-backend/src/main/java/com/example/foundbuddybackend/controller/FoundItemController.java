@@ -308,7 +308,7 @@ public class FoundItemController {
             if (comment != null) historyEntry.put("comment", comment);
 
             List<Object> history = item.getStatusHistory();
-            if (history == null) history = new ArrayList<>();
+            history = history != null ? new ArrayList<>(history) : new ArrayList<>();
             history.add(historyEntry);
             item.setStatusHistory(history);
 
@@ -322,7 +322,7 @@ public class FoundItemController {
             return ResponseEntity.ok(Map.of("success", true, "workflowStatus", newStatus, "statusHistory", history));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage() != null ? e.getMessage() : e.toString()));
         }
     }
 
