@@ -116,11 +116,14 @@ public class FirestoreRestService {
      * This prevents accidental deletion of AI embeddings and other fields.
      */
     public void setDocument(String collection, String documentId, Map<String, Object> data, List<String> updateMask) throws Exception {
-        String maskParam = String.join(",", updateMask);
-        String url = base() + "/" + collection + "/" + documentId + "?updateMask.fieldNames=" + maskParam;
+        StringBuilder url = new StringBuilder(base() + "/" + collection + "/" + documentId + "?");
+        for (int i = 0; i < updateMask.size(); i++) {
+            if (i > 0) url.append("&");
+            url.append("updateMask.fieldNames=").append(updateMask.get(i));
+        }
         String body = toFirestoreJson(data);
-        System.out.println("🔄 setDocument (masked): PATCH " + collection + "/" + documentId + " mask=" + maskParam);
-        rest.exchange(url, HttpMethod.PATCH,
+        System.out.println("🔄 setDocument (masked): PATCH " + collection + "/" + documentId + " mask=" + updateMask);
+        rest.exchange(url.toString(), HttpMethod.PATCH,
                 new HttpEntity<>(body, authHeaders()), String.class);
     }
 

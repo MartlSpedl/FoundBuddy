@@ -9,6 +9,7 @@ rm -rf FoundBuddy-backend/.gradle
 rm -rf FoundBuddy-backend/build
 rm -rf FoundBuddy-backend/target
 rm -rf FoundBuddy-backend/.settings
+rm -rf FoundBuddy-backend/bin
 rm -rf FoundBuddy-backend/uploads
 rm -f FoundBuddy-backend/.classpath
 rm -f FoundBuddy-backend/.project

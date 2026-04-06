@@ -230,13 +230,10 @@ public class FoundItemController {
                     try {
                         System.out.println("🔄 Computing embedding for item " + itemId + " in background...");
                         List<Double> embedding = embeddingService.embedImage(imageUri);
-                        // Patch the embedding into the existing Firestore document
-                        Map<String, Object> existing = db.getDocument(COLLECTION, itemId);
-                        if (existing != null) {
-                            existing.put("imageEmbedding", embedding);
-                            db.setDocument(COLLECTION, itemId, existing);
-                            System.out.println("✅ Embedding saved for item " + itemId);
-                        }
+                        Map<String, Object> embData = new LinkedHashMap<>();
+                        embData.put("imageEmbedding", embedding);
+                        db.setDocument(COLLECTION, itemId, embData, List.of("imageEmbedding"));
+                        System.out.println("✅ Embedding saved for item " + itemId);
                     } catch (Exception e) {
                         // Just log — embedding is optional, item is already saved
                         System.err.println("⚠️ Embedding failed for item " + itemId + ": " + e.getMessage());
