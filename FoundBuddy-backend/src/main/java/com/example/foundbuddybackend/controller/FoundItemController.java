@@ -207,6 +207,10 @@ public class FoundItemController {
             if (item.getCreatedAt() == null) {
                 item.setCreatedAt(System.currentTimeMillis());
             }
+            // Default workflow status
+            if (item.getWorkflowStatus() == null || item.getWorkflowStatus().isBlank()) {
+                item.setWorkflowStatus("Gemeldet");
+            }
             // Validate URI
             if (item.getImageUri() != null) {
                 String uri = item.getImageUri();
@@ -256,7 +260,10 @@ public class FoundItemController {
 
             FoundItem item = mapToItem(doc);
             item.setResolved(true);
-            db.setDocument(COLLECTION, id, itemToMap(item));
+            
+            Map<String, Object> updateData = new LinkedHashMap<>();
+            updateData.put("isResolved", true);
+            db.setDocument(COLLECTION, id, updateData, List.of("isResolved"));
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -350,7 +357,9 @@ public class FoundItemController {
             boolean newValue = !item.isFavorite();
             item.setFavorite(newValue);
 
-            db.setDocument(COLLECTION, id, itemToMap(item));
+            Map<String, Object> updateData = new LinkedHashMap<>();
+            updateData.put("isFavorite", newValue);
+            db.setDocument(COLLECTION, id, updateData, List.of("isFavorite"));
             return ResponseEntity.ok(Map.of("success", true, "isFavorite", newValue));
         } catch (Exception e) {
             e.printStackTrace();
@@ -412,7 +421,13 @@ public class FoundItemController {
             comments.add(newComment);
             item.setComments(comments);
 
-            db.setDocument(COLLECTION, id, itemToMap(item));
+            Map<String, Object> updateData = new LinkedHashMap<>();
+            List<Map<String, Object>> commentsList = new ArrayList<>();
+            for (Comment c : comments) {
+                commentsList.add(commentToMap(c));
+            }
+            updateData.put("comments", commentsList);
+            db.setDocument(COLLECTION, id, updateData, List.of("comments"));
             return ResponseEntity.ok(Map.of("success", true, "comment", newComment));
         } catch (Exception e) {
             e.printStackTrace();
