@@ -310,29 +310,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         val item = list[index]
 
-        // Prüfen ob User berechtigt ist
         if (item.allowedEditors.isNotEmpty() && !item.allowedEditors.contains(userId)) {
-            return // User nicht berechtigt
+            return
         }
 
-        val statusChange = StatusChange(
-            userId = userId,
-            username = username,
-            oldStatus = item.workflowStatus,
-            newStatus = newStatus,
-            comment = comment
-        )
-
-        val updatedHistory = item.statusHistory + statusChange
-        list[index] = item.copy(
-            workflowStatus = newStatus,
-            statusHistory = updatedHistory
-        )
-        _items.value = list
-
-        // Backend-Call
         viewModelScope.launch {
-            repo?.updateWorkflowStatus(itemId, newStatus, userId, username, comment)
+            val success = repo?.updateWorkflowStatus(itemId, newStatus, userId, username, comment) ?: false
+            if (success) {
+                refreshItem(itemId)
+            } else {
+                _errorMessage.value = "Status-Update fehlgeschlagen"
+            }
         }
     }
 

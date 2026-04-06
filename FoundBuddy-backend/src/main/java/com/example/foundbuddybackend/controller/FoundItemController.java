@@ -282,10 +282,13 @@ public class FoundItemController {
             }
 
             String uploaderId = item.getUploaderId();
+            String uploaderName = item.getUploaderName();
             List<String> allowedEditors = item.getAllowedEditors();
             boolean isOwner = uploaderId != null && uploaderId.equals(userId);
+            boolean isOwnerByName = (uploaderId == null || uploaderId.isBlank()) 
+                && uploaderName != null && uploaderName.equalsIgnoreCase(username);
             boolean isAllowedEditor = allowedEditors != null && allowedEditors.contains(userId);
-            if (!isOwner && !isAllowedEditor) {
+            if (!isOwner && !isOwnerByName && !isAllowedEditor) {
                 return ResponseEntity.status(403).body(Map.of("error", "Only the owner or allowed editors can update the status"));
             }
 
