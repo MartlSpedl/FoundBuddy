@@ -311,15 +311,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val item = list[index]
 
         if (item.allowedEditors.isNotEmpty() && !item.allowedEditors.contains(userId)) {
+            _errorMessage.value = "Du bist nicht berechtigt, diesen Status zu ändern"
             return
         }
 
         viewModelScope.launch {
-            val success = repo?.updateWorkflowStatus(itemId, newStatus, userId, username, comment) ?: false
-            if (success) {
-                refreshItem(itemId)
-            } else {
-                _errorMessage.value = "Status-Update fehlgeschlagen"
+            when (val result = repo?.updateWorkflowStatus(itemId, newStatus, userId, username, comment)) {
+                is FoundItemRepository.StatusUpdateResult.Success -> refreshItem(itemId)
+                is FoundItemRepository.StatusUpdateResult.Forbidden -> _errorMessage.value = result.message
+                is FoundItemRepository.StatusUpdateResult.Error -> _errorMessage.value = "Status-Update fehlgeschlagen: ${result.message}"
+                null -> _errorMessage.value = "Status-Update fehlgeschlagen"
             }
         }
     }

@@ -17,7 +17,7 @@ import java.util.*;
  * for reliable cross-platform compatibility.
  */
 @RestController
-@RequestMapping("/api/found-items")
+@RequestMapping("/api/items")
 @CrossOrigin(origins = "*")
 public class FoundItemController {
 
@@ -311,7 +311,10 @@ public class FoundItemController {
             // Update workflow status
             item.setWorkflowStatus(newStatus);
 
-            db.setDocument(COLLECTION, id, itemToMap(item));
+            Map<String, Object> updateData = new LinkedHashMap<>();
+            updateData.put("workflowStatus", newStatus);
+            updateData.put("statusHistory", history);
+            db.setDocument(COLLECTION, id, updateData, List.of("workflowStatus", "statusHistory"));
             return ResponseEntity.ok(Map.of("success", true, "workflowStatus", newStatus, "statusHistory", history));
         } catch (Exception e) {
             e.printStackTrace();

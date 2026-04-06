@@ -111,6 +111,20 @@ public class FirestoreRestService {
     }
 
     /**
+     * Update specific fields using an updateMask.
+     * Only the specified fields will be modified; other fields remain untouched.
+     * This prevents accidental deletion of AI embeddings and other fields.
+     */
+    public void setDocument(String collection, String documentId, Map<String, Object> data, List<String> updateMask) throws Exception {
+        String maskParam = String.join(",", updateMask);
+        String url = base() + "/" + collection + "/" + documentId + "?updateMask.fieldNames=" + maskParam;
+        String body = toFirestoreJson(data);
+        System.out.println("🔄 setDocument (masked): PATCH " + collection + "/" + documentId + " mask=" + maskParam);
+        rest.exchange(url, HttpMethod.PATCH,
+                new HttpEntity<>(body, authHeaders()), String.class);
+    }
+
+    /**
      * Get all documents in a collection.
      */
     @SuppressWarnings("unchecked")

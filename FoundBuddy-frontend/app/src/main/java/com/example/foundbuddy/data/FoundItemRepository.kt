@@ -41,7 +41,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getById(itemId: String): FoundItem? = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId")
+            val url = java.net.URL("$baseUrl/api/items/$itemId")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5_000
@@ -69,7 +69,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getAll(): List<FoundItem> = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items")
+            val url = java.net.URL("$baseUrl/api/items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5_000
@@ -101,7 +101,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             val dto = item.toItemDto()
             val json = itemAdapter.toJson(dto)
 
-            val url = java.net.URL("$baseUrl/api/found-items")
+            val url = java.net.URL("$baseUrl/api/items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.doOutput = true
             connection.requestMethod = "POST"
@@ -122,7 +122,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
 
     suspend fun clearAll() = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items")
+            val url = java.net.URL("$baseUrl/api/items")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "DELETE"
             connection.connectTimeout = 5000
@@ -135,7 +135,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
 
     suspend fun markAsResolved(itemId: String) = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId/resolve")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/resolve")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "PUT"
             connection.connectTimeout = 5000
@@ -152,7 +152,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     suspend fun toggleFavorite(itemId: String, userId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId/favorite?userId=$encodedUserId")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/favorite?userId=$encodedUserId")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "PUT"
             connection.connectTimeout = 5000
@@ -168,6 +168,15 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
     }
 
     /**
+     * Result of a status update operation.
+     */
+    sealed class StatusUpdateResult {
+        data object Success : StatusUpdateResult()
+        data class Forbidden(val message: String) : StatusUpdateResult()
+        data class Error(val message: String) : StatusUpdateResult()
+    }
+
+    /**
      * Aktualisiert den Workflow-Status
      */
     suspend fun updateWorkflowStatus(
@@ -176,9 +185,9 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
         userId: String,
         username: String,
         comment: String? = null
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): StatusUpdateResult = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId/status")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/status")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.doOutput = true
             connection.requestMethod = "PUT"
@@ -200,11 +209,24 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             }
 
             val responseCode = connection.responseCode
-            connection.inputStream.use { it.readBytes() }
-            responseCode == HttpURLConnection.HTTP_OK
+            val responseBody = connection.inputStream.use { it.bufferedReader().readText() }
+            
+            when (responseCode) {
+                HttpURLConnection.HTTP_OK -> StatusUpdateResult.Success
+                HttpURLConnection.HTTP_FORBIDDEN -> {
+                    val errorMsg = try {
+                        val json = org.json.JSONObject(responseBody)
+                        json.optString("error", "Nicht berechtigt")
+                    } catch (e: Exception) {
+                        "Nicht berechtigt"
+                    }
+                    StatusUpdateResult.Forbidden(errorMsg)
+                }
+                else -> StatusUpdateResult.Error("Serverfehler: $responseCode")
+            }
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            StatusUpdateResult.Error(e.message ?: "Unbekannter Fehler")
         }
     }
 
@@ -236,7 +258,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun getStatusHistory(itemId: String): List<StatusChange> = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId/status-history")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/status-history")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000
@@ -258,7 +280,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun addComment(itemId: String, author: String, text: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items/$itemId/comments")
+            val url = java.net.URL("$baseUrl/api/items/$itemId/comments")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.doOutput = true
             connection.requestMethod = "POST"
@@ -503,7 +525,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
      */
     suspend fun createFoundItem(item: FoundItem): FoundItem = withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("$baseUrl/api/found-items")
+            val url = java.net.URL("$baseUrl/api/items")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.doOutput = true
