@@ -23,7 +23,6 @@ api.upload_folder(
         "build/**",
         "uploads/**",
         "*.class",
-        "*.jar",
         "src/main/resources/firebase-key.json",
         ".idea/**",
         ".gradle/**",
