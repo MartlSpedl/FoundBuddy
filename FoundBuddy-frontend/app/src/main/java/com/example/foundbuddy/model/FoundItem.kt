@@ -17,6 +17,7 @@ data class FoundItem(
     @Json(name = "likedByUser") val likedByUser: Boolean = false,
     @Json(name = "createdAt") val timestamp: Long = System.currentTimeMillis(),
     val workflowStatus: String = "Gemeldet",
+    val favoritedBy: List<String> = emptyList(),
     val isFavorite: Boolean = false,
     val statusHistory: List<StatusChange> = emptyList(),
     val allowedEditors: List<String> = emptyList(),

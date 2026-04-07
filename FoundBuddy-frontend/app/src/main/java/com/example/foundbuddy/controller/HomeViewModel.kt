@@ -209,11 +209,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         this@HomeViewModel.repo = repo
     }
 
+    private var currentUserId: String? = null
+
+    fun setCurrentUserId(userId: String?) {
+        currentUserId = userId
+    }
+
     // Wird aus MainActivity aufgerufen, wenn aus Repository geladen wurde
     fun refreshItems(newItems: List<FoundItem>) {
-        _items.value = newItems
+        val userId = currentUserId
+        _items.value = newItems.map { item ->
+            item.copy(isFavorite = userId?.let { item.favoritedBy.contains(it) } ?: false)
+        }
         // Favoriten aus den Items filtern
-        _favorites.value = newItems.filter { it.isFavorite }
+        _favorites.value = newItems.filter { item ->
+            userId?.let { item.favoritedBy.contains(it) } ?: false
+        }
         _isLoading.value = false
     }
 
@@ -233,13 +244,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshFavorites(newFavorites: List<FoundItem>) {
-        _favorites.value = newFavorites
+        val userId = currentUserId
+        _favorites.value = newFavorites.map { item ->
+            item.copy(isFavorite = userId?.let { item.favoritedBy.contains(it) } ?: false)
+        }
     }
 
     fun loadFavorites(userId: String) {
         viewModelScope.launch {
             repo?.getFavorites(userId)?.let { favorites ->
-                _favorites.value = favorites
+                _favorites.value = favorites.map { item ->
+                    item.copy(isFavorite = true)
+                }
             }
         }
     }
@@ -272,7 +288,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _items.value = list
     }
 
-    // Sprint 5: Favoriten-Funktionalität
+    // Sprint 5: Favoriten-Funktionalität (per-user)
     fun toggleFavorite(itemId: String, currentUserId: String?) {
         if (currentUserId == null) return
 
@@ -281,14 +297,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (index == -1) return
 
         val item = list[index]
-        val isCurrentlyFavorite = item.isFavorite
+        val isCurrentlyFavorite = item.favoritedBy.contains(currentUserId)
+        
+        val newFavoritedBy = if (isCurrentlyFavorite) {
+            item.favoritedBy.filter { it != currentUserId }
+        } else {
+            item.favoritedBy + currentUserId
+        }
 
-        list[index] = item.copy(isFavorite = !isCurrentlyFavorite)
+        list[index] = item.copy(
+            favoritedBy = newFavoritedBy,
+            isFavorite = !isCurrentlyFavorite
+        )
         _items.value = list
 
         // Favoriten-Liste aktualisieren
-        val newFavorites = _items.value.filter { it.isFavorite }
-        _favorites.value = newFavorites
+        _favorites.value = _items.value.filter { it.favoritedBy.contains(currentUserId) }
 
         // Backend-Call
         viewModelScope.launch {

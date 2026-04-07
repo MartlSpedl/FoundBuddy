@@ -344,7 +344,8 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             likedByUser = false,
             timestamp = timestamp ?: System.currentTimeMillis(),
             workflowStatus = workflowStatus ?: "Gemeldet",
-            isFavorite = isFavorite ?: false,
+            favoritedBy = favoritedBy ?: emptyList(),
+            isFavorite = false, // Will be computed per-user in ViewModel
             statusHistory = history,
             allowedEditors = allowedEditors ?: emptyList(),
             comments = comments?.map { dto ->
@@ -384,7 +385,7 @@ class FoundItemRepository(private val context: Context, private val api: FoundBu
             uploaderId = uploaderId,
             isResolved = isResolved,
             workflowStatus = workflowStatus,
-            isFavorite = isFavorite,
+            favoritedBy = favoritedBy,
             statusHistory = historyDto,
             allowedEditors = allowedEditors,
             comments = comments.map { comment ->
@@ -717,7 +718,7 @@ data class ItemDto(
     val isResolved: Boolean? = false,
     // Sprint 5: Neue Felder
     val workflowStatus: String? = "Gemeldet",
-    val isFavorite: Boolean? = false,
+    val favoritedBy: List<String>? = emptyList(),
     val statusHistory: List<StatusChangeDto>? = emptyList(),
     val allowedEditors: List<String>? = emptyList(),
     val comments: List<CommentDto>? = emptyList()

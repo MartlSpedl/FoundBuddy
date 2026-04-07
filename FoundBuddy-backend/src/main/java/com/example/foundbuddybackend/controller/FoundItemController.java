@@ -48,8 +48,15 @@ public class FoundItemController {
         Object likes = m.get("likes");
         if (likes instanceof Number) item.setLikes(((Number) likes).intValue());
 
-        Object isFavorite = m.get("isFavorite");
-        item.setFavorite(Boolean.TRUE.equals(isFavorite));
+        @SuppressWarnings("unchecked")
+        List<Object> rawFavoritedBy = (List<Object>) m.get("favoritedBy");
+        if (rawFavoritedBy != null) {
+            List<String> favoritedBy = new ArrayList<>();
+            for (Object f : rawFavoritedBy) {
+                if (f != null) favoritedBy.add(f.toString());
+            }
+            item.setFavoritedBy(favoritedBy);
+        }
 
         Object uploaderId = m.get("uploaderId");
         if (uploaderId != null) item.setUploaderId(str(m, "uploaderId"));
@@ -141,7 +148,7 @@ public class FoundItemController {
         m.put("uploaderId", item.getUploaderId() != null ? item.getUploaderId() : "");
         m.put("likes", item.getLikes());
         m.put("workflowStatus", item.getWorkflowStatus() != null ? item.getWorkflowStatus() : "Gemeldet");
-        m.put("isFavorite", item.isFavorite());
+        m.put("favoritedBy", item.getFavoritedBy() != null ? item.getFavoritedBy() : new ArrayList<>());
         if (item.getStatusHistory() != null) m.put("statusHistory", item.getStatusHistory());
         if (item.getAllowedEditors() != null) m.put("allowedEditors", item.getAllowedEditors());
         if (item.getComments() != null) {
@@ -343,7 +350,7 @@ public class FoundItemController {
         }
     }
 
-    /** Toggles favorite status for an item. */
+    /** Toggles favorite status for an item for a specific user. */
     @PutMapping("/{id}/favorite")
     public ResponseEntity<?> toggleFavorite(@PathVariable String id, @RequestParam String userId) {
         try {
@@ -351,13 +358,50 @@ public class FoundItemController {
             if (doc == null) return ResponseEntity.notFound().build();
 
             FoundItem item = mapToItem(doc);
-            boolean newValue = !item.isFavorite();
-            item.setFavorite(newValue);
+            List<String> favoritedBy = item.getFavoritedBy();
+            if (favoritedBy == null) favoritedBy = new ArrayList<>();
+
+            boolean isCurrentlyFavorite = favoritedBy.contains(userId);
+            List<String> newFavoritedBy = new ArrayList<>(favoritedBy);
+            
+            if (isCurrentlyFavorite) {
+                newFavoritedBy.remove(userId);
+            } else {
+                newFavoritedBy.add(userId);
+            }
+            
+            item.setFavoritedBy(newFavoritedBy);
 
             Map<String, Object> updateData = new LinkedHashMap<>();
-            updateData.put("isFavorite", newValue);
-            db.setDocument(COLLECTION, id, updateData, List.of("isFavorite"));
-            return ResponseEntity.ok(Map.of("success", true, "isFavorite", newValue));
+            updateData.put("favoritedBy", newFavoritedBy);
+            db.setDocument(COLLECTION, id, updateData, List.of("favoritedBy"));
+            return ResponseEntity.ok(Map.of("success", true, "isFavorite", !isCurrentlyFavorite, "favoritedBy", newFavoritedBy));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Gets all items favorited by a specific user. */
+    @GetMapping("/favorites/{userId}")
+    public ResponseEntity<?> getFavorites(@PathVariable String userId) {
+        try {
+            List<Map<String, Object>> docs = db.getCollection(COLLECTION);
+            List<FoundItem> items = new ArrayList<>();
+            for (Map<String, Object> doc : docs) {
+                FoundItem item = mapToItem(doc);
+                if (item != null && item.getFavoritedBy() != null && item.getFavoritedBy().contains(userId)) {
+                    items.add(item);
+                }
+            }
+            items.sort((a, b) -> {
+                Long tsA = a.getCreatedAt(), tsB = b.getCreatedAt();
+                if (tsA == null && tsB == null) return 0;
+                if (tsA == null) return 1;
+                if (tsB == null) return -1;
+                return tsB.compareTo(tsA);
+            });
+            return ResponseEntity.ok(items);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));

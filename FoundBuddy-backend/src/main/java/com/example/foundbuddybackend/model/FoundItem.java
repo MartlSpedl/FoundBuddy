@@ -23,7 +23,7 @@ public class FoundItem {
     private int likes = 0;
     private boolean likedByUser = false;
     private String workflowStatus = "Gemeldet"; // Gemeldet | In Kontakt | Abgeschlossen
-    private boolean isFavorite = false;
+    private List<String> favoritedBy = new ArrayList<>();
     private List<Object> statusHistory = List.of();
     private List<String> allowedEditors = List.of();
     private List<Comment> comments = new ArrayList<>();
@@ -99,10 +99,14 @@ public class FoundItem {
     public String getWorkflowStatus() { return workflowStatus; }
     public void setWorkflowStatus(String workflowStatus) { this.workflowStatus = workflowStatus; }
 
-    // ── isFavorite ────────────────────────────────────────────────────────────
-    @JsonProperty("isFavorite")
-    public boolean isFavorite() { return isFavorite; }
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
+    // ── favoritedBy ────────────────────────────────────────────────────────────
+    @JsonProperty("favoritedBy")
+    public List<String> getFavoritedBy() { return favoritedBy; }
+    public void setFavoritedBy(List<String> favoritedBy) { this.favoritedBy = favoritedBy != null ? favoritedBy : new ArrayList<>(); }
+    
+    public boolean isFavoritedBy(String userId) {
+        return favoritedBy != null && favoritedBy.contains(userId);
+    }
 
     // ── statusHistory ─────────────────────────────────────────────────────────
     public List<Object> getStatusHistory() { return statusHistory; }

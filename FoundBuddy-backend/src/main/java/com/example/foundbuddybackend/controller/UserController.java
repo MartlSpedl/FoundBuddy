@@ -389,4 +389,23 @@ public class UserController {
             System.err.println("Error deleting user items: " + e.getMessage());
         }
     }
+
+    @GetMapping("/{userId}/favorites")
+    public ResponseEntity<?> getFavorites(@PathVariable String userId) {
+        try {
+            List<Map<String, Object>> docs = db.getCollection("found_items");
+            List<Map<String, Object>> favorites = new ArrayList<>();
+            for (Map<String, Object> doc : docs) {
+                @SuppressWarnings("unchecked")
+                List<Object> favoritedBy = (List<Object>) doc.get("favoritedBy");
+                if (favoritedBy != null && favoritedBy.contains(userId)) {
+                    favorites.add(doc);
+                }
+            }
+            return ResponseEntity.ok(favorites);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
