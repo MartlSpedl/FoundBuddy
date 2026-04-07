@@ -60,11 +60,20 @@ fun FeedScreen(
         listToShow.filter { !it.isResolved }
     }
 
-    val foundItems = filteredItems.filter { it.status.equals("Gefunden", ignoreCase = true) }
-    val lostItems = filteredItems.filter { it.status.equals("Verloren", ignoreCase = true) }
+    val foundStatuses = listOf("found", "Found", "Gefunden", "GEFUNDEN")
+    val lostStatuses = listOf("lost", "Lost", "Verloren", "VERLOREN")
+    
+    val foundItems = filteredItems.filter { item ->
+        item.status.equals("found", ignoreCase = true) ||
+                foundStatuses.any { item.status.equals(it, ignoreCase = true) }
+    }
+    val lostItems = filteredItems.filter { item ->
+        item.status.equals("lost", ignoreCase = true) ||
+                lostStatuses.any { item.status.equals(it, ignoreCase = true) }
+    }
     val otherItems = filteredItems.filter { item ->
-        !item.status.equals("Gefunden", ignoreCase = true) &&
-                !item.status.equals("Verloren", ignoreCase = true)
+        !foundStatuses.any { item.status.equals(it, ignoreCase = true) } &&
+                !lostStatuses.any { item.status.equals(it, ignoreCase = true) }
     }
 
     Scaffold(

@@ -63,7 +63,7 @@ fun UploadScreen(
     val username by userViewModel.username.collectAsState(initial = "Unbekannt")
     val lang by userViewModel.language.collectAsState()
 
-    var selectedType by remember { mutableStateOf(if (lang == "en") "Found" else "Gefunden") }
+    var selectedType by remember { mutableStateOf("found") }
     var selectedItem by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -273,19 +273,20 @@ fun UploadScreen(
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .padding(4.dp)
                 ) {
-                    listOf(LanguageManager.tr("found", lang), LanguageManager.tr("lost", lang)).forEach { type ->
-                        val isSel = selectedType == type
+                    val statusOptions = listOf("found" to LanguageManager.tr("found", lang), "lost" to LanguageManager.tr("lost", lang))
+                    statusOptions.forEach { (key, label) ->
+                        val isSel = selectedType == key
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSel) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                .clickable { selectedType = type },
+                                .clickable { selectedType = key },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                type,
+                                label,
                                 color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
@@ -305,7 +306,7 @@ fun UploadScreen(
                         value = selectedItem,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(String.format(LanguageManager.tr("what_found", lang), if(selectedType==LanguageManager.tr("found", lang)) LanguageManager.tr("found_verb", lang) else LanguageManager.tr("lost_verb", lang))) },
+                        label = { Text(String.format(LanguageManager.tr("what_found", lang), if(selectedType=="found") LanguageManager.tr("found_verb", lang) else LanguageManager.tr("lost_verb", lang))) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),

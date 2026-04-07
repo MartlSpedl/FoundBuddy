@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -132,8 +131,16 @@ fun ProfileScreen(
     val tabs = listOf(LanguageManager.tr("found", lang), LanguageManager.tr("lost", lang))
     
     val displayPosts = remember(userPosts, selectedTabIndex) {
-                    val status = if (selectedTabIndex == 0) LanguageManager.tr("found", lang) else LanguageManager.tr("lost", lang)
-        userPosts.filter { it.status.equals(status, ignoreCase = true) }
+        val targetKey = if (selectedTabIndex == 0) "found" else "lost"
+        val knownTranslations = if (selectedTabIndex == 0) {
+            listOf("found", "Found", "Gefunden", "GEFUNDEN")
+        } else {
+            listOf("lost", "Lost", "Verloren", "VERLOREN")
+        }
+        userPosts.filter { item ->
+            item.status.equals(targetKey, ignoreCase = true) ||
+                    knownTranslations.any { item.status.equals(it, ignoreCase = true) }
+        }
     }
 
     Column(
@@ -243,23 +250,6 @@ fun ProfileScreen(
                 modifier = Modifier.weight(0.4f),
                 color = MaterialTheme.colorScheme.secondary
             )
-            if (currentUser != null) {
-                Surface(
-                    onClick = onLogout,
-                    modifier = Modifier.size(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
         }
 
         // --- Tabs ---

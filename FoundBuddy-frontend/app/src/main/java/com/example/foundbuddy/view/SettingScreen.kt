@@ -143,24 +143,17 @@ fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(modifier = Modifier.padding(4.dp)) {
                 Text(
                     text = LanguageManager.tr("app_management", lmLang),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
 
                 ListItem(
                     headlineContent = { Text(LanguageManager.tr("delete_all_items", lmLang)) },
                     supportingContent = { Text("Alle lokal gespeicherten Items entfernen") },
-                    leadingContent = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.delete_icon),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
                     trailingContent = {
                         FilledTonalButton(onClick = onClear) {
                             Text(LanguageManager.tr("delete", lmLang))
