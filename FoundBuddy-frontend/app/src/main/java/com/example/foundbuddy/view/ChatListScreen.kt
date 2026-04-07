@@ -13,9 +13,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.foundbuddy.controller.HomeViewModel
 import com.example.foundbuddy.controller.LanguageManager
 import com.example.foundbuddy.controller.UserViewModel
@@ -69,7 +73,6 @@ fun ChatListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // ---- Anfragen Section ----
                 if (requests.isNotEmpty()) {
                     item {
                         Text(
@@ -103,7 +106,6 @@ fun ChatListScreen(
                     }
                 }
 
-                // ---- Regular Conversations ----
                 if (conversations.isNotEmpty()) {
                     item {
                         Text(
@@ -129,6 +131,36 @@ fun ChatListScreen(
 }
 
 @Composable
+fun ProfileAvatar(
+    imageUrl: String?,
+    size: Dp
+) {
+    if (!imageUrl.isNullOrBlank()) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Surface(
+            modifier = Modifier.size(size),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+        ) {
+            Icon(
+                Icons.Default.Person,
+                contentDescription = null,
+                modifier = Modifier.padding(size / 5),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
 fun RequestItem(
     conversation: com.example.foundbuddy.model.Conversation,
     vm: HomeViewModel,
@@ -145,18 +177,10 @@ fun RequestItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(44.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.padding(10.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                ProfileAvatar(
+                    imageUrl = conversation.participantProfileImage,
+                    size = 44.dp
+                )
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -213,18 +237,10 @@ fun ConversationItem(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(50.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.padding(10.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            ProfileAvatar(
+                imageUrl = conversation.participantProfileImage,
+                size = 50.dp
+            )
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(

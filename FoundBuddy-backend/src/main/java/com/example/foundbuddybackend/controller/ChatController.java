@@ -77,6 +77,20 @@ public class ChatController {
             for (QueryDocumentSnapshot doc : docs) {
                 Conversation conv = doc.toObject(Conversation.class);
                 conv.setId(doc.getId());
+
+                String participantId = conv.getParticipantId();
+                if (participantId != null) {
+                    try {
+                        DocumentSnapshot userDoc = db.collection("users").document(participantId).get().get();
+                        if (userDoc.exists()) {
+                            String profileImage = userDoc.getString("profileImage");
+                            conv.setParticipantProfileImage(profileImage);
+                        }
+                    } catch (Exception e) {
+                        // Keep profileImage as null if fetching fails
+                    }
+                }
+
                 conversations.add(conv);
             }
 
@@ -177,6 +191,7 @@ public class ChatController {
             Conversation senderConv = new Conversation(
                 message.getRecipientId(), 
                 recipientName, // Use actual recipient name
+                null, // profileImage will be fetched on load
                 message, 
                 true // Sender already accepts the chat
             );
@@ -199,6 +214,7 @@ public class ChatController {
             Conversation recipientConv = new Conversation(
                 message.getSenderId(), 
                 message.getSenderName(), // Use sender's name from message
+                null, // profileImage will be fetched on load
                 message, 
                 isAccepted
             );

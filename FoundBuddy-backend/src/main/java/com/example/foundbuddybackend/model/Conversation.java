@@ -8,14 +8,16 @@ public class Conversation {
     private String id;
     private String participantId;
     private String participantName;
+    private String participantProfileImage;
     private Message lastMessage;
     private boolean isAccepted;
 
     public Conversation() {}
 
-    public Conversation(String participantId, String participantName, Message lastMessage, boolean isAccepted) {
+    public Conversation(String participantId, String participantName, String participantProfileImage, Message lastMessage, boolean isAccepted) {
         this.participantId = participantId;
         this.participantName = participantName;
+        this.participantProfileImage = participantProfileImage;
         this.lastMessage = lastMessage;
         this.isAccepted = isAccepted;
     }
@@ -28,6 +30,9 @@ public class Conversation {
 
     public String getParticipantName() { return participantName; }
     public void setParticipantName(String participantName) { this.participantName = participantName; }
+
+    public String getParticipantProfileImage() { return participantProfileImage; }
+    public void setParticipantProfileImage(String participantProfileImage) { this.participantProfileImage = participantProfileImage; }
 
     public Message getLastMessage() { return lastMessage; }
     public void setLastMessage(Message lastMessage) { this.lastMessage = lastMessage; }

@@ -18,6 +18,7 @@ data class Message(
 data class Conversation(
     val participantId: String,
     val participantName: String,
+    val participantProfileImage: String? = null,
     val lastMessage: Message,
     val isAccepted: Boolean = true
 )
