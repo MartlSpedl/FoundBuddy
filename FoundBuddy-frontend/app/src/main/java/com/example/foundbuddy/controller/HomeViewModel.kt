@@ -108,6 +108,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         com.example.foundbuddy.model.Conversation(
                             participantId = backendConv.participantId,
                             participantName = backendConv.participantName,
+                            participantProfileImage = backendConv.participantProfileImage,
                             lastMessage = com.example.foundbuddy.model.Message(
                                 id = backendConv.lastMessage?.id ?: "",
                                 senderId = backendConv.lastMessage?.senderId ?: "",
